@@ -24,6 +24,7 @@ classifiers = [
 setup(
     name="mkenv",
     py_modules=["mkenv"],
+    version=__version__,
     entry_points={
         "console_scripts": ["mkenv = mkenv:main", "mkvenv = mkenv:main"],
     },
