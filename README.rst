@@ -22,7 +22,7 @@ Usage
 Usage is similar to ``mkvirtualenv``, although ``mkenv`` passes
 arguments directly through to ``virtualenv``::
 
-    $ mkenv nameofvenv -- -p python2.6
+    $ mkenv nameofvenv -- -p pypy
 
 will create a virtual environment in an appropriate platform-specific
 data directory, or in the directory specified by ``WORKON_HOME`` for
