@@ -82,6 +82,7 @@ def run(arguments):
 
     installs = [arg for args in arguments["installs"] for arg in args]
     if installs:
-        subprocess.check_call(
-            [os.path.join(venv, "bin", "pip"), "install"] + installs
-        )
+        command = [
+            os.path.join(venv, "bin", "python"), "-m", "pip", "install",
+        ]
+        subprocess.check_call(command + installs)
