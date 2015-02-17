@@ -83,10 +83,7 @@ def run(arguments):
         # because they will get spaces in their shebangs. Emulating *nix
         # behavior seems to be the "rightest" thing to do instead.
         if platform.system() == "Darwin":
-            base_dir = os.getenv(
-                "XDG_DATA_HOME", os.path.expanduser("~/.local/share"),
-            )
-            venvs_dir = os.path.join(base_dir, "virtualenvs")
+            venvs_dir = os.path.expanduser("~/.local/share/virtualenvs"),
         else:
             venvs_dir = user_data_dir(appname="virtualenvs")
 
