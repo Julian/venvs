@@ -10,6 +10,7 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 
 import argparse
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -74,7 +75,21 @@ def main():
 def run(arguments):
     from appdirs import user_data_dir
 
-    venvs_dir = os.getenv("WORKON_HOME", user_data_dir(appname="virtualenvs"))
+    venvs_dir = os.getenv("WORKON_HOME")
+    if venvs_dir is None:
+        # On OSX, seemingly the best place to put this is also
+        # user_data_dir, but that's ~/Library/Application Support,
+        # which means that any binaries installed won't be runnable
+        # because they will get spaces in their shebangs. Emulating *nix
+        # behavior seems to be the "rightest" thing to do instead.
+        if platform.system() == "Darwin":
+            base_dir = os.getenv(
+                "XDG_DATA_HOME", os.path.expanduser("~/.local/share"),
+            )
+            venvs_dir = os.path.join(base_dir, "virtualenvs")
+        else:
+            venvs_dir = user_data_dir(appname="virtualenvs")
+
     venv = os.path.join(venvs_dir, arguments["name"])
     subprocess.check_call(
         ["virtualenv"] + arguments["virtualenv-args"] + [venv]
