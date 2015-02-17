@@ -76,7 +76,7 @@ def run(arguments):
     from appdirs import user_data_dir
 
     venvs_dir = os.getenv("WORKON_HOME")
-    if venvs_dir is None:
+    if not venvs_dir:
         # On OSX, seemingly the best place to put this is also
         # user_data_dir, but that's ~/Library/Application Support,
         # which means that any binaries installed won't be runnable
