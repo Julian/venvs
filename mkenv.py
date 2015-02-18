@@ -12,6 +12,7 @@ import argparse
 import os
 import platform
 import re
+import shutil
 import subprocess
 import sys
 
@@ -37,10 +38,18 @@ parser.add_argument(
     version=__version__,
 )
 
-parser.add_argument(
+target_venv_group = parser.add_mutually_exclusive_group(required=True)
+target_venv_group.add_argument(
     "name",
-    help="the name of the newly-created virtualenv",
+    nargs="?",
+    help="create a new named virtualenv",
 )
+target_venv_group.add_argument(
+    "-t", "--temp", "--temporary",
+    action="store_true",
+    help="create or reuse a global temporary virtualenv instead of a named one"
+)
+
 parser.add_argument(
     "-i", "--install",
     action="append",
@@ -73,8 +82,6 @@ def main():
 
 
 def run(arguments):
-    from appdirs import user_data_dir
-
     venvs_dir = os.getenv("WORKON_HOME")
     if not venvs_dir:
         # On OSX, seemingly the best place to put this is also
@@ -85,11 +92,18 @@ def run(arguments):
         if platform.system() == "Darwin":
             venvs_dir = os.path.expanduser("~/.local/share/virtualenvs")
         else:
+            from appdirs import user_data_dir
             venvs_dir = user_data_dir(appname="virtualenvs")
 
-    venv = os.path.join(venvs_dir, arguments["name"])
+    if arguments["temp"]:
+        venv = os.path.join(venvs_dir, "mkenv-temp-venv")
+        print os.path.join(venv, "bin")
+        shutil.rmtree(venv, ignore_errors=True)
+    else:
+        venv = os.path.join(venvs_dir, arguments["name"])
+
     subprocess.check_call(
-        ["virtualenv"] + arguments["virtualenv-args"] + [venv]
+        ["virtualenv", "--quiet"] + arguments["virtualenv-args"] + [venv]
     )
 
     installs = [arg for args in arguments["installs"] for arg in args]

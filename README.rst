@@ -5,7 +5,9 @@ mkenv
 mkenv is a simpler tool for creating virtualenvs in a central location.
 
 It consists of the 5% of `virtualenvwrapper
-<https://virtualenvwrapper.readthedocs.org/en/latest/>`_ that I actually use.
+<https://virtualenvwrapper.readthedocs.org/en/latest/>`_ that I actually use,
+and is in some ways meant to complement ``virtualenv`` rather than completely
+wrapping or hiding it.
 
 
 Installation
@@ -27,6 +29,40 @@ arguments directly through to ``virtualenv``::
 will create a virtual environment in an appropriate platform-specific
 data directory, or in the directory specified by ``WORKON_HOME`` for
 compatibility.
+
+
+Temporary Virtualenvs
+---------------------
+
+I also find ``mktmpenv`` useful for quick testing. To support its use case,
+``mkenv`` currently supports a different but similar style of temporary
+virtualenv.
+
+Invoking::
+
+    $ venv=$(mkenv -t)
+
+in your shell will create (or re-create) a global temporary virtualenv,
+and print its ``bin/`` subdirectory (which in this case will be then
+stored in the ``venv`` variable). It can subsequently be used by, e.g.::
+
+    $ $venv/python
+
+or::
+
+    $ $venv/pip ...
+
+et cetera.
+
+The global virtualenv is cleared each time you invoke ``mkenv -t``.
+Unless you care, unlike virtualenvwrapper's ``mktmpenv``, there's no
+need to care about cleaning it up, whenever it matters for the next
+time, it will be cleared and overwritten.
+
+``mkenv`` may support the more similar "traditional" one-use virtualenv in the
+future, but given that it does not activate virtualenvs by default (see below),
+the current recommendation for this use case would be to simply use the
+``virtualenv`` binary directly.
 
 
 Why don't I use virtualenvwrapper?
