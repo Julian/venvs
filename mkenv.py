@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 # Make a rookie attempt at converting the docstring to plaintext, since of
@@ -70,6 +70,12 @@ parser.add_argument(
          "with pip after it is created. May be repeated.",
 )
 parser.add_argument(
+    "-v", "--verbose",
+    action="store_true",
+    help="show more output. Note that using this with the `-t` temporary "
+         "virtualenv argument may polute stdout."
+)
+parser.add_argument(
     "virtualenv-args",
     nargs=argparse.REMAINDER,
     help="additional arguments that will be passed along to virtualenv(1)"
@@ -95,16 +101,20 @@ def run(arguments):
             from appdirs import user_data_dir
             venvs_dir = user_data_dir(appname="virtualenvs")
 
+    virtualenv_args = arguments["virtualenv-args"]
+
     if arguments["temp"]:
         venv = os.path.join(venvs_dir, "mkenv-temp-venv")
         print os.path.join(venv, "bin")
         shutil.rmtree(venv, ignore_errors=True)
+
+        # Don't pollute stdout with output now, since we're using stdout
+        if not arguments["verbose"]:
+            virtualenv_args.append("--quiet")
     else:
         venv = os.path.join(venvs_dir, arguments["name"])
 
-    subprocess.check_call(
-        ["virtualenv", "--quiet"] + arguments["virtualenv-args"] + [venv]
-    )
+    subprocess.check_call(["virtualenv"] + virtualenv_args + [venv])
 
     installs = [arg for args in arguments["installs"] for arg in args]
     if installs:
