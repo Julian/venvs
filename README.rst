@@ -54,6 +54,12 @@ or::
 
 et cetera.
 
+You may prefer using::
+
+    $ cd $(mkenv -t)
+
+as your temporary venv workflow if you're into that sort of thing instead.
+
 The global virtualenv is cleared each time you invoke ``mkenv -t``.
 Unless you care, unlike virtualenvwrapper's ``mktmpenv``, there's no
 need to care about cleaning it up, whenever it matters for the next
