@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 
 # Make a rookie attempt at converting the docstring to plaintext, since of
@@ -50,6 +50,11 @@ target_venv_group.add_argument(
     help="create or reuse a global temporary virtualenv instead of a named one"
 )
 
+parser.add_argument(
+    "-R", "--recreate",
+    action="store_true",
+    help="delete the named virtualenv if it exists before recreating it",
+)
 parser.add_argument(
     "-i", "--install",
     action="append",
@@ -106,7 +111,7 @@ def run(arguments):
     if arguments["temp"]:
         venv = os.path.join(venvs_dir, "mkenv-temp-venv")
         print os.path.join(venv, "bin")
-        shutil.rmtree(venv, ignore_errors=True)
+        arguments["recreate"] = True
 
         # Don't pollute stdout with output now, since we're using stdout
         if not arguments["verbose"]:
@@ -114,6 +119,8 @@ def run(arguments):
     else:
         venv = os.path.join(venvs_dir, arguments["name"])
 
+    if arguments["recreate"]:
+        shutil.rmtree(venv, ignore_errors=True)
     subprocess.check_call(["virtualenv"] + virtualenv_args + [venv])
 
     installs = [arg for args in arguments["installs"] for arg in args]
