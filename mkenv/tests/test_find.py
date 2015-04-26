@@ -1,4 +1,5 @@
 from unittest import TestCase
+import os
 
 from bp.filepath import FilePath
 from bp.memory import MemoryPath
@@ -70,4 +71,46 @@ class TestFind(CLIMixin, TestCase):
         self.assertEqual(
             (stdin, stdout, stderr),
             ("", self.locator.for_directory(mem).path + "\n", ""),
+        )
+
+    def test_cannot_specify_name_twice(self):
+        stdin, stdout, stderr = self.run_cli(
+            ["-n", "foo", "-n", "bar"], exit_status=os.EX_USAGE,
+        )
+        self.assertEqual(
+            (stdin, stdout, stderr),
+            ("", stdout, "error: '-n / --name' specified multiple times\n\n"),
+        )
+
+    def test_cannot_specify_name_twice_in_two_ways(self):
+        stdin, stdout, stderr = self.run_cli(
+            ["-n", "foo", "--name", "bar"], exit_status=os.EX_USAGE,
+        )
+        self.assertEqual(
+            (stdin, stdout, stderr),
+            ("", stdout, "error: '-n / --name' specified multiple times\n\n"),
+        )
+
+    def test_cannot_specify_directory_twice(self):
+        stdin, stdout, stderr = self.run_cli(
+            ["-d", "foo", "-d", "bar"], exit_status=os.EX_USAGE,
+        )
+        self.assertEqual(
+            (stdin, stdout, stderr), (
+                "",
+                stdout,
+                "error: '-d / --directory' specified multiple times\n\n",
+            ),
+        )
+
+    def test_cannot_specify_directory_twice_in_two_ways(self):
+        stdin, stdout, stderr = self.run_cli(
+            ["-d", "foo", "--directory", "bar"], exit_status=os.EX_USAGE,
+        )
+        self.assertEqual(
+            (stdin, stdout, stderr), (
+                "",
+                stdout,
+                "error: '-d / --directory' specified multiple times\n\n",
+            ),
         )

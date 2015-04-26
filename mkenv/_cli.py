@@ -65,7 +65,8 @@ class Flag(object):
 class CLI(object):
 
     HELP = Argument(names=("-h", "--help"), help="Show usage information.")
-    VERSION = Argument(names=("-V", "--version"), help="Show version information."
+    VERSION = Argument(
+        names=("-V", "--version"), help="Show version information."
     )
 
     def __init__(self, *accepted_arguments):
@@ -115,12 +116,21 @@ class CLI(object):
 
     def parse(self, argv, help, stdout):
         argv = iter(argv)
+        seen = set()
         parsed = {}
         for argument in argv:
             found = self.names_to_arguments.get(argument)
 
             if found is None:
                 raise UsageError("No such argument: " + repr(argument))
+
+            if found in seen:
+                raise UsageError(
+                    "{0!r} specified multiple times".format(
+                        " / ".join(found.names)
+                    ),
+                )
+            seen.add(found)
 
             if found == CLI.HELP:
                 self.show_help(help=help, stdout=stdout)
