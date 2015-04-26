@@ -10,35 +10,17 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 
 import argparse
 import os
-import platform
-import re
 import shutil
 import subprocess
-import sys
+
+from mkenv.find import env_for_name
+from mkenv.cli import cli, parser
+from mkenv.common import TEMPORARY_VIRTUALENV
 
 
-__version__ = "0.3.0"
+parser = parser(doc=__doc__)
 
-
-# Make a rookie attempt at converting the docstring to plaintext, since of
-# course sphinx.builders.text.TextBuilder requires the world to run.
-# Sorry. I'm a terrible person. But so is everyone else.
-epilog = re.sub(
-    r"`[^`]+ <([^`]+)>`_",
-    r"\1",
-    re.sub(":\w+:", "", __doc__),
-)
-parser = argparse.ArgumentParser(
-    epilog=epilog,
-    formatter_class=argparse.RawDescriptionHelpFormatter,
-)
-parser.add_argument(
-    "-V", "--version",
-    action="version",
-    version=__version__,
-)
-
-target_venv_group = parser.add_mutually_exclusive_group(required=True)
+target_venv_group = parser.add_mutually_exclusive_group()
 target_venv_group.add_argument(
     "name",
     nargs="?",
@@ -87,29 +69,14 @@ parser.add_argument(
 )
 
 
-def main():
-    arguments = vars(parser.parse_args())
-    return run(arguments=arguments)
-
-
-def run(arguments):
-    venvs_dir = os.getenv("WORKON_HOME")
-    if not venvs_dir:
-        # On OSX, seemingly the best place to put this is also
-        # user_data_dir, but that's ~/Library/Application Support,
-        # which means that any binaries installed won't be runnable
-        # because they will get spaces in their shebangs. Emulating *nix
-        # behavior seems to be the "rightest" thing to do instead.
-        if platform.system() == "Darwin":
-            venvs_dir = os.path.expanduser("~/.local/share/virtualenvs")
-        else:
-            from appdirs import user_data_dir
-            venvs_dir = user_data_dir(appname="virtualenvs")
-
+@cli(parser=parser)
+def run(arguments, stdin, stdout, stderr):
+    print arguments
+    return
     virtualenv_args = arguments["virtualenv-args"]
 
     if arguments["temp"]:
-        venv = os.path.join(venvs_dir, "mkenv-temp-venv")
+        venv = TEMPORARY_VIRTUALENV
         print os.path.join(venv, "bin")
         arguments["recreate"] = True
 
@@ -117,7 +84,7 @@ def run(arguments):
         if not arguments["verbose"]:
             virtualenv_args.append("--quiet")
     else:
-        venv = os.path.join(venvs_dir, arguments["name"])
+        venv = env_for_name(arguments["name"])
 
     if arguments["recreate"]:
         shutil.rmtree(venv, ignore_errors=True)

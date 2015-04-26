@@ -24,7 +24,14 @@ setup(
     packages=find_packages(),
     setup_requires=["vcversioner"],
     entry_points={
-        "console_scripts": ["mkenv = mkenv:main", "mkvenv = mkenv:main"],
+        "console_scripts": [
+            "mkenv = mkenv.make:run",
+            "mkvenv = mkenv.make:run",
+            "findenv = mkenv.find:run",
+            "findvenv = mkenv.find:run",
+            "rmenv = mkenv.remove:run",
+            "rmvenv = mkenv.remove:run",
+        ],
     },
     install_requires=["appdirs", "virtualenv"],
     author="Julian Berman",
