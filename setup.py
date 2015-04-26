@@ -2,8 +2,6 @@ import os
 
 from setuptools import find_packages, setup
 
-from mkenv import __version__
-
 
 with open(os.path.join(os.path.dirname(__file__), "README.rst")) as readme:
     long_description = readme.read()
@@ -18,22 +16,23 @@ classifiers = [
     "Programming Language :: Python :: 2",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy"
+    "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
 setup(
     name="mkenv",
-    py_modules=["mkenv"],
-    version=__version__,
+    packages=find_packages(),
+    setup_requires=["vcversioner"],
     entry_points={
         "console_scripts": ["mkenv = mkenv:main", "mkvenv = mkenv:main"],
     },
-    install_requires=["appdirs"],
+    install_requires=["appdirs", "virtualenv"],
     author="Julian Berman",
     author_email="Julian@GrayVines.com",
     classifiers=classifiers,
-    description="A simpler tool for creating venvs in a central location",
     license="MIT",
     long_description=long_description,
     url="https://github.com/Julian/mkenv",
+    description="A simpler tool for creating venvs in a central location",
+    vcversioner={"version_module_paths" : ["mkenv/__init__.py"]},
 )
