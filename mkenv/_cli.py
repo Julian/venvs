@@ -64,9 +64,8 @@ class Flag(object):
 
 class CLI(object):
 
-    HELP = Argument(names=set(["-h", "--help"]), help="Show usage information.")
-    VERSION = Argument(
-        names=set(["-V", "--version"]), help="Show version information."
+    HELP = Argument(names=("-h", "--help"), help="Show usage information.")
+    VERSION = Argument(names=("-V", "--version"), help="Show version information."
     )
 
     def __init__(self, *accepted_arguments):
@@ -92,9 +91,7 @@ class CLI(object):
 
             help, _ = pydoc.splitdoc(pydoc.getdoc(fn))
             try:
-                arguments.update(
-                    self.parse(argv=argv, help=help, stdout=stdout),
-                )
+                parsed = self.parse(argv=argv, help=help, stdout=stdout)
             except UsageError as error:
                 stderr.write("error: ")
                 stderr.write(str(error))
@@ -102,9 +99,10 @@ class CLI(object):
                 self.show_help(stdout=stdout, help=help)
                 exit_status = os.EX_USAGE
             else:
-                if arguments is None:
+                if parsed is None:
                     exit_status = os.EX_OK
                 else:
+                    arguments.update(parsed)
                     exit_status = main.with_arguments(
                         arguments=arguments,
                         stdin=stdin,
