@@ -91,7 +91,7 @@ to use. Specifically:
       I've never attached a project to a virtualenv. I just use a naming
       convention, naming the virtualenv with the name of the repo (with simple
       coersion), and then using `dynamic directory expansion in my shell
-      <https://github.com/Julian/dotfiles/blob/51bb47e/.config/zsh/.zshrc#L57-L80>`_
+      <https://github.com/Julian/dotfiles/blob/master/.config/zsh/.zshrc#L59-L87>`_
       to handle association.
 
 Basically, I just want a thing that is managing a central repository of
