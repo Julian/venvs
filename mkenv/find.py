@@ -1,6 +1,6 @@
 from bp.filepath import FilePath
 
-from mkenv.common import VIRTUALENVS_ROOT
+from mkenv.common import Locator
 from mkenv._cli import CLI, Argument, Flag
 
 
@@ -20,6 +20,12 @@ from mkenv._cli import CLI, Argument, Flag
         names=("-n", "--name"),
         help="Find the virtualenv associated with the given project name.",
     ),
+    Argument(
+        names=("-R", "--root"),
+        dest="locator",
+        type=lambda root : Locator(root=root),
+        help="Specify a different root directory for virtualenvs.",
+    ),
 )
 def run(arguments, stdin, stdout, stderr):
     """
@@ -27,34 +33,23 @@ def run(arguments, stdin, stdout, stderr):
 
     """
 
+    locator = arguments.get("locator") or Locator.default()
+
     directory = arguments.get("directory")
     if directory is not None:
-        found = env_for_directory(directory=directory)
+        found = locator.for_directory(directory=directory)
     else:
         name = arguments.get("name")
         if name is not None:
-            found = env_for_name(name=name)
+            found = locator.for_name(name=name)
         else:
-            found = VIRTUALENVS_ROOT
+            found = locator.root
 
     if arguments.get("existing-only") and not found.isdir():
         return 1
 
     stdout.write(found.path)
     stdout.write("\n")
-
-
-def env_for_directory(directory):
-    """
-    Find the virtualenv that would be associated with the given directory.
-
-    """
-
-    return env_for_name(directory.basename())
-
-
-def env_for_name(name):
-    return VIRTUALENVS_ROOT.child(name.lower().replace("-", "_"))
 
 
 if __name__ == "__main__":

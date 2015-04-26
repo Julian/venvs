@@ -7,26 +7,37 @@ from bp.filepath import FilePath
 from bp.memory import MemoryFS, MemoryPath
 
 from mkenv import find
-from mkenv.common import VIRTUALENVS_ROOT
+from mkenv.common import Locator
 
 
 class TestFind(TestCase):
+    def setUp(self):
+        self.stdin = StringIO()
+        self.stdout = StringIO()
+        self.stderr = StringIO()
+
+        self.fs = MemoryFS()
+        self.locator = Locator(root=MemoryPath(fs=self.fs))
+
     def run_cli(self, argv=(), exit_status=os.EX_OK):
-        stdin, stdout, stderr = StringIO(), StringIO(), StringIO()
         find.run(
             argv=argv,
-            stdin=stdin,
-            stdout=stdout,
-            stderr=stderr,
+            stdin=self.stdin,
+            stdout=self.stdout,
+            stderr=self.stderr,
             exit=partial(self.assertEqual, 0),
         )
-        return stdin.getvalue(), stdout.getvalue(), stderr.getvalue()
+        return (
+            self.stdin.getvalue(),
+            self.stdout.getvalue(),
+            self.stderr.getvalue(),
+        )
 
     def test_find_without_args_finds_the_virtualenv_root(self):
         stdin, stdout, stderr = self.run_cli()
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", VIRTUALENVS_ROOT.path + "\n", ""),
+            ("", Locator.default().root.path + "\n", ""),
         )
 
     def test_find_d_finds_envs_by_directory(self):
@@ -34,21 +45,21 @@ class TestFind(TestCase):
         stdin, stdout, stderr = self.run_cli(["-d", this_dir.path])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", find.env_for_directory(this_dir).path + "\n", ""),
+            ("", Locator.default().for_directory(this_dir).path + "\n", ""),
         )
 
     def test_find_d_defaults_to_cwd(self):
         stdin, stdout, stderr = self.run_cli(["-d"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", find.env_for_directory(FilePath(".")).path + "\n", ""),
+            ("", Locator.default().for_directory(FilePath(".")).path + "\n", ""),
         )
 
     def test_find_n_finds_envs_by_name(self):
         stdin, stdout, stderr = self.run_cli(["-n", "bla"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", find.env_for_name("bla").path + "\n", ""),
+            ("", Locator.default().for_name("bla").path + "\n", ""),
         )
 
 
