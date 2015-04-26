@@ -39,11 +39,7 @@ def run(arguments, stdin, stdout, stderr):
     if directory is not None:
         found = locator.for_directory(directory=directory)
     else:
-        name = arguments.get("name")
-        if name is not None:
-            found = locator.for_name(name=name)
-        else:
-            found = locator.root
+        found = locator.for_name(name=arguments.get("name"))
 
     if arguments.get("existing-only") and not found.isdir():
         return 1
