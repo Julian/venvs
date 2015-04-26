@@ -1,38 +1,15 @@
-from StringIO import StringIO
-from functools import partial
 from unittest import TestCase
-import os
 
 from bp.filepath import FilePath
-from bp.memory import MemoryFS, MemoryPath
+from bp.memory import MemoryPath
 
 from mkenv import find
-from mkenv.common import Locator
+from mkenv.tests.utils import CLIMixin
 
 
-class TestFind(TestCase):
-    def setUp(self):
-        self.stdin = StringIO()
-        self.stdout = StringIO()
-        self.stderr = StringIO()
+class TestFind(CLIMixin, TestCase):
 
-        self.fs = MemoryFS()
-        self.locator = Locator(root=MemoryPath(fs=self.fs))
-
-    def run_cli(self, argv=(), exit_status=os.EX_OK):
-        find.run(
-            argv=argv,
-            stdin=self.stdin,
-            stdout=self.stdout,
-            stderr=self.stderr,
-            exit=partial(self.assertEqual, exit_status),
-            arguments={"locator" : self.locator},
-        )
-        return (
-            self.stdin.getvalue(),
-            self.stdout.getvalue(),
-            self.stderr.getvalue(),
-        )
+    cli = find
 
     def test_find_without_args_finds_the_virtualenv_root(self):
         stdin, stdout, stderr = self.run_cli()
