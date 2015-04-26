@@ -69,12 +69,10 @@ class TestFind(TestCase):
         )
         self.assertEqual((stdin, stdout, stderr), ("", "", "")) 
 
-    @skip("Skipped until bp supports some more nice things in MemoryPath.")
     def test_find_existing_succeeds_for_existing_virtualenvs(self):
-        # TODO: Should probably use make.
-        MemoryPath(fs=self.fs, path="bla").createDirectory()
+        MemoryPath(fs=self.fs, path=("bla",)).createDirectory()
         stdin, stdout, stderr = self.run_cli(["-n", "bla", "--existing-only"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", self.locator.for_directory("bla").path + "\n", ""),
+            ("", self.locator.for_name("bla").path + "\n", ""),
         )
