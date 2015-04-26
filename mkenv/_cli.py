@@ -47,20 +47,20 @@ class Flag(object):
         return [(self.dest, self.store)]
 
 
-HELP = Argument(names=set(["-h", "--help"]), help="Show usage information.")
-VERSION = Argument(
-    names=set(["-V", "--version"]), help="Show version information."
-)
+class CLI(object):
 
+    HELP = Argument(names=set(["-h", "--help"]), help="Show usage information.")
+    VERSION = Argument(
+        names=set(["-V", "--version"]), help="Show version information."
+    )
 
-def cli(*accepted_arguments):
+    def __init__(self, *accepted_arguments):
+        self.names_to_arguments = names_to_arguments = {}
+        for accepted in (self.HELP, self.VERSION) + accepted_arguments:
+            for name in accepted.names:
+                names_to_arguments[name] = accepted
 
-    names_to_arguments = {}
-    for accepted_argument in (HELP, VERSION) + accepted_arguments:
-        for name in accepted_argument.names:
-            names_to_arguments[name] = accepted_argument
-
-    def _make_cli(fn):
+    def __call__(self, fn):
         @wraps(fn)
         def main(
             argv=None,
@@ -74,69 +74,62 @@ def cli(*accepted_arguments):
             help, _ = pydoc.splitdoc(pydoc.getdoc(fn))
 
             try:
-                arguments = parse(
-                    accepts=names_to_arguments,
-                    argv=argv,
-                    help=help,
-                    stdout=stdout,
-                )
+                arguments = self.parse(argv=argv, help=help, stdout=stdout)
             except UsageError as error:
                 stderr.write("error: ")
                 stderr.write(str(error))
                 stderr.write("\n\n")
-                show_help(accepts=names_to_arguments, stdout=stdout, help=help)
+                self.show_help(stdout=stdout, help=help)
                 exit_status = os.EX_USAGE
             else:
                 if arguments is None:
                     exit_status = os.EX_OK
                 else:
-                    exit_status = fn(
+                    exit_status = main.with_arguments(
                         arguments=arguments,
                         stdin=stdin,
                         stdout=stdout,
                         stderr=stderr,
                     )
             exit(exit_status or os.EX_OK)
+        main.with_arguments = fn
         return main
-    return _make_cli
 
+    def parse(self, argv, help, stdout):
+        argv = iter(argv)
+        parsed = {}
+        for argument in argv:
+            found = self.names_to_arguments.get(argument)
 
-def parse(accepts, argv, help, stdout):
-    argv = iter(argv)
-    parsed = {}
-    for argument in argv:
-        found = accepts.get(argument)
+            if found is None:
+                raise UsageError("No such argument: " + repr(argument))
 
-        if found is None:
-            raise UsageError("No such argument: " + repr(argument))
+            if found == CLI.HELP:
+                self.show_help(help=help, stdout=stdout)
+                return
+            elif found == CLI.VERSION:
+                stdout.write(__version__)
+                stdout.write("\n")
+                return
+            else:
+                try:
+                    parsed.update(found.consume(argv))
+                except StopIteration:
+                    raise UsageError(
+                        "{0} takes {1} argument(s)".format(argument, found.nargs),
+                    )
+        return parsed
 
-        if found == HELP:
-            show_help(accepts=accepts, help=help, stdout=stdout)
-            return
-        elif found == VERSION:
-            stdout.write(__version__)
-            stdout.write("\n")
-            return
-        else:
-            try:
-                parsed.update(found.consume(argv))
-            except StopIteration:
-                raise UsageError(
-                    "{0} takes {1} argument(s)".format(argument, found.nargs),
+    def show_help(self, help, stdout):
+        if help:
+            stdout.write(help)
+            stdout.write("\n\n")
+        stdout.write("Usage:\n")
+
+        for accepted_argument in set(self.names_to_arguments.itervalues()):
+            stdout.write(
+                "  {0:<20}        {1:<57}\n".format(
+                    ", ".join(accepted_argument.names),
+                    accepted_argument.help,
                 )
-    return parsed
-
-
-def show_help(help, accepts, stdout):
-    if help:
-        stdout.write(help)
-        stdout.write("\n\n")
-    stdout.write("Usage:\n")
-
-    for accepted_argument in set(accepts.itervalues()):
-        stdout.write(
-            "  {0:<20}        {1:<57}\n".format(
-                ", ".join(accepted_argument.names),
-                accepted_argument.help,
             )
-        )
