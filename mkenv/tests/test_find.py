@@ -3,6 +3,9 @@ from functools import partial
 from unittest import TestCase
 import os
 
+from bp.filepath import FilePath
+from bp.memory import MemoryFS, MemoryPath
+
 from mkenv import find
 from mkenv.common import VIRTUALENVS_ROOT
 
@@ -23,28 +26,27 @@ class TestFind(TestCase):
         stdin, stdout, stderr = self.run_cli()
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", VIRTUALENVS_ROOT + "\n", ""),
+            ("", VIRTUALENVS_ROOT.path + "\n", ""),
         )
 
     def test_find_d_finds_envs_by_directory(self):
-        this_dir = os.path.basename(__file__)
-        stdin, stdout, stderr = self.run_cli(["-d", this_dir])
+        this_dir = FilePath(__file__).parent()
+        stdin, stdout, stderr = self.run_cli(["-d", this_dir.path])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", find.env_for_directory(this_dir) + "\n", ""),
+            ("", find.env_for_directory(this_dir).path + "\n", ""),
         )
 
     def test_find_d_defaults_to_cwd(self):
-        this_dir = os.getcwd()
         stdin, stdout, stderr = self.run_cli(["-d"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", find.env_for_directory(this_dir) + "\n", ""),
+            ("", find.env_for_directory(FilePath(".")).path + "\n", ""),
         )
 
     def test_find_n_finds_envs_by_name(self):
         stdin, stdout, stderr = self.run_cli(["-n", "bla"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", find.env_for_name("bla") + "\n", ""),
+            ("", find.env_for_name("bla").path + "\n", ""),
         )

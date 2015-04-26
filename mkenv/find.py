@@ -1,17 +1,20 @@
 import os
 
+from bp.filepath import FilePath
+
 from mkenv.common import VIRTUALENVS_ROOT
-from mkenv._cli import Argument, Flag, cli
+from mkenv._cli import CLI, Argument, Flag
 
 
-@cli(
+@CLI(
     Flag(
         names=("-E", "--existing-only"),
         help="Only consider existing virtualenvs.",
     ),
     Argument(
         names=("-d", "--directory"),
-        default=os.getcwd,
+        default=lambda : FilePath("."),
+        type=FilePath,
         nargs="?",
         help="Find the virtualenv associated with the given directory.",
     ),
@@ -36,10 +39,11 @@ def run(arguments, stdin, stdout, stderr):
         else:
             found = VIRTUALENVS_ROOT
 
-    if arguments["existing-only"] and not os.path.exists(found):
+    if arguments.get("existing-only") and not os.path.exists(found):
+        return 0
         return 1
 
-    stdout.write(found)
+    stdout.write(found.path)
     stdout.write("\n")
 
 
@@ -49,11 +53,11 @@ def env_for_directory(directory):
 
     """
 
-    return env_for_name(os.path.basename(os.path.abspath(directory)))
+    return env_for_name(directory.basename())
 
 
 def env_for_name(name):
-    return os.path.join(VIRTUALENVS_ROOT, name.lower().replace("-", "_"))
+    return VIRTUALENVS_ROOT.child(name.lower().replace("-", "_"))
 
 
 if __name__ == "__main__":
