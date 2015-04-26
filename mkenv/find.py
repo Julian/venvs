@@ -26,6 +26,10 @@ from mkenv._cli import CLI, Argument, Flag
         type=lambda root : Locator(root=FilePath(root)),
         help="Specify a different root directory for virtualenvs.",
     ),
+    Argument(
+        names=("binary",),
+        help="Locate a binary within the specified virtualenv's bin/ folder.",
+    ),
 )
 def run(arguments, stdin, stdout, stderr):
     """
@@ -43,6 +47,10 @@ def run(arguments, stdin, stdout, stderr):
 
     if arguments.get("existing-only") and not found.isdir():
         return 1
+
+    binary = arguments.get("binary")
+    if binary is not None:
+        found = found.descendant(["bin", binary])
 
     stdout.write(found.path)
     stdout.write("\n")

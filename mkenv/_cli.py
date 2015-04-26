@@ -70,10 +70,17 @@ class CLI(object):
     )
 
     def __init__(self, *accepted_arguments):
-        self.names_to_arguments = names_to_arguments = {}
+        self._names_to_arguments = names_to_arguments = {}
+        self._positional_arguments = positional_arguments = []
+
         for accepted in (self.HELP, self.VERSION) + accepted_arguments:
-            for name in accepted.names:
-                names_to_arguments[name] = accepted
+            if is_positional(accepted):
+                positional_arguments.append(accepted)
+            else:
+                for name in accepted.names:
+                    names_to_arguments[name] = accepted
+
+        self.accepted_arguments = accepted_arguments
 
     def __call__(self, fn):
         @wraps(fn)
@@ -116,20 +123,26 @@ class CLI(object):
 
     def parse(self, argv, help, stdout):
         argv = iter(argv)
-        seen = set()
+
         parsed = {}
+        positional, seen = iter(self._positional_arguments), set()
+
         for argument in argv:
-            found = self.names_to_arguments.get(argument)
+            if not argument.startswith("-"):
+                found = next(positional, None)
+                if found is None:
+                    raise UsageError("No such argument: " + repr(argument))
+                parsed[found.dest] = argument
+                continue
+
+            found = self._names_to_arguments.get(argument)
 
             if found is None:
                 raise UsageError("No such argument: " + repr(argument))
 
             if found in seen:
-                raise UsageError(
-                    "{0!r} specified multiple times".format(
-                        " / ".join(found.names)
-                    ),
-                )
+                name = " / ".join(found.names)
+                raise UsageError("{0!r} specified multiple times".format(name))
             seen.add(found)
 
             if found == CLI.HELP:
@@ -143,9 +156,8 @@ class CLI(object):
                 try:
                     parsed.update(found.consume(argv))
                 except StopIteration:
-                    raise UsageError(
-                        "{0} takes {1} argument(s)".format(argument, found.nargs),
-                    )
+                    message = "{0} takes {1} argument(s)"
+                    raise UsageError(message.format(argument, found.nargs))
         return parsed
 
     def show_help(self, help, stdout):
@@ -154,10 +166,14 @@ class CLI(object):
             stdout.write("\n\n")
         stdout.write("Usage:\n")
 
-        for accepted_argument in set(self.names_to_arguments.itervalues()):
+        for accepted_argument in self.accepted_arguments:
             stdout.write(
                 "  {0:<20}        {1:<57}\n".format(
                     ", ".join(accepted_argument.names),
                     accepted_argument.help,
                 )
             )
+
+
+def is_positional(argument):
+    return not any(name.startswith("-") for name in argument.names)

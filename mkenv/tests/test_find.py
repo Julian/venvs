@@ -12,13 +12,6 @@ class TestFind(CLIMixin, TestCase):
 
     cli = find
 
-    def test_find_without_args_finds_the_virtualenv_root(self):
-        stdin, stdout, stderr = self.run_cli()
-        self.assertEqual(
-            (stdin, stdout, stderr),
-            ("", self.locator.root.path + "\n", ""),
-        )
-
     def test_find_d_finds_envs_by_directory(self):
         this_dir = FilePath(__file__).parent()
         stdin, stdout, stderr = self.run_cli(["-d", this_dir.path])
@@ -39,6 +32,22 @@ class TestFind(CLIMixin, TestCase):
         self.assertEqual(
             (stdin, stdout, stderr),
             ("", self.locator.for_name("bla").path + "\n", ""),
+        )
+
+    def test_find_without_args_finds_the_virtualenv_root(self):
+        stdin, stdout, stderr = self.run_cli()
+        self.assertEqual(
+            (stdin, stdout, stderr),
+            ("", self.locator.root.path + "\n", ""),
+        )
+
+    def test_find_directory_with_binary(self):
+        this_dir = FilePath(__file__).parent()
+        stdin, stdout, stderr = self.run_cli(["-d", this_dir.path, "python"])
+        this_dir_venv = self.locator.for_directory(this_dir)
+        self.assertEqual(
+            (stdin, stdout, stderr),
+            ("", this_dir_venv.descendant(["bin", "python"]).path + "\n", ""),
         )
 
     def test_find_existing_by_name_fails_for_non_existing_virtualenvs(self):
