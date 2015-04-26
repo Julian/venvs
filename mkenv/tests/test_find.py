@@ -63,16 +63,34 @@ class TestFind(TestCase):
             ("", self.locator.for_name("bla").path + "\n", ""),
         )
 
-    def test_find_existing_fails_for_non_existing_virtualenvs(self):
+    def test_find_existing_by_name_fails_for_non_existing_virtualenvs(self):
         stdin, stdout, stderr = self.run_cli(
             ["-n", "bla", "--existing-only"], exit_status=1,
         )
         self.assertEqual((stdin, stdout, stderr), ("", "", "")) 
 
-    def test_find_existing_succeeds_for_existing_virtualenvs(self):
-        MemoryPath(fs=self.fs, path=("bla",)).createDirectory()
+    def test_find_existing_by_name_succeeds_for_existing_virtualenvs(self):
+        path = MemoryPath(fs=self.fs, path=("bla",))
+        path.createDirectory()
         stdin, stdout, stderr = self.run_cli(["-n", "bla", "--existing-only"])
         self.assertEqual(
             (stdin, stdout, stderr),
             ("", self.locator.for_name("bla").path + "\n", ""),
+        )
+
+    def test_find_existing_by_dir_fails_for_non_existing_virtualenvs(self):
+        stdin, stdout, stderr = self.run_cli(
+            ["-d", "/foo/bla", "--existing-only"], exit_status=1,
+        )
+        self.assertEqual((stdin, stdout, stderr), ("", "", ""))
+
+    def test_find_existing_by_dir_succeeds_for_existing_virtualenvs(self):
+        MemoryPath(fs=self.fs, path=("bla",)).createDirectory()
+        stdin, stdout, stderr = self.run_cli(
+            ["-d", "/foo/bla", "--existing-only"],
+        )
+        path = MemoryPath(fs=self.fs, path=("foo", "bla",))
+        self.assertEqual(
+            (stdin, stdout, stderr),
+            ("", self.locator.for_directory(path).path + "\n", ""),
         )
