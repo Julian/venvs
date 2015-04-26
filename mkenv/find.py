@@ -1,5 +1,3 @@
-import os
-
 from bp.filepath import FilePath
 
 from mkenv.common import VIRTUALENVS_ROOT
