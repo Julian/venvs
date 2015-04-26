@@ -83,13 +83,18 @@ class CLI(object):
             stdout=sys.stdout,
             stderr=sys.stderr,
             exit=sys.exit,
+            arguments=None,
         ):
             if argv is None:
                 argv = sys.argv[1:]
-            help, _ = pydoc.splitdoc(pydoc.getdoc(fn))
+            if arguments is None:
+                arguments = {}
 
+            help, _ = pydoc.splitdoc(pydoc.getdoc(fn))
             try:
-                arguments = self.parse(argv=argv, help=help, stdout=stdout)
+                arguments.update(
+                    self.parse(argv=argv, help=help, stdout=stdout),
+                )
             except UsageError as error:
                 stderr.write("error: ")
                 stderr.write(str(error))

@@ -25,7 +25,8 @@ class TestFind(TestCase):
             stdin=self.stdin,
             stdout=self.stdout,
             stderr=self.stderr,
-            exit=partial(self.assertEqual, 0),
+            exit=partial(self.assertEqual, exit_status),
+            arguments={"locator" : self.locator},
         )
         return (
             self.stdin.getvalue(),
@@ -37,7 +38,7 @@ class TestFind(TestCase):
         stdin, stdout, stderr = self.run_cli()
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", Locator.default().root.path + "\n", ""),
+            ("", self.locator.root.path + "\n", ""),
         )
 
     def test_find_d_finds_envs_by_directory(self):
@@ -45,33 +46,34 @@ class TestFind(TestCase):
         stdin, stdout, stderr = self.run_cli(["-d", this_dir.path])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", Locator.default().for_directory(this_dir).path + "\n", ""),
+            ("", self.locator.for_directory(this_dir).path + "\n", ""),
         )
 
     def test_find_d_defaults_to_cwd(self):
         stdin, stdout, stderr = self.run_cli(["-d"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", Locator.default().for_directory(FilePath(".")).path + "\n", ""),
+            ("", self.locator.for_directory(FilePath(".")).path + "\n", ""),
         )
 
     def test_find_n_finds_envs_by_name(self):
         stdin, stdout, stderr = self.run_cli(["-n", "bla"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", Locator.default().for_name("bla").path + "\n", ""),
+            ("", self.locator.for_name("bla").path + "\n", ""),
         )
 
-
-class TestExisting(TestCase):
-    @skip("Skipped until refactoring to make testing this possible.")
-    def test_find_existing_fails_for_non_existing_directories(self):
-        stdin, stdout, stderr = StringIO(), StringIO(), StringIO()
-        path = MemoryPath(fs=MemoryFS())
-        exit_status = find.run.with_arguments(
-            arguments={"directory" : path, "existing-only" : True},
-            stdin=stdin,
-            stdout=stdout,
-            stderr=stderr,
+    def test_find_existing_fails_for_non_existing_virtualenvs(self):
+        stdin, stdout, stderr = self.run_cli(
+            ["-n", "bla", "--existing-only"], exit_status=1,
         )
-        self.assertNotEqual(exit_status, 0)
+        self.assertEqual((stdin, stdout, stderr), ("", "", "")) 
+
+    @skip("Skipped until bp supports some more nice things in MemoryPath.")
+    def test_find_existing_succeeds_for_existing_virtualenvs(self):
+        MemoryPath(fs=self.fs, path="bla").createDirectory()
+        stdin, stdout, stderr = self.run_cli(["-n", "bla", "--existing-only"])
+        self.assertEqual(
+            (stdin, stdout, stderr),
+            ("", self.locator.for_directory("bla").path + "\n", ""),
+        )
