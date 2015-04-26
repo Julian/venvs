@@ -33,7 +33,7 @@ setup(
             "rmvenv = mkenv.remove:run",
         ],
     },
-    install_requires=["appdirs", "betterpath", "virtualenv"],
+    install_requires=["appdirs", "betterpath", "characteristic", "virtualenv"],
     author="Julian Berman",
     author_email="Julian@GrayVines.com",
     classifiers=classifiers,

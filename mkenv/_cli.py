@@ -3,6 +3,8 @@ import os
 import pydoc
 import sys
 
+from characteristic import Attribute, attributes
+
 from mkenv import __version__
 
 
@@ -10,14 +12,20 @@ class UsageError(Exception):
     pass
 
 
+@attributes(
+    [
+        Attribute(name="names"),
+        Attribute(name="help", default_value=""),
+        Attribute(name="nargs", default_value=1),
+        Attribute(name="type", default_value=lambda value : value),
+        Attribute(name="default", default_value=lambda : None),
+    ],
+)
 class Argument(object):
-    def __init__(self, names, help="", nargs=1, type=lambda value : value, default=lambda : None):
-        self.help = help
-        self.names = names
-        self.default = default
-        self.nargs = nargs
-        self.dest = max(names, key=len).lstrip("-")
-        self.type = type
+    def __init__(self, dest=None):
+        if dest is None:
+            dest = max(self.names, key=len).lstrip("-")
+        self.dest = dest
 
     def consume(self, argv):
         dest, nargs = self.dest, self.nargs
@@ -34,14 +42,21 @@ class Argument(object):
             yield dest, [self.type(next(argv)) for _ in xrange(nargs)]
 
 
-
+@attributes(
+    [
+        Attribute(name="names"),
+        Attribute(name="help", default_value=""),
+        Attribute(name="store", default_value=True),
+    ],
+)
 class Flag(object):
-    def __init__(self, names, help="", store=True):
-        self.help = help
-        self.names = names
-        self.dest = max(names, key=len).lstrip("-")
-        self.store = store
-        self.nargs = 0
+
+    nargs = 0
+
+    def __init__(self, dest=None):
+        if dest is None:
+            dest = max(self.names, key=len).lstrip("-")
+        self.dest = dest
 
     def consume(self, argv):
         return [(self.dest, self.store)]
