@@ -14,7 +14,7 @@ import shutil
 import subprocess
 
 from mkenv.find import env_for_name
-from mkenv.cli import cli, parser
+from mkenv._cli import cli, parser
 from mkenv.common import TEMPORARY_VIRTUALENV
 
 

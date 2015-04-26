@@ -1,6 +1,6 @@
 from StringIO import StringIO
 from functools import partial
-from unittest import TestCase
+from unittest import TestCase, skip
 import os
 
 from bp.filepath import FilePath
@@ -50,3 +50,17 @@ class TestFind(TestCase):
             (stdin, stdout, stderr),
             ("", find.env_for_name("bla").path + "\n", ""),
         )
+
+
+class TestExisting(TestCase):
+    @skip("Skipped until refactoring to make testing this possible.")
+    def test_find_existing_fails_for_non_existing_directories(self):
+        stdin, stdout, stderr = StringIO(), StringIO(), StringIO()
+        path = MemoryPath(fs=MemoryFS())
+        exit_status = find.run.with_arguments(
+            arguments={"directory" : path, "existing-only" : True},
+            stdin=stdin,
+            stdout=stdout,
+            stderr=stderr,
+        )
+        self.assertNotEqual(exit_status, 0)

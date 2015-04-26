@@ -39,8 +39,7 @@ def run(arguments, stdin, stdout, stderr):
         else:
             found = VIRTUALENVS_ROOT
 
-    if arguments.get("existing-only") and not os.path.exists(found):
-        return 0
+    if arguments.get("existing-only") and not found.isdir():
         return 1
 
     stdout.write(found.path)
