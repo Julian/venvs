@@ -1,6 +1,6 @@
 from StringIO import StringIO
 from functools import partial
-from unittest import TestCase, skip
+from unittest import TestCase
 import os
 
 from bp.filepath import FilePath
@@ -85,12 +85,12 @@ class TestFind(TestCase):
         self.assertEqual((stdin, stdout, stderr), ("", "", ""))
 
     def test_find_existing_by_dir_succeeds_for_existing_virtualenvs(self):
-        MemoryPath(fs=self.fs, path=("bla",)).createDirectory()
+        self.locator.root.child("bla").createDirectory()
+        mem = MemoryPath(fs=self.fs, path=("foo", "bla",))
         stdin, stdout, stderr = self.run_cli(
-            ["-d", "/foo/bla", "--existing-only"],
+            ["-d", mem.path, "--existing-only"],
         )
-        path = MemoryPath(fs=self.fs, path=("foo", "bla",))
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", self.locator.for_directory(path).path + "\n", ""),
+            ("", self.locator.for_directory(mem).path + "\n", ""),
         )
