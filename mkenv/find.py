@@ -23,7 +23,7 @@ from mkenv._cli import CLI, Argument, Flag
     Argument(
         names=("-R", "--root"),
         dest="locator",
-        type=lambda root : Locator(root=root),
+        type=lambda root : Locator(root=FilePath(root)),
         help="Specify a different root directory for virtualenvs.",
     ),
 )
