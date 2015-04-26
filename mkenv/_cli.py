@@ -11,21 +11,27 @@ class UsageError(Exception):
 
 
 class Argument(object):
-    def __init__(self, names, help="", nargs=1, default=lambda : None):
+    def __init__(self, names, help="", nargs=1, type=lambda value : value, default=lambda : None):
         self.help = help
         self.names = names
         self.default = default
         self.nargs = nargs
         self.dest = max(names, key=len).lstrip("-")
+        self.type = type
 
     def consume(self, argv):
         dest, nargs = self.dest, self.nargs
         if nargs == 1:
-            yield dest, next(argv)
+            yield dest, self.type(next(argv))
         elif nargs == "?":
-            yield dest, next(argv, self.default())
+            argument = next(argv, None)
+            if argument is None:
+                argument = self.default()
+            else:
+                argument = self.type(argument)
+            yield dest, argument
         else:
-            yield dest, [next(argv) for _ in xrange(nargs)]
+            yield dest, [self.type(next(argv)) for _ in xrange(nargs)]
 
 
 
