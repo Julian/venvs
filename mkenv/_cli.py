@@ -15,72 +15,138 @@ class UsageError(Exception):
 @attributes(
     [
         Attribute(name="names"),
-        Attribute(name="help", default_value=""),
-        Attribute(name="nargs", default_value=1),
+        Attribute(name="help", default_value="", exclude_from_repr=True),
         Attribute(name="type", default_value=lambda value : value),
-        Attribute(name="default", default_value=lambda : None),
+        Attribute(
+            name="default",
+            default_value=lambda : None,
+            exclude_from_repr=True,
+        ),
     ],
 )
 class Argument(object):
-    def __init__(self, dest=None):
+    def __init__(self, kind, dest=None, nargs=None):
+        self.kind = kind
+
         if dest is None:
             dest = max(self.names, key=len).lstrip("-")
         self.dest = dest
 
-    def consume(self, argv):
+        if nargs is None:
+            nargs = getattr(kind, "nargs", 1)
+        self.nargs = nargs
+
+    def consume(self, command_line):
         dest, nargs = self.dest, self.nargs
+
         if nargs == 1:
-            yield dest, self.type(next(argv))
+            value = self.type(next(command_line))
         elif nargs == "?":
-            argument = next(argv, None)
+            argument = next(command_line, None)
             if argument is None:
-                argument = self.default()
+                value = self.default()
             else:
-                argument = self.type(argument)
-            yield dest, argument
+                value = self.type(argument)
         else:
-            yield dest, [self.type(next(argv)) for _ in xrange(nargs)]
+            value = [self.type(next(command_line)) for _ in xrange(nargs)]
+
+        return [(dest, self.prepare(value))]
+
+    def prepare(self, argument_value):
+        return getattr(self.kind, "prepare", lambda arg : arg)(argument_value)
+
+    def register(self):
+        if self.kind.is_positional:
+            return (self,), ()
+        else:
+            return (), [(name, self) for name in self.names]
+
+    def format_help(self):
+        return "  {names:<20}        {self.help:<57}\n".format(
+            names=", ".join(self.names),
+            self=self,
+        )
 
 
-@attributes(
-    [
-        Attribute(name="names"),
-        Attribute(name="help", default_value=""),
-        Attribute(name="store", default_value=True),
-    ],
-)
+@attributes([Attribute(name="store", default_value=True)])
 class Flag(object):
-
+    is_positional = False
     nargs = 0
 
-    def __init__(self, dest=None):
-        if dest is None:
-            dest = max(self.names, key=len).lstrip("-")
-        self.dest = dest
+    def prepare(self, argument_value):
+        return self.store
 
-    def consume(self, argv):
-        return [(self.dest, self.store)]
+
+@attributes([])
+class Option(object):
+    is_positional = False
+
+
+@attributes([])
+class Positional(object):
+    is_positional = True
+
+
+@attributes([Attribute(name="members")], apply_with_cmp=False)
+class Group(object):
+    def register(self):
+        return [], [
+            (name, _Exclusivity.wrap(group=self, argument=nonpositional))
+            for argument in self.members
+            for name, nonpositional in argument.register()[1]
+        ]
+
+    def format_help(self):
+        body = "".join(member.format_help() for member in self.members)
+        return "\n" + body + "\n"
+
+
+@attributes([Attribute(name="argument"), Attribute(name="group")])
+class _Exclusivity(object):
+    def __init__(self):
+        self.names = self.argument.names
+
+    @classmethod
+    def wrap(cls, argument, group):
+        return cls(argument=argument, group=group)
+
+    def consume(self, command_line):
+        state = command_line.state.setdefault(self.group, {})
+        seen = state.get("seen")
+        if seen is not None:
+            raise UsageError(
+                "specify only one of {0!r} or {1!r}".format(
+                    " / ".join(seen.names), " / ".join(self.argument.names),
+                )
+            )
+        else:
+            state["seen"] = self.argument
+            return self.argument.consume(command_line=command_line)
 
 
 class CLI(object):
 
-    HELP = Argument(names=("-h", "--help"), help="Show usage information.")
+    HELP = Argument(
+        Option(),
+        names=("-h", "--help"),
+        help="Show usage information.",
+    )
     VERSION = Argument(
-        names=("-V", "--version"), help="Show version information."
+        Option(),
+        names=("-V", "--version"),
+        help="Show version information."
     )
 
-    def __init__(self, *accepted_arguments):
-        self._names_to_arguments = names_to_arguments = {}
-        self._positional_arguments = positional_arguments = []
+    def __init__(self, *argspec):
+        self._nonpositionals = nonpositionals = {}
+        self._positionals = positionals = []
 
-        for accepted in (self.HELP, self.VERSION) + accepted_arguments:
-            if is_positional(accepted):
-                positional_arguments.append(accepted)
-            else:
-                for name in accepted.names:
-                    names_to_arguments[name] = accepted
+        for argument in (self.HELP, self.VERSION) + argspec:
+            for_positionals, for_nonpositionals = argument.register()
+            positionals.extend(for_positionals)
+            nonpositionals.update(for_nonpositionals)
 
-        self.accepted_arguments = accepted_arguments
+        self.argspec = argspec
 
     def __call__(self, fn):
         @wraps(fn)
@@ -122,20 +188,22 @@ class CLI(object):
         return main
 
     def parse(self, argv, help, stdout):
-        argv = iter(argv)
+        command_line = CommandLine(argv=argv)
 
         parsed = {}
-        positional, seen = iter(self._positional_arguments), set()
+        seen = set()
+        positionals = iter(self._positionals)
+        nonpositionals = self._nonpositionals
 
-        for argument in argv:
+        for argument in command_line:
             if not argument.startswith("-"):
-                found = next(positional, None)
+                found = next(positionals, None)
                 if found is None:
                     raise UsageError("No such argument: " + repr(argument))
                 parsed[found.dest] = argument
                 continue
 
-            found = self._names_to_arguments.get(argument)
+            found = nonpositionals.get(argument)
 
             if found is None:
                 raise UsageError("No such argument: " + repr(argument))
@@ -154,7 +222,7 @@ class CLI(object):
                 return
             else:
                 try:
-                    parsed.update(found.consume(argv))
+                    parsed.update(found.consume(command_line=command_line))
                 except StopIteration:
                     message = "{0} takes {1} argument(s)"
                     raise UsageError(message.format(argument, found.nargs))
@@ -166,14 +234,18 @@ class CLI(object):
             stdout.write("\n\n")
         stdout.write("Usage:\n")
 
-        for accepted_argument in self.accepted_arguments:
-            stdout.write(
-                "  {0:<20}        {1:<57}\n".format(
-                    ", ".join(accepted_argument.names),
-                    accepted_argument.help,
-                )
-            )
+        for argument in self.argspec:
+            stdout.write(argument.format_help())
 
 
-def is_positional(argument):
-    return not any(name.startswith("-") for name in argument.names)
+@attributes([Attribute(name="argv")])
+class CommandLine(object):
+    def __init__(self):
+        self.remaining = iter(self.argv)
+        self.state = {}
+
+    def __iter__(self):
+        return self.remaining
+
+    def next(self):
+        return next(self.remaining)

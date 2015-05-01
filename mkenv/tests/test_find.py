@@ -123,3 +123,16 @@ class TestFind(CLIMixin, TestCase):
                 "error: '-d / --directory' specified multiple times\n\n",
             ),
         )
+
+    def test_cannot_specify_both_name_and_directory(self):
+        stdin, stdout, stderr = self.run_cli(
+            ["-n", "foo", "--directory", "bar"], exit_status=os.EX_USAGE,
+        )
+        self.assertEqual(
+            (stdin, stdout, stderr), (
+                "",
+                stdout,
+                "error: specify only one of "
+                "'-n / --name' or '-d / --directory'\n\n",
+            ),
+        )

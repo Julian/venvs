@@ -1,5 +1,4 @@
 from StringIO import StringIO
-from functools import partial
 import os
 
 from bp.memory import MemoryFS, MemoryPath
@@ -24,8 +23,12 @@ class CLIMixin(object):
             stdin=self.stdin,
             stdout=self.stdout,
             stderr=self.stderr,
-            exit=partial(self.assertEqual, exit_status),
             arguments={"locator" : self.locator},
+            exit=lambda got : self.assertEqual(
+                got,
+                exit_status,
+                msg=(got, exit_status, self.stderr.getvalue()),
+            ),
         )
         return (
             self.stdin.getvalue(),

@@ -1,32 +1,41 @@
 from bp.filepath import FilePath
 
 from mkenv.common import Locator
-from mkenv._cli import CLI, Argument, Flag
+from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
 
 
 @CLI(
-    Flag(
+    Argument(
+        Flag(),
         names=("-E", "--existing-only"),
         help="Only consider existing virtualenvs.",
     ),
-    Argument(
-        names=("-d", "--directory"),
-        default=lambda : FilePath("."),
-        type=FilePath,
-        nargs="?",
-        help="Find the virtualenv associated with the given directory.",
+    Group(
+        members=[
+            Argument(
+                Option(),
+                names=("-d", "--directory"),
+                default=lambda : FilePath("."),
+                type=FilePath,
+                nargs="?",
+                help="Find the virtualenv associated with the given directory.",
+            ),
+            Argument(
+                Option(),
+                names=("-n", "--name"),
+                help="Find the virtualenv associated with the given project name.",
+            ),
+        ],
     ),
     Argument(
-        names=("-n", "--name"),
-        help="Find the virtualenv associated with the given project name.",
-    ),
-    Argument(
+        Option(),
         names=("-R", "--root"),
         dest="locator",
         type=lambda root : Locator(root=FilePath(root)),
         help="Specify a different root directory for virtualenvs.",
     ),
     Argument(
+        Positional(),
         names=("binary",),
         help="Locate a binary within the specified virtualenv's bin/ folder.",
     ),
