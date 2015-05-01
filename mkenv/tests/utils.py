@@ -3,6 +3,7 @@ import os
 
 from bp.memory import MemoryFS, MemoryPath
 
+from mkenv._cli import CommandLine
 from mkenv.common import Locator
 
 
@@ -19,7 +20,7 @@ class CLIMixin(object):
 
     def run_cli(self, argv=(), exit_status=os.EX_OK):
         self.cli.run(
-            argv=argv,
+            command_line=CommandLine(argv=argv),
             stdin=self.stdin,
             stdout=self.stdout,
             stderr=self.stderr,

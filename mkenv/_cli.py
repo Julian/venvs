@@ -151,21 +151,25 @@ class CLI(object):
     def __call__(self, fn):
         @wraps(fn)
         def main(
-            argv=None,
+            command_line=None,
             stdin=sys.stdin,
             stdout=sys.stdout,
             stderr=sys.stderr,
             exit=sys.exit,
             arguments=None,
         ):
-            if argv is None:
-                argv = sys.argv[1:]
+            if command_line is None:
+                command_line = CommandLine()
             if arguments is None:
                 arguments = {}
 
             help, _ = pydoc.splitdoc(pydoc.getdoc(fn))
             try:
-                parsed = self.parse(argv=argv, help=help, stdout=stdout)
+                parsed = self.parse(
+                    command_line=command_line,
+                    help=help,
+                    stdout=stdout,
+                )
             except UsageError as error:
                 stderr.write("error: ")
                 stderr.write(str(error))
@@ -187,9 +191,7 @@ class CLI(object):
         main.with_arguments = fn
         return main
 
-    def parse(self, argv, help, stdout):
-        command_line = CommandLine(argv=argv)
-
+    def parse(self, command_line, help, stdout):
         parsed = {}
         seen = set()
         positionals = iter(self._positionals)
@@ -232,13 +234,17 @@ class CLI(object):
         if help:
             stdout.write(help)
             stdout.write("\n\n")
-        stdout.write("Usage:\n")
+        stdout.write(self.concise_usage())
+        stdout.write("\n\nUsage:\n")
 
         for argument in self.argspec:
             stdout.write(argument.format_help())
 
+    def concise_usage(self):
+        return "findenv"
 
-@attributes([Attribute(name="argv")])
+
+@attributes([Attribute(name="argv", default_factory=lambda : sys.argv[1:])])
 class CommandLine(object):
     def __init__(self):
         self.remaining = iter(self.argv)
