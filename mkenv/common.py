@@ -38,7 +38,6 @@ class Locator(object):
 
         return self.for_name(directory.basename())
 
-
     def for_name(self, name=None):
         if not name:
             return self.root
