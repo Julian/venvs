@@ -1,3 +1,4 @@
+from StringIO import StringIO
 from unittest import TestCase
 import os
 
@@ -136,3 +137,10 @@ class TestFind(CLIMixin, TestCase):
                 "'-n / --name' or '-d / --directory'\n\n",
             ),
         )
+
+
+class TestIntegration(TestCase):
+    def test_it_works(self):
+        with self.assertRaises(SystemExit) as e:
+            find.run(["mkenv"], stdout=StringIO())
+        self.assertEqual(e.exception.args, (0,))
