@@ -251,7 +251,7 @@ class CommandLine(object):
         self.state = {}
 
     def __iter__(self):
-        return self.remaining
+        return self
 
     def next(self):
         return next(self.remaining)
