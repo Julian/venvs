@@ -61,6 +61,9 @@ class Argument(object):
         else:
             return (), [(name, self) for name in self.names]
 
+    def emit_default(self):
+        return [(self.dest, self.default())]
+
     def format_help(self):
         return "  {names:<20}        {self.help:<57}\n".format(
             names=", ".join(self.names),
@@ -99,6 +102,10 @@ class Group(object):
     def format_help(self):
         body = "".join(member.format_help() for member in self.members)
         return "\n" + body + "\n"
+
+    def emit_default(self):
+        # TODO: probably something different for required groups
+        return []
 
 
 @attributes([Attribute(name="argument"), Attribute(name="group")])
@@ -228,6 +235,10 @@ class CLI(object):
                 except StopIteration:
                     message = "{0} takes {1} argument(s)"
                     raise UsageError(message.format(argument, found.nargs))
+
+        for argument in self.argspec:
+            if argument not in seen:
+                parsed.update(argument.emit_default())
         return parsed
 
     def show_help(self, help, stdout):

@@ -4,6 +4,8 @@ import platform
 from bp.filepath import FilePath
 from characteristic import Attribute, attributes
 
+from mkenv._cli import Argument, Option
+
 
 @attributes([Attribute(name="root")])
 class Locator(object):
@@ -46,3 +48,12 @@ class Locator(object):
     def temporary(self):
         return self.for_name(".mkenv-temporary-env")
 
+
+_ROOT = Argument(
+    Option(),
+    names=("-R", "--root"),
+    default=Locator.default,
+    dest="locator",
+    type=lambda root : Locator(root=FilePath(root)),
+    help="Specify a different root directory for virtualenvs.",
+)

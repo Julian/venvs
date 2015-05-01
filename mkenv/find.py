@@ -1,6 +1,6 @@
 from bp.filepath import FilePath
 
-from mkenv.common import Locator
+from mkenv.common import _ROOT, Locator
 from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
 
 
@@ -27,13 +27,7 @@ from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
             ),
         ],
     ),
-    Argument(
-        Option(),
-        names=("-R", "--root"),
-        dest="locator",
-        type=lambda root : Locator(root=FilePath(root)),
-        help="Specify a different root directory for virtualenvs.",
-    ),
+    _ROOT,
     Argument(
         Positional(),
         names=("binary",),
@@ -46,7 +40,7 @@ def run(arguments, stdin, stdout, stderr):
 
     """
 
-    locator = arguments.get("locator") or Locator.default()
+    locator = arguments["locator"]
 
     directory = arguments.get("directory")
     if directory is not None:
