@@ -1,0 +1,2 @@
+bzr+lp:~julian+/testscenarios/testscenarios#egg=testscenarios
+-e .

@@ -44,18 +44,25 @@ def run(arguments, stdin, stdout, stderr):
 
     directory = arguments.get("directory")
     if directory is not None:
-        found = locator.for_directory(directory=directory)
+        virtualenv = locator.for_directory(directory=directory)
     else:
-        found = locator.for_name(name=arguments.get("name"))
+        name = arguments.get("name")
+        if name is None:
+            stdout.write(locator.root.path)
+            stdout.write("\n")
+            return
 
-    if arguments.get("existing-only") and not found.isdir():
+        virtualenv = locator.for_name(name=name)
+
+    if arguments["existing-only"] and not virtualenv.exists:
         return 1
 
-    binary = arguments.get("binary")
+    binary = arguments["binary"]
     if binary is not None:
-        found = found.descendant(["bin", binary])
+        stdout.write(virtualenv.binary(binary).path)
+    else:
+        stdout.write(virtualenv.path.path)
 
-    stdout.write(found.path)
     stdout.write("\n")
 
 

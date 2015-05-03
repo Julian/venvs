@@ -18,28 +18,30 @@ class TestFind(CLIMixin, TestCase):
         stdin, stdout, stderr = self.run_cli(["-d", this_dir.path])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", self.locator.for_directory(this_dir).path + "\n", ""),
+            ("", self.locator.for_directory(this_dir).path.path + "\n", ""),
         )
 
     def test_find_d_defaults_to_cwd(self):
         stdin, stdout, stderr = self.run_cli(["-d"])
         self.assertEqual(
-            (stdin, stdout, stderr),
-            ("", self.locator.for_directory(FilePath(".")).path + "\n", ""),
+            (stdin, stdout, stderr), (
+                "",
+                self.locator.for_directory(FilePath(".")).path.path + "\n",
+                "",
+            ),
         )
 
     def test_find_n_finds_envs_by_name(self):
         stdin, stdout, stderr = self.run_cli(["-n", "bla"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", self.locator.for_name("bla").path + "\n", ""),
+            ("", self.locator.for_name("bla").path.path + "\n", ""),
         )
 
     def test_find_without_args_finds_the_virtualenv_root(self):
         stdin, stdout, stderr = self.run_cli()
         self.assertEqual(
-            (stdin, stdout, stderr),
-            ("", self.locator.root.path + "\n", ""),
+            (stdin, stdout, stderr), ("", self.locator.root.path + "\n", ""),
         )
 
     def test_find_directory_with_binary(self):
@@ -47,8 +49,11 @@ class TestFind(CLIMixin, TestCase):
         stdin, stdout, stderr = self.run_cli(["-d", this_dir.path, "python"])
         this_dir_venv = self.locator.for_directory(this_dir)
         self.assertEqual(
-            (stdin, stdout, stderr),
-            ("", this_dir_venv.descendant(["bin", "python"]).path + "\n", ""),
+            (stdin, stdout, stderr), (
+                "",
+                this_dir_venv.binary("python").path + "\n",
+                "",
+            ),
         )
 
     def test_find_existing_by_name_fails_for_non_existing_virtualenvs(self):
@@ -62,8 +67,11 @@ class TestFind(CLIMixin, TestCase):
         path.createDirectory()
         stdin, stdout, stderr = self.run_cli(["-n", "bla", "--existing-only"])
         self.assertEqual(
-            (stdin, stdout, stderr),
-            ("", self.locator.for_name("bla").path + "\n", ""),
+            (stdin, stdout, stderr), (
+                "",
+                self.locator.for_name("bla").path.path + "\n",
+                "",
+            ),
         )
 
     def test_find_existing_by_dir_fails_for_non_existing_virtualenvs(self):
@@ -79,8 +87,11 @@ class TestFind(CLIMixin, TestCase):
             ["-d", mem.path, "--existing-only"],
         )
         self.assertEqual(
-            (stdin, stdout, stderr),
-            ("", self.locator.for_directory(mem).path + "\n", ""),
+            (stdin, stdout, stderr), (
+                "",
+                self.locator.for_directory(mem).path.path + "\n",
+                "",
+            ),
         )
 
     def test_cannot_specify_name_twice(self):

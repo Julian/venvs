@@ -7,7 +7,27 @@ from characteristic import Attribute, attributes
 from mkenv._cli import Argument, Option
 
 
-@attributes([Attribute(name="root")])
+@attributes([Attribute(name="path")])
+class VirtualEnv(object):
+    """
+    A virtual environment.
+
+    """
+
+    @property
+    def exists(self):
+        return self.path.isdir()
+
+    def binary(self, name):
+        return self.path.descendant(["bin", name])
+
+
+@attributes(
+    [
+        Attribute(name="root"),
+        Attribute(name="virtualenv_class", default_value=VirtualEnv),
+    ],
+)
 class Locator(object):
     """
     Locates virtualenvs from a common root directory.
@@ -40,10 +60,9 @@ class Locator(object):
 
         return self.for_name(directory.basename())
 
-    def for_name(self, name=None):
-        if not name:
-            return self.root
-        return self.root.child(name.lower().replace("-", "_"))
+    def for_name(self, name):
+        child = self.root.child(name.lower().replace("-", "_"))
+        return self.virtualenv_class(path=child)
 
     def temporary(self):
         return self.for_name(".mkenv-temporary-env")
