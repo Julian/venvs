@@ -187,9 +187,9 @@ class CLI(object):
                 if parsed is None:
                     exit_status = os.EX_OK
                 else:
-                    arguments.update(parsed)
+                    parsed.update(arguments)
                     exit_status = main.with_arguments(
-                        arguments=arguments,
+                        arguments=parsed,
                         stdin=stdin,
                         stdout=stdout,
                         stderr=stderr,
@@ -210,6 +210,7 @@ class CLI(object):
                 if found is None:
                     raise UsageError("No such argument: " + repr(argument))
                 parsed[found.dest] = argument
+                seen.add(found)
                 continue
 
             found = nonpositionals.get(argument)
