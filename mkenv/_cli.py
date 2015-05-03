@@ -200,7 +200,7 @@ class CLI(object):
 
     def parse(self, command_line, help, stdout):
         parsed = {}
-        seen = set()
+        seen = set()  # XXX: Group / Exclusivity
         positionals = iter(self._positionals)
         nonpositionals = self._nonpositionals
 
