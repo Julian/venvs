@@ -25,7 +25,7 @@ class VirtualEnv(object):
 @attributes(
     [
         Attribute(name="root"),
-        Attribute(name="virtualenv_class", default_value=VirtualEnv),
+        Attribute(name="make_virtualenv", default_value=VirtualEnv),
     ],
 )
 class Locator(object):
@@ -62,7 +62,7 @@ class Locator(object):
 
     def for_name(self, name):
         child = self.root.child(name.lower().replace("-", "_"))
-        return self.virtualenv_class(path=child)
+        return self.make_virtualenv(path=child)
 
     def temporary(self):
         return self.for_name(".mkenv-temporary-env")

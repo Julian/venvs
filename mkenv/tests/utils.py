@@ -4,7 +4,7 @@ import os
 from bp.memory import MemoryFS, MemoryPath
 
 from mkenv._cli import CommandLine
-from mkenv.common import Locator
+from mkenv.common import Locator, VirtualEnv
 
 
 class CLIMixin(object):
@@ -16,7 +16,13 @@ class CLIMixin(object):
         self.stderr = StringIO()
 
         self.fs = MemoryFS()
-        self.locator = Locator(root=MemoryPath(fs=self.fs))
+        self.locator = Locator(
+            root=MemoryPath(fs=self.fs),
+            make_virtualenv=lambda **kwargs : VirtualEnv(
+                create=lambda virtualenv : virtualenv.path.createDirectory(),
+                **kwargs
+            )
+        )
 
     def run_cli(self, argv=(), exit_status=os.EX_OK):
         self.cli.run(
