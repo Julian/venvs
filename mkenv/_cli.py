@@ -14,7 +14,6 @@ class UsageError(Exception):
 
 @attributes(
     [
-        Attribute(name="names"),
         Attribute(name="help", default_value="", exclude_from_repr=True),
         Attribute(name="type", default_value=lambda value : value),
         Attribute(
@@ -27,9 +26,10 @@ class UsageError(Exception):
 class Argument(object):
     def __init__(self, kind, dest=None, nargs=None):
         self.kind = kind
+        self.names = names = kind.names
 
         if dest is None:
-            dest = max(self.names, key=len).lstrip("-")
+            dest = max(names, key=len).lstrip("-")
         self.dest = dest
 
         if nargs is None:
@@ -71,7 +71,12 @@ class Argument(object):
         )
 
 
-@attributes([Attribute(name="store", default_value=True)])
+@attributes(
+    [
+        Attribute(name="names"),
+        Attribute(name="store", default_value=True),
+    ],
+)
 class Flag(object):
     is_positional = False
     nargs = 0
@@ -80,14 +85,18 @@ class Flag(object):
         return self.store
 
 
-@attributes([])
+@attributes([Attribute(name="names")])
 class Option(object):
     is_positional = False
 
 
-@attributes([])
+@attributes([Attribute(name="name")])
 class Positional(object):
     is_positional = True
+
+    @property
+    def names(self):
+        return (self.name,)
 
 
 @attributes([Attribute(name="members")], apply_with_cmp=False)
@@ -134,13 +143,11 @@ class _Exclusivity(object):
 class CLI(object):
 
     HELP = Argument(
-        Option(),
-        names=("-h", "--help"),
+        Option(names=("-h", "--help")),
         help="Show usage information.",
     )
     VERSION = Argument(
-        Option(),
-        names=("-V", "--version"),
+        Option(names=("-V", "--version")),
         help="Show version information."
     )
 

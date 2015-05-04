@@ -87,8 +87,7 @@ class Locator(object):
 
 
 _ROOT = Argument(
-    Option(),
-    names=("-R", "--root"),
+    Option(names=("-R", "--root")),
     default=Locator.default,
     dest="locator",
     type=lambda root : Locator(root=FilePath(root)),
