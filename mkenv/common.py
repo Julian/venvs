@@ -1,5 +1,7 @@
 import os
 import platform
+import subprocess
+import sys
 
 from bp.filepath import FilePath
 from characteristic import Attribute, attributes
@@ -7,7 +9,23 @@ from characteristic import Attribute, attributes
 from mkenv._cli import Argument, Option
 
 
-@attributes([Attribute(name="path")])
+def _create_virtualenv(virtualenv, stdout, stderr):
+    process = subprocess.Popen(
+        ["virtualenv", virtualenv.path.path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    virtualenv_stdout, virtualenv_stderr = process.communicate()
+    stdout.write(virtualenv_stdout)
+    stderr.write(virtualenv_stderr)
+
+
+@attributes(
+    [
+        Attribute(name="path"),
+        Attribute(name="_create", default_value=_create_virtualenv),
+    ]
+)
 class VirtualEnv(object):
     """
     A virtual environment.
@@ -20,6 +38,9 @@ class VirtualEnv(object):
 
     def binary(self, name):
         return self.path.descendant(["bin", name])
+
+    def create(self, stdout=sys.stdout, stderr=sys.stderr):
+        self._create(self, stdout=stdout, stderr=stderr)
 
 
 @attributes(

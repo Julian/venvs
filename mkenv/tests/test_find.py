@@ -6,6 +6,7 @@ from bp.filepath import FilePath
 from bp.memory import MemoryPath
 
 from mkenv import find
+from mkenv._cli import CommandLine
 from mkenv.tests.utils import CLIMixin
 
 
@@ -153,5 +154,5 @@ class TestFind(CLIMixin, TestCase):
 class TestIntegration(TestCase):
     def test_it_works(self):
         with self.assertRaises(SystemExit) as e:
-            find.run(["mkenv"], stdout=StringIO())
+            find.run(CommandLine(argv=["mkenv"]), stdout=StringIO())
         self.assertEqual(e.exception.args, (0,))

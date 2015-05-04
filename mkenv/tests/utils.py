@@ -19,7 +19,9 @@ class CLIMixin(object):
         self.locator = Locator(
             root=MemoryPath(fs=self.fs),
             make_virtualenv=lambda **kwargs : VirtualEnv(
-                create=lambda virtualenv : virtualenv.path.createDirectory(),
+                create=lambda virtualenv, stdout, stderr : (
+                    virtualenv.path.createDirectory()
+                ),
                 **kwargs
             )
         )
