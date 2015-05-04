@@ -10,14 +10,11 @@ from mkenv._cli import Argument, Option
 
 
 def _create_virtualenv(virtualenv, stdout, stderr):
-    process = subprocess.Popen(
+    subprocess.check_call(
         ["virtualenv", virtualenv.path.path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=stdout,
+        stderr=stderr,
     )
-    virtualenv_stdout, virtualenv_stderr = process.communicate()
-    stdout.write(virtualenv_stdout)
-    stderr.write(virtualenv_stderr)
 
 
 @attributes(
