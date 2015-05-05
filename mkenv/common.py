@@ -1,3 +1,4 @@
+import errno
 import os
 import platform
 import subprocess
@@ -38,6 +39,17 @@ class VirtualEnv(object):
 
     def create(self, stdout=sys.stdout, stderr=sys.stderr):
         self._create(self, stdout=stdout, stderr=stderr)
+
+    def remove(self):
+        self.path.remove()
+
+    def recreate(self, **kwargs):
+        try:
+            self.remove()
+        except IOError as error:
+            if error.errno != errno.ENOENT:
+                raise
+        self._create(self, **kwargs)
 
 
 @attributes(
