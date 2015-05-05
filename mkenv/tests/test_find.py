@@ -150,6 +150,15 @@ class TestFind(CLIMixin, TestCase):
             ),
         )
 
+    def test_cannot_specify_random_garbage(self):
+        stdin, stdout, stderr = self.run_cli(
+            ["--random-garbage"], exit_status=os.EX_USAGE,
+        )
+        self.assertEqual(
+            (stdin, stdout, stderr),
+            ("", stdout, "error: no such argument '--random-garbage'\n\n"),
+        )
+
 
 class TestIntegration(TestCase):
     def test_it_works(self):

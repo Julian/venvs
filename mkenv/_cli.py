@@ -220,10 +220,11 @@ class CLI(object):
         nonpositionals = self._nonpositionals
 
         while command_line:
-            if not command_line.peek().startswith("-"):
+            argument = command_line.peek()
+            if not argument.startswith("-"):
                 found = next(positionals, None)
                 if found is None:
-                    raise UsageError("No such argument: " + repr(argument))
+                    raise UsageError("no such argument " + repr(argument))
                 parsed.update(found.consume(command_line=command_line))
                 seen.add(found)
                 continue
@@ -231,7 +232,7 @@ class CLI(object):
             found = nonpositionals.get(next(command_line))
 
             if found is None:
-                raise UsageError("No such argument: " + repr(argument))
+                raise UsageError("no such argument " + repr(argument))
 
             if found in seen:
                 name = " / ".join(found.names)
