@@ -102,11 +102,18 @@ class Positional(object):
 @attributes([Attribute(name="members")], apply_with_cmp=False)
 class Group(object):
     def register(self):
-        return [], [
-            (name, _Exclusivity.wrap(group=self, argument=nonpositional))
-            for argument in self.members
-            for name, nonpositional in argument.register()[1]
-        ]
+        positionals, nonpositionals = [], []
+        for new_argument in self.members:
+            new_positionals, new_nonpositionals = new_argument.register()
+            positionals.extend(
+                _Exclusivity.wrap(group=self, argument=argument)
+                for argument in new_positionals
+            )
+            nonpositionals.extend(
+                (name, _Exclusivity.wrap(group=self, argument=argument))
+                for name, argument in new_nonpositionals
+            )
+        return positionals, nonpositionals
 
     def format_help(self):
         body = "".join(member.format_help() for member in self.members)
@@ -121,6 +128,7 @@ class Group(object):
 class _Exclusivity(object):
     def __init__(self):
         self.names = self.argument.names
+        self.dest = self.argument.dest
 
     @classmethod
     def wrap(cls, argument, group):
@@ -211,16 +219,16 @@ class CLI(object):
         positionals = iter(self._positionals)
         nonpositionals = self._nonpositionals
 
-        for argument in command_line:
-            if not argument.startswith("-"):
+        while command_line:
+            if not command_line.peek().startswith("-"):
                 found = next(positionals, None)
                 if found is None:
                     raise UsageError("No such argument: " + repr(argument))
-                parsed[found.dest] = argument
+                parsed.update(found.consume(command_line=command_line))
                 seen.add(found)
                 continue
 
-            found = nonpositionals.get(argument)
+            found = nonpositionals.get(next(command_line))
 
             if found is None:
                 raise UsageError("No such argument: " + repr(argument))
@@ -266,11 +274,20 @@ class CLI(object):
 @attributes([Attribute(name="argv", default_factory=lambda : sys.argv[1:])])
 class CommandLine(object):
     def __init__(self):
-        self.remaining = iter(self.argv)
+        self._remaining = self.argv[::-1]
         self.state = {}
 
     def __iter__(self):
         return self
 
+    def __len__(self):
+        return len(self._remaining)
+
     def next(self):
-        return next(self.remaining)
+        try:
+            return self._remaining.pop()
+        except IndexError:
+            raise StopIteration()
+
+    def peek(self):
+        return self._remaining[-1]
