@@ -1,3 +1,4 @@
+from itertools import chain
 import errno
 import os
 import platform
@@ -18,10 +19,26 @@ def _create_virtualenv(virtualenv, stdout, stderr):
     )
 
 
+def _install_into_virtualenv(
+    virtualenv, packages, requirements, stdout, stderr,
+):
+    if not packages and not requirements:
+        return
+    things = list(
+        chain(packages, (("-r", requirement) for requirement in requirements))
+    )
+    subprocess.check_call(
+        [virtualenv.binary("python").path, "-m", "pip", "install"] + things,
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
 @attributes(
     [
         Attribute(name="path"),
         Attribute(name="_create", default_value=_create_virtualenv),
+        Attribute(name="_install", default_value=_install_into_virtualenv),
     ]
 )
 class VirtualEnv(object):
@@ -49,7 +66,10 @@ class VirtualEnv(object):
         except IOError as error:
             if error.errno != errno.ENOENT:
                 raise
-        self._create(self, **kwargs)
+        self._create(virtualenv=self, **kwargs)
+
+    def install(self, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
+        self._install(virtualenv=self, stdout=stdout, stderr=stderr, **kwargs)
 
 
 @attributes(

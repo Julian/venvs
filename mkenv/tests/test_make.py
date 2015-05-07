@@ -65,6 +65,14 @@ class TestMake(CLIMixin, TestCase):
         self.assertTrue(virtualenv.exists)
         self.assertFalse(virtualenv.path.child("thing").exists())
 
+    def test_install_and_requirements(self):
+        self.run_cli(["-i", "foo", "-i", "bar", "-r", "reqs.txt", "bla"])
+        # We've stubbed out our Locator's venvs' install to just store.
+        self.assertEqual(
+            self.installed[self.locator.for_name("bla")],
+            [(["foo", "bar"], ["reqs.txt"])],
+        )
+
 
 class TestIntegration(TestCase):
     def setUp(self):

@@ -19,11 +19,19 @@ class CLIMixin(object):
         self.locator = Locator(
             root=MemoryPath(fs=self.fs),
             make_virtualenv=lambda **kwargs : VirtualEnv(
-                create=lambda virtualenv, stdout, stderr : (
-                    virtualenv.path.createDirectory()
-                ),
+                create=self.fake_create,
+                install=self.fake_install,
                 **kwargs
-            )
+            ),
+        )
+        self.installed = {}
+
+    def fake_create(self, virtualenv, stdout, stderr):
+        virtualenv.path.createDirectory()
+
+    def fake_install(self, virtualenv, packages, requirements, stdout, stderr):
+        self.installed.setdefault(virtualenv, []).append(
+            (packages, requirements),
         )
 
     def run_cli(self, argv=(), exit_status=os.EX_OK):

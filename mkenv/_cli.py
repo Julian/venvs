@@ -16,15 +16,11 @@ class UsageError(Exception):
     [
         Attribute(name="help", default_value="", exclude_from_repr=True),
         Attribute(name="type", default_value=lambda value : value),
-        Attribute(
-            name="default",
-            default_value=lambda : None,
-            exclude_from_repr=True,
-        ),
+        Attribute(name="repeat", default_value=1),
     ],
 )
 class Argument(object):
-    def __init__(self, kind, dest=None, nargs=None):
+    def __init__(self, kind, dest=None, nargs=None, default=None):
         self.kind = kind
         self.names = names = kind.names
 
@@ -36,21 +32,41 @@ class Argument(object):
             nargs = getattr(kind, "nargs", 1)
         self.nargs = nargs
 
+        if default is None:
+            if self.repeat is True or self.repeat > 1:
+                default = lambda : []
+            else:
+                default = lambda : None
+        self.default = default
+
     def consume(self, command_line):
         dest, nargs = self.dest, self.nargs
 
         if nargs == 1:
-            value = self.type(next(command_line))
+            raw_value = self.type(next(command_line))
         elif nargs == "?":
             argument = next(command_line, None)
             if argument is None:
-                value = self.default()
+                raw_value = self.default()
             else:
-                value = self.type(argument)
+                raw_value = self.type(argument)
         else:
-            value = [self.type(next(command_line)) for _ in xrange(nargs)]
+            raw_value = [self.type(next(command_line)) for _ in xrange(nargs)]
 
-        return [(dest, self.prepare(value))]
+        value = self.prepare(raw_value)
+
+        seen = command_line.state.setdefault(self, [])
+        seen.append(value)
+        command_line.see(self)
+
+        repeat = self.repeat
+        infinite_repeat = repeat is True
+        if not infinite_repeat and len(seen) > repeat:
+            name = " / ".join(self.names)
+            raise UsageError("{0!r} specified multiple times".format(name))
+        if infinite_repeat or repeat > 1:
+            value = seen
+        return [(dest, value)]
 
     def prepare(self, argument_value):
         return getattr(self.kind, "prepare", lambda arg : arg)(argument_value)
@@ -137,7 +153,7 @@ class _Exclusivity(object):
     def consume(self, command_line):
         state = command_line.state.setdefault(self.group, {})
         seen = state.get("seen")
-        if seen is not None:
+        if seen is not None and seen != self.argument:
             raise UsageError(
                 "specify only one of {0!r} or {1!r}".format(
                     " / ".join(seen.names), " / ".join(self.argument.names),
@@ -215,7 +231,6 @@ class CLI(object):
 
     def parse(self, command_line, help, stdout):
         parsed = {}
-        seen = set()  # XXX: Group / Exclusivity
         positionals = iter(self._positionals)
         nonpositionals = self._nonpositionals
 
@@ -226,18 +241,12 @@ class CLI(object):
                 if found is None:
                     raise UsageError("no such argument " + repr(argument))
                 parsed.update(found.consume(command_line=command_line))
-                seen.add(found)
                 continue
 
             found = nonpositionals.get(next(command_line))
 
             if found is None:
                 raise UsageError("no such argument " + repr(argument))
-
-            if found in seen:
-                name = " / ".join(found.names)
-                raise UsageError("{0!r} specified multiple times".format(name))
-            seen.add(found)
 
             if found == CLI.HELP:
                 self.show_help(help=help, stdout=stdout)
@@ -253,9 +262,8 @@ class CLI(object):
                     message = "{0} takes {1} argument(s)"
                     raise UsageError(message.format(argument, found.nargs))
 
-        for argument in self.argspec:
-            if argument not in seen:
-                parsed.update(argument.emit_default())
+        for argument in command_line.unseen(argspec=self.argspec):
+            parsed.update(argument.emit_default())
         return parsed
 
     def show_help(self, help, stdout):
@@ -277,6 +285,7 @@ class CommandLine(object):
     def __init__(self):
         self._remaining = self.argv[::-1]
         self.state = {}
+        self._seen = set()
 
     def __iter__(self):
         return self
@@ -292,3 +301,14 @@ class CommandLine(object):
 
     def peek(self):
         return self._remaining[-1]
+
+    def see(self, argument):
+        self._seen.add(argument)
+
+    def unseen(self, argspec):
+        """
+        Filter out any unseen arguments during parsing.
+
+        """
+
+        return (argument for argument in argspec if argument not in self._seen)

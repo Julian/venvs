@@ -15,6 +15,7 @@ from mkenv.common import _ROOT
 from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
 
 
+
 @CLI(
     Group(
         members=[
@@ -32,6 +33,20 @@ from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
         Flag(names=("-R", "--recreate")),
         help="recreate the virtualenv if it already exists",
     ),
+    Argument(
+        Option(names=("-i", "--install")),
+        dest="installs",
+        repeat=True,
+        help="install the given specifier (package) into the "
+        "virtualenv with pip after it is created",
+    ),
+    Argument(
+        Option(names=("-r", "--requirement")),
+        dest="requirements",
+        repeat=True,
+        help="install the given requirements file into the "
+        "virtualenv with pip after it is created",
+    ),
     _ROOT,
 )
 def run(arguments, stdin, stdout, stderr):
@@ -46,3 +61,7 @@ def run(arguments, stdin, stdout, stderr):
             act = virtualenv.create
 
     act(stdout=stdout, stderr=stderr)
+    virtualenv.install(
+        packages=arguments["installs"],
+        requirements=arguments["requirements"],
+    )
