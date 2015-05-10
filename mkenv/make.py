@@ -20,28 +20,28 @@ from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
     Group(
         members=[
             Argument(
-                Positional(name="name"),
+                kind=Positional(name="name"),
                 help="create a new named virtualenv",
             ),
             Argument(
-                Flag(names=("-t", "--temp", "--temporary")),
+                kind=Flag(names=("-t", "--temp", "--temporary")),
                 help="create or reuse the global temporary virtualenv",
             ),
         ],
     ),
     Argument(
-        Flag(names=("-R", "--recreate")),
+        kind=Flag(names=("-R", "--recreate")),
         help="recreate the virtualenv if it already exists",
     ),
     Argument(
-        Option(names=("-i", "--install")),
+        kind=Option(names=("-i", "--install")),
         dest="installs",
         repeat=True,
         help="install the given specifier (package) into the "
         "virtualenv with pip after it is created",
     ),
     Argument(
-        Option(names=("-r", "--requirement")),
+        kind=Option(names=("-r", "--requirement")),
         dest="requirements",
         repeat=True,
         help="install the given requirements file into the "

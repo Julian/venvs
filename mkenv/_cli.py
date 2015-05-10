@@ -14,22 +14,20 @@ class UsageError(Exception):
 
 @attributes(
     [
+        Attribute(name="kind"),
         Attribute(name="help", default_value="", exclude_from_repr=True),
         Attribute(name="type", default_value=lambda value : value),
         Attribute(name="repeat", default_value=1),
     ],
 )
 class Argument(object):
-    def __init__(self, kind, dest=None, nargs=None, default=None):
-        self.kind = kind
-        self.names = names = kind.names
-
+    def __init__(self, dest=None, nargs=None, default=None):
         if dest is None:
-            dest = max(names, key=len).lstrip("-")
+            dest = max(self.names, key=len).lstrip("-")
         self.dest = dest
 
         if nargs is None:
-            nargs = getattr(kind, "nargs", 1)
+            nargs = getattr(self.kind, "nargs", 1)
         self.nargs = nargs
 
         if default is None:
@@ -38,6 +36,13 @@ class Argument(object):
             else:
                 default = lambda : None
         self.default = default
+
+    @property
+    def names(self):
+        names = getattr(self.kind, "names", None)
+        if names is None:
+            return self.kind.name,
+        return names
 
     def consume(self, command_line):
         dest, nargs = self.dest, self.nargs
@@ -110,10 +115,6 @@ class Option(object):
 class Positional(object):
     is_positional = True
 
-    @property
-    def names(self):
-        return (self.name,)
-
 
 @attributes([Attribute(name="members")], apply_with_cmp=False)
 class Group(object):
@@ -167,11 +168,11 @@ class _Exclusivity(object):
 class CLI(object):
 
     HELP = Argument(
-        Option(names=("-h", "--help")),
+        kind=Option(names=("-h", "--help")),
         help="Show usage information.",
     )
     VERSION = Argument(
-        Option(names=("-V", "--version")),
+        kind=Option(names=("-V", "--version")),
         help="Show version information."
     )
 

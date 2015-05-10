@@ -6,27 +6,27 @@ from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
 
 @CLI(
     Argument(
-        Flag(names=("-E", "--existing-only")),
+        kind=Flag(names=("-E", "--existing-only")),
         help="Only consider existing virtualenvs.",
     ),
     Group(
         members=[
             Argument(
-                Option(names=("-d", "--directory")),
+                kind=Option(names=("-d", "--directory")),
                 default=lambda : FilePath("."),
                 type=FilePath,
                 nargs="?",
                 help="Find the virtualenv associated with the given directory.",
             ),
             Argument(
-                Option(names=("-n", "--name")),
+                kind=Option(names=("-n", "--name")),
                 help="Find the virtualenv associated with the given project name.",
             ),
         ],
     ),
     _ROOT,
     Argument(
-        Positional(name="binary"),
+        kind=Positional(name="binary"),
         help="Locate a binary within the specified virtualenv's bin/ folder.",
     ),
 )
