@@ -278,6 +278,7 @@ class CLI(object):
             stdout.write(argument.format_help())
 
     def concise_usage(self):
+        # XXX
         return "findenv"
 
 
