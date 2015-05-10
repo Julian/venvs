@@ -36,11 +36,13 @@ class CLIMixin(object):
 
     def run_cli(self, argv=(), exit_status=os.EX_OK):
         self.cli.run(
-            command_line=CommandLine(argv=argv),
-            stdin=self.stdin,
-            stdout=self.stdout,
-            stderr=self.stderr,
             arguments={"locator" : self.locator},
+            command_line=CommandLine(
+                argv=argv,
+                stdin=self.stdin,
+                stdout=self.stdout,
+                stderr=self.stderr,
+            ),
             exit=lambda got : self.assertEqual(
                 got,
                 exit_status,

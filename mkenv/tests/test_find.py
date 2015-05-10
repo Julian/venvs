@@ -163,5 +163,5 @@ class TestFind(CLIMixin, TestCase):
 class TestIntegration(TestCase):
     def test_it_works(self):
         with self.assertRaises(SystemExit) as e:
-            find.run(CommandLine(argv=["mkenv"]), stdout=StringIO())
+            find.run(CommandLine(argv=["mkenv"], stdout=StringIO()))
         self.assertEqual(e.exception.args, (0,))

@@ -82,9 +82,9 @@ class TestIntegration(TestCase):
     def test_it_works(self):
         with self.root.child("make_stdout").open("w") as stdout:
             make.run(
-                stdout=stdout,
                 exit=partial(self.assertEqual, 0),
                 command_line=CommandLine(
+                    stdout=stdout,
                     argv=[
                         "--root", self.root.path,
                         "mkenv-unittest-should-be-deleted",
@@ -94,9 +94,9 @@ class TestIntegration(TestCase):
 
         with self.root.child("find_stdout").open("w") as stdout:
             find.run(
-                stdout=stdout,
                 exit=partial(self.assertEqual, 0),
                 command_line=CommandLine(
+                    stdout=stdout,
                     argv=[
                         "--existing-only",
                         "--root", self.root.path,

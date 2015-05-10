@@ -189,14 +189,7 @@ class CLI(object):
 
     def __call__(self, fn):
         @wraps(fn)
-        def main(
-            command_line=None,
-            stdin=sys.stdin,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-            exit=sys.exit,
-            arguments=None,
-        ):
+        def main(command_line=None, exit=sys.exit, arguments=None):
             if command_line is None:
                 command_line = CommandLine()
             if arguments is None:
@@ -204,16 +197,12 @@ class CLI(object):
 
             help, _ = pydoc.splitdoc(pydoc.getdoc(fn))
             try:
-                parsed = self.parse(
-                    command_line=command_line,
-                    help=help,
-                    stdout=stdout,
-                )
+                parsed = self.parse(command_line=command_line, help=help)
             except UsageError as error:
-                stderr.write("error: ")
-                stderr.write(str(error))
-                stderr.write("\n\n")
-                self.show_help(stdout=stdout, help=help)
+                command_line.stderr.write("error: ")
+                command_line.stderr.write(str(error))
+                command_line.stderr.write("\n\n")
+                self.show_help(stdout=command_line.stdout, help=help)
                 exit_status = os.EX_USAGE
             else:
                 if parsed is None:
@@ -222,15 +211,15 @@ class CLI(object):
                     parsed.update(arguments)
                     exit_status = main.with_arguments(
                         arguments=parsed,
-                        stdin=stdin,
-                        stdout=stdout,
-                        stderr=stderr,
+                        stdin=command_line.stdin,
+                        stdout=command_line.stdout,
+                        stderr=command_line.stderr,
                     )
             exit(exit_status or os.EX_OK)
         main.with_arguments = fn
         return main
 
-    def parse(self, command_line, help, stdout):
+    def parse(self, command_line, help=""):  # XXX: help
         parsed = {}
         positionals = iter(self._positionals)
         nonpositionals = self._nonpositionals
@@ -250,11 +239,11 @@ class CLI(object):
                 raise UsageError("no such argument " + repr(argument))
 
             if found == CLI.HELP:
-                self.show_help(help=help, stdout=stdout)
+                self.show_help(help=help, stdout=command_line.stdout)
                 return
             elif found == CLI.VERSION:
-                stdout.write(__version__)
-                stdout.write("\n")
+                command_line.stdout.write(__version__)
+                command_line.stdout.write("\n")
                 return
             else:
                 try:
@@ -282,7 +271,20 @@ class CLI(object):
         return "findenv"
 
 
-@attributes([Attribute(name="argv", default_factory=lambda : sys.argv[1:])])
+@attributes(
+    [
+        Attribute(name="argv", default_factory=lambda : sys.argv[1:]),
+        Attribute(
+            name="stdin", default_value=sys.stdin, exclude_from_repr=True,
+        ),
+        Attribute(
+            name="stdout", default_value=sys.stdout, exclude_from_repr=True,
+        ),
+        Attribute(
+            name="stderr", default_value=sys.stderr, exclude_from_repr=True,
+        ),
+    ]
+)
 class CommandLine(object):
     def __init__(self):
         self._remaining = self.argv[::-1]
