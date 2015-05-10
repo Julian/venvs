@@ -1,3 +1,4 @@
+from collections import defaultdict
 from functools import wraps
 import os
 import pydoc
@@ -59,10 +60,7 @@ class Argument(object):
             raw_value = [self.type(next(command_line)) for _ in xrange(nargs)]
 
         value = self.prepare(raw_value)
-
-        seen = command_line.state.setdefault(self, [])
-        seen.append(value)
-        command_line.see(self)
+        seen = command_line.see(argument=self, value=value)
 
         repeat = self.repeat
         infinite_repeat = repeat is True
@@ -152,16 +150,14 @@ class _Exclusivity(object):
         return cls(argument=argument, group=group)
 
     def consume(self, command_line):
-        state = command_line.state.setdefault(self.group, {})
-        seen = state.get("seen")
-        if seen is not None and seen != self.argument:
+        seen = command_line.see(self.group, value=self.argument)
+        if set(seen) != set([self.argument]):
             raise UsageError(
-                "specify only one of {0!r} or {1!r}".format(
-                    " / ".join(seen.names), " / ".join(self.argument.names),
-                )
+                "specify only one of " + " or ".join(
+                    repr(" / ".join(argument.names)) for argument in seen
+                ),
             )
         else:
-            state["seen"] = self.argument
             return self.argument.consume(command_line=command_line)
 
 
@@ -288,8 +284,7 @@ class CLI(object):
 class CommandLine(object):
     def __init__(self):
         self._remaining = self.argv[::-1]
-        self.state = {}
-        self._seen = set()
+        self._seen = defaultdict(list)
 
     def __iter__(self):
         return self
@@ -306,8 +301,15 @@ class CommandLine(object):
     def peek(self):
         return self._remaining[-1]
 
-    def see(self, argument):
-        self._seen.add(argument)
+    def see(self, argument, value):
+        """
+        See a new value for the given argument.
+
+        """
+
+        seen = self._seen[argument]
+        seen.append(value)
+        return seen
 
     def unseen(self, argspec):
         """
