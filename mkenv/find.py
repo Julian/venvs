@@ -27,6 +27,7 @@ from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
     _ROOT,
     Argument(
         kind=Positional(name="binary"),
+        required=False,
         help="Locate a binary within the specified virtualenv's bin/ folder.",
     ),
 )

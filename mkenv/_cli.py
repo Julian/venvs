@@ -23,7 +23,7 @@ class UsageError(Exception):
     ],
 )
 class Argument(object):
-    def __init__(self, dest=None, nargs=None):
+    def __init__(self, dest=None, nargs=None, required=None):
         if dest is None:
             dest = max(self.names, key=len).lstrip("-")
         self.dest = dest
@@ -31,6 +31,10 @@ class Argument(object):
         if nargs is None:
             nargs = getattr(self.kind, "nargs", 1)
         self.nargs = nargs
+
+        if required is None:
+            required = getattr(self.kind, "required", False)
+        self.required = required
 
     @property
     def names(self):
@@ -68,6 +72,11 @@ class Argument(object):
         return [(self.dest, value)]
 
     def default(self):
+        if self.required:
+            raise UsageError(
+                "{0!r} is required".format(" / ".join(self.names)),
+            )
+
         default = self._default
         if default is not None:
             return default()
@@ -120,6 +129,7 @@ class Option(object):
 @attributes([Attribute(name="name")])
 class Positional(object):
     is_positional = True
+    required = True
 
 
 @attributes([Attribute(name="members")], apply_with_cmp=False)
@@ -256,10 +266,6 @@ class CLI(object):
                     message = "{0} takes {1} argument(s)"
                     raise UsageError(message.format(argument, found.nargs))
 
-        for unseen in positionals:
-            raise UsageError(
-                "{0!r} is required".format(" / ".join(unseen.names)),
-            )
         for argument in command_line.unseen(argspec=self.argspec):
             parsed.update(argument.emit_default())
         return parsed
