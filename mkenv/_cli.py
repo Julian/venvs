@@ -118,7 +118,7 @@ class Flag(object):
         return self.store
 
     def default(self):
-        return not self.store
+        return {True : False, False : True}.get(self.store)
 
 
 @attributes([Attribute(name="names")])

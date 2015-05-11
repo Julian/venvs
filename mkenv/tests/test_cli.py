@@ -35,6 +35,16 @@ class TestFlag(TestCase):
         arguments = cli.parse(CommandLine(argv=[]))
         self.assertEqual(arguments, {"foo" : True})
 
+    def test_non_boolean_store(self):
+        cli = CLI(Argument(kind=Flag(names=("--foo",), store=12)))
+        arguments = cli.parse(CommandLine(argv=["--foo"]))
+        self.assertEqual(arguments, {"foo" : 12})
+
+    def test_non_boolean_store_not_provided(self):
+        cli = CLI(Argument(kind=Flag(names=("--foo",), store=12)))
+        arguments = cli.parse(CommandLine(argv=[]))
+        self.assertEqual(arguments, {"foo" : None})
+
 
 class TestOption(TestCase):
     def test_provided(self):
