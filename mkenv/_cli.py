@@ -32,10 +32,12 @@ class Argument(object):
         self.nargs = nargs
 
         if default is None:
-            if self.repeat is True or self.repeat > 1:
-                default = lambda : []
-            else:
-                default = lambda : None
+            default = getattr(self.kind, "default", None)
+            if default is None:
+                if self.repeat is True or self.repeat > 1:
+                    default = lambda : []
+                else:
+                    default = lambda : None
         self.default = default
 
     @property
@@ -99,6 +101,9 @@ class Argument(object):
 class Flag(object):
     is_positional = False
     nargs = 0
+
+    def default(self):
+        return not self.store
 
     def prepare(self, argument_value):
         return self.store
