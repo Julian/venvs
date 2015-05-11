@@ -253,6 +253,10 @@ class CLI(object):
                     message = "{0} takes {1} argument(s)"
                     raise UsageError(message.format(argument, found.nargs))
 
+        for unseen in positionals:
+            raise UsageError(
+                "{0!r} is required".format(" / ".join(unseen.names)),
+            )
         for argument in command_line.unseen(argspec=self.argspec):
             parsed.update(argument.emit_default())
         return parsed

@@ -2,7 +2,9 @@ from StringIO import StringIO
 from unittest import TestCase
 import os
 
-from mkenv._cli import Argument, CLI, CommandLine, Flag, Positional
+from mkenv._cli import (
+    UsageError, Argument, CLI, CommandLine, Flag, Option, Positional,
+)
 
 
 class TestPositional(TestCase):
@@ -32,3 +34,28 @@ class TestFlag(TestCase):
         cli = CLI(Argument(kind=Flag(names=("--foo",), store=False)))
         arguments = cli.parse(CommandLine(argv=[]))
         self.assertEqual(arguments, {"foo" : True})
+
+
+class TestOption(TestCase):
+    def test_provided(self):
+        cli = CLI(Argument(kind=Option(names=("--foo",))))
+        arguments = cli.parse(CommandLine(argv=["--foo", "bar"]))
+        self.assertEqual(arguments, {"foo" : "bar"})
+
+    def test_not_provided(self):
+        cli = CLI(Argument(kind=Option(names=("--foo",))))
+        arguments = cli.parse(CommandLine(argv=[]))
+        self.assertEqual(arguments, {"foo" : None})
+
+
+class TestPositional(TestCase):
+    def test_provided(self):
+        cli = CLI(Argument(kind=Positional(name="foo")))
+        arguments = cli.parse(CommandLine(argv=["bla"]))
+        self.assertEqual(arguments, {"foo" : "bla"})
+
+    def test_not_provided(self):
+        cli = CLI(Argument(kind=Positional(name="foo")))
+        with self.assertRaises(UsageError) as e:
+            cli.parse(CommandLine(argv=[]))
+        self.assertIn("'foo' is required", str(e.exception))
