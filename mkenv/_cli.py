@@ -40,20 +40,22 @@ class Argument(object):
         return names
 
     def consume(self, command_line):
-        dest, nargs = self.dest, self.nargs
-
-        if nargs == 1:
-            raw_value = self.type(next(command_line))
-        elif nargs == "?":
-            argument = next(command_line, None)
-            if argument is None:
-                raw_value = self.default()
-            else:
-                raw_value = self.type(argument)
+        consume = getattr(self.kind, "consume", None)
+        if consume is not None:
+            value = consume(command_line=command_line)
         else:
-            raw_value = [self.type(next(command_line)) for _ in xrange(nargs)]
+            nargs = self.nargs
+            if nargs == 1:
+                value = self.type(next(command_line))
+            elif nargs == "?":
+                argument = next(command_line, None)
+                if argument is None:
+                    value = self.default()
+                else:
+                    value = self.type(argument)
+            else:
+                value = [self.type(next(command_line)) for _ in xrange(nargs)]
 
-        value = self.prepare(raw_value)
         seen = command_line.see(argument=self, value=value)
 
         repeat = self.repeat
@@ -63,7 +65,7 @@ class Argument(object):
             raise UsageError("{0!r} specified multiple times".format(name))
         if infinite_repeat or repeat > 1:
             value = seen
-        return [(dest, value)]
+        return [(self.dest, value)]
 
     def default(self):
         default = self._default
@@ -77,9 +79,6 @@ class Argument(object):
         if self.repeat is True or self.repeat > 1:
             return []
         return None
-
-    def prepare(self, argument_value):
-        return getattr(self.kind, "prepare", lambda arg : arg)(argument_value)
 
     def register(self):
         if self.kind.is_positional:
@@ -105,13 +104,12 @@ class Argument(object):
 )
 class Flag(object):
     is_positional = False
-    nargs = 0
+
+    def consume(self, command_line):
+        return self.store
 
     def default(self):
         return not self.store
-
-    def prepare(self, argument_value):
-        return self.store
 
 
 @attributes([Attribute(name="names")])
