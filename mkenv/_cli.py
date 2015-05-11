@@ -18,11 +18,12 @@ class UsageError(Exception):
         Attribute(name="kind"),
         Attribute(name="help", default_value="", exclude_from_repr=True),
         Attribute(name="type", default_value=lambda value : value),
-        Attribute(name="repeat", default_value=1),
+        Attribute(name="repeat", default_value=1, exclude_from_repr=True),
+        Attribute(name="_default", default_value=None, exclude_from_repr=True),
     ],
 )
 class Argument(object):
-    def __init__(self, dest=None, nargs=None, default=None):
+    def __init__(self, dest=None, nargs=None):
         if dest is None:
             dest = max(self.names, key=len).lstrip("-")
         self.dest = dest
@@ -30,15 +31,6 @@ class Argument(object):
         if nargs is None:
             nargs = getattr(self.kind, "nargs", 1)
         self.nargs = nargs
-
-        if default is None:
-            default = getattr(self.kind, "default", None)
-            if default is None:
-                if self.repeat is True or self.repeat > 1:
-                    default = lambda : []
-                else:
-                    default = lambda : None
-        self.default = default
 
     @property
     def names(self):
@@ -72,6 +64,19 @@ class Argument(object):
         if infinite_repeat or repeat > 1:
             value = seen
         return [(dest, value)]
+
+    def default(self):
+        default = self._default
+        if default is not None:
+            return default()
+
+        default = getattr(self.kind, "default", None)
+        if default is not None:
+            return default()
+
+        if self.repeat is True or self.repeat > 1:
+            return []
+        return None
 
     def prepare(self, argument_value):
         return getattr(self.kind, "prepare", lambda arg : arg)(argument_value)
