@@ -72,11 +72,6 @@ class Argument(object):
         return [(self.dest, value)]
 
     def default(self):
-        if self.required:
-            raise UsageError(
-                "{0!r} is required".format(" / ".join(self.names)),
-            )
-
         default = self._default
         if default is not None:
             return default()
@@ -95,8 +90,17 @@ class Argument(object):
         else:
             return (), [(name, self) for name in self.names]
 
-    def emit_default(self):
+    def emit_defaults(self, command_line):
+        if command_line.seen(self):
+            return []
         return [(self.dest, self.default())]
+
+    def require(self, command_line):
+        if self.required and not command_line.seen(self):
+            raise UsageError(
+                "{0!r} is required".format(" / ".join(self.names)),
+            )
+        return self.emit_defaults(command_line=command_line)
 
     def format_help(self):
         return "  {names:<20}        {self.help:<57}\n".format(
@@ -152,9 +156,15 @@ class Group(object):
         body = "".join(member.format_help() for member in self.members)
         return "\n" + body + "\n"
 
-    def emit_default(self):
+    def emit_defaults(self, command_line):
         # TODO: probably something different for required groups
-        return []
+        seen = set(command_line.seen(self))
+        return [
+            (argument.dest, None)
+            for argument in self.members if argument not in seen
+        ]
+
+    require = emit_defaults
 
 
 @attributes([Attribute(name="argument"), Attribute(name="group")])
@@ -266,8 +276,8 @@ class CLI(object):
                     message = "{0} takes {1} argument(s)"
                     raise UsageError(message.format(argument, found.nargs))
 
-        for argument in command_line.unseen(argspec=self.argspec):
-            parsed.update(argument.emit_default())
+        for argument in self.argspec:
+            parsed.update(argument.require(command_line=command_line))
         return parsed
 
     def show_help(self, help, stdout):
@@ -325,9 +335,12 @@ class CommandLine(object):
 
         """
 
-        seen = self._seen[argument]
+        seen = self.seen(argument)
         seen.append(value)
         return seen
+
+    def seen(self, argument):
+        return self._seen[argument]
 
     def unseen(self, argspec):
         """

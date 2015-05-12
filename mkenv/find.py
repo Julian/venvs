@@ -39,11 +39,11 @@ def run(arguments, stdin, stdout, stderr):
 
     locator = arguments["locator"]
 
-    directory = arguments.get("directory")
+    directory = arguments["directory"]
     if directory is not None:
         virtualenv = locator.for_directory(directory=directory)
     else:
-        name = arguments.get("name")
+        name = arguments["name"]
         if name is None:
             stdout.write(locator.root.path)
             stdout.write("\n")

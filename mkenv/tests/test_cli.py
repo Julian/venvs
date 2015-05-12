@@ -3,15 +3,8 @@ from unittest import TestCase
 import os
 
 from mkenv._cli import (
-    UsageError, Argument, CLI, CommandLine, Flag, Option, Positional,
+    UsageError, Argument, CLI, CommandLine, Flag, Group, Option, Positional,
 )
-
-
-class TestPositional(TestCase):
-    def test_properly_provided(self):
-        cli = CLI(Argument(kind=Positional(name="first")))
-        arguments = cli.parse(CommandLine(argv=["argument"]))
-        self.assertEqual(arguments, {"first" : "argument"})
 
 
 class TestFlag(TestCase):
@@ -69,3 +62,44 @@ class TestPositional(TestCase):
         with self.assertRaises(UsageError) as e:
             cli.parse(CommandLine(argv=[]))
         self.assertIn("'foo' is required", str(e.exception))
+
+
+class TestGroup(TestCase):
+    def test_one_provided(self):
+        cli = CLI(
+            Group(
+                members=[
+                    Argument(kind=Option(names=("--foo",))),
+                    Argument(kind=Option(names=("--bar",))),
+                ],
+            )
+        )
+        arguments = cli.parse(CommandLine(argv=["--foo", "bla"]))
+        self.assertEqual(arguments, {"foo" : "bla", "bar" : None})
+
+    def test_two_provided(self):
+        cli = CLI(
+            Group(
+                members=[
+                    Argument(kind=Option(names=("--foo",))),
+                    Argument(kind=Option(names=("--bar",))),
+                ],
+            )
+        )
+        with self.assertRaises(UsageError) as e:
+            cli.parse(CommandLine(argv=["--foo", "bla", "--bar", "quux"]))
+        self.assertIn(
+            "specify only one of '--foo' or '--bar'", str(e.exception),
+        )
+
+    def test_neither_provided(self):
+        cli = CLI(
+            Group(
+                members=[
+                    Argument(kind=Option(names=("--foo",))),
+                    Argument(kind=Option(names=("--bar",))),
+                ],
+            )
+        )
+        arguments = cli.parse(CommandLine(argv=[]))
+        self.assertEqual(arguments, {"foo" : None, "bar" : None})
