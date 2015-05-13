@@ -2,12 +2,13 @@
 mkenv
 =====
 
-mkenv is a simpler tool for creating virtualenvs in a central location.
+mkenv is a simpler tool for creating and maintaining virtualenvs in a central
+location.
 
 It consists of the 5% of `virtualenvwrapper
 <https://virtualenvwrapper.readthedocs.org/en/latest/>`_ that I actually use,
-and is in some ways meant to complement ``virtualenv`` rather than completely
-wrapping or hiding it.
+and is in some ways meant to more closely complement ``virtualenv`` rather than
+completely wrapping or hiding it.
 
 
 Installation
@@ -28,7 +29,7 @@ arguments directly through to ``virtualenv``::
 
 will create a virtual environment in an appropriate platform-specific
 data directory, or in the directory specified by ``WORKON_HOME`` for
-compatibility.
+compatibility with virtualenvwrapper.
 
 
 Temporary Virtualenvs
@@ -71,6 +72,27 @@ the current recommendation for this use case would be to simply use the
 ``virtualenv`` binary directly.
 
 
+The 5 Minute Tutorial
+---------------------
+
+Besides the ``mkenv`` for named-virtualenv creation and ``mkenv -t`` for
+temporary-virtualenv creation described above::
+
+    $ findenv -n name
+
+will output (to standard output) the path to a virtualenv with the given name
+(see also ``--existing-only``), and::
+
+    $ rmenv name
+
+will remove it.
+
+There are a number of other slight variants, see the ``--help`` information for
+each of the three binaries.
+
+*Real documentation to come (I hope)*
+
+
 Why don't I use virtualenvwrapper?
 ----------------------------------
 
@@ -81,10 +103,9 @@ to use. Specifically:
     * I don't like activating virtualenvs.
       
       virtualenvs are magical and hacky enough on their own, and piling
-      activation on top just makes things even more messy, especially
-      if you're moving around between different projects in a shell.
-      Some people use ``cd`` tricks to solve this, but I just want
-      simiplicity.
+      activation on top just makes things even more messy for me, especially
+      when moving around between different projects in a shell.  Some people
+      use ``cd`` tricks to solve this, but I just want simplicity.
 
     * I don't need project support.
 
@@ -95,4 +116,4 @@ to use. Specifically:
       to handle association.
 
 Basically, I just want a thing that is managing a central repository of
-virtualenvs for me. So that's what ``mkenv`` does!
+virtualenvs for me. So that's what ``mkenv`` does.
