@@ -230,7 +230,7 @@ class CLI(object):
     def __init__(self, *argspec, **kwargs):
         remainder = self._remainder = kwargs.pop("remainder", None)
         if kwargs:
-            raise TypeError("unexpected keyword arguments: " + repr(kwargS))
+            raise TypeError("unexpected keyword arguments: " + repr(kwargs))
 
         self._nonpositionals = nonpositionals = {}
         self._positionals = positionals = []

@@ -8,9 +8,6 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 
 """
 
-import shutil
-import subprocess
-
 from mkenv.common import _ROOT
 from mkenv._cli import (
     CLI, Argument, Flag, Group, Option, Positional, Remainder,

@@ -1,6 +1,6 @@
 from bp.filepath import FilePath
 
-from mkenv.common import _ROOT, Locator
+from mkenv.common import _ROOT
 from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
 
 

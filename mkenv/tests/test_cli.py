@@ -1,6 +1,4 @@
-from StringIO import StringIO
 from unittest import TestCase
-import os
 
 from mkenv._cli import (
     UsageError,
