@@ -4,8 +4,6 @@ import os
 from mkenv._cli import CLI, Argument, Flag, Positional
 from mkenv.common import _ROOT
 
-from bp.errors import PathError
-
 
 @CLI(
     Argument(
@@ -22,7 +20,7 @@ def run(arguments, stdin, stdout, stderr):
     virtualenv = arguments["locator"].for_name(arguments["name"])
     try:
         virtualenv.remove()
-    except PathError as error:
+    except (IOError, OSError) as error:  # FIXME: Once bp has exceptions
         if error.errno != errno.ENOENT:
             raise
         if not arguments["force"]:
