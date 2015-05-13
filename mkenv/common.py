@@ -11,9 +11,9 @@ from characteristic import Attribute, attributes
 from mkenv._cli import Argument, Option
 
 
-def _create_virtualenv(virtualenv, stdout, stderr):
+def _create_virtualenv(virtualenv, arguments, stdout, stderr):
     subprocess.check_call(
-        ["virtualenv", virtualenv.path.path],
+        ["virtualenv"] + list(arguments) + [virtualenv.path.path],
         stdout=stdout,
         stderr=stderr,
     )
@@ -54,8 +54,8 @@ class VirtualEnv(object):
     def binary(self, name):
         return self.path.descendant(["bin", name])
 
-    def create(self, stdout=sys.stdout, stderr=sys.stderr):
-        self._create(self, stdout=stdout, stderr=stderr)
+    def create(self, arguments=(), stdout=sys.stdout, stderr=sys.stderr):
+        self._create(self, arguments=arguments, stdout=stdout, stderr=stderr)
 
     def remove(self):
         self.path.remove()

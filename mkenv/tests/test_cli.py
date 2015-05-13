@@ -3,7 +3,15 @@ from unittest import TestCase
 import os
 
 from mkenv._cli import (
-    UsageError, Argument, CLI, CommandLine, Flag, Group, Option, Positional,
+    UsageError,
+    Argument,
+    CLI,
+    CommandLine,
+    Flag,
+    Group,
+    Option,
+    Positional,
+    Remainder,
 )
 
 
@@ -103,3 +111,31 @@ class TestGroup(TestCase):
         )
         arguments = cli.parse(CommandLine(argv=[]))
         self.assertEqual(arguments, {"foo" : None, "bar" : None})
+
+
+class TestRemainder(TestCase):
+    def test_provided_after_required_positional(self):
+        cli = CLI(
+            Argument(kind=Positional(name="argument")),
+            remainder=Remainder(name="remaining"),
+        )
+        arguments = cli.parse(CommandLine(argv=["123", "--", "1", "2", "4"]))
+        self.assertEqual(
+            arguments, {"argument" : "123", "remaining" : ["1", "2", "4"]},
+        )
+
+    def test_not_provided_after_required_positional(self):
+        cli = CLI(
+            Argument(kind=Positional(name="argument")),
+            remainder=Remainder(name="remaining"),
+        )
+        arguments = cli.parse(CommandLine(argv=["123"]))
+        self.assertEqual(arguments, {"argument" : "123", "remaining" : []})
+
+    def test_just_divider_after_required_positional(self):
+        cli = CLI(
+            Argument(kind=Positional(name="argument")),
+            remainder=Remainder(name="remaining"),
+        )
+        arguments = cli.parse(CommandLine(argv=["123", "--"]))
+        self.assertEqual(arguments, {"argument" : "123", "remaining" : []})

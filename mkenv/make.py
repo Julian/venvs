@@ -12,7 +12,9 @@ import shutil
 import subprocess
 
 from mkenv.common import _ROOT
-from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
+from mkenv._cli import (
+    CLI, Argument, Flag, Group, Option, Positional, Remainder,
+)
 
 
 
@@ -48,6 +50,10 @@ from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
         "virtualenv with pip after it is created",
     ),
     _ROOT,
+    remainder=Remainder(
+        name="virtualenv-args",
+        help="additional arguments to provide to virtualenv for creation",
+    )
 )
 def run(arguments, stdin, stdout, stderr):
     if arguments.get("temporary"):
@@ -60,7 +66,7 @@ def run(arguments, stdin, stdout, stderr):
         else:
             act = virtualenv.create
 
-    act(stdout=stdout, stderr=stderr)
+    act(arguments=arguments["virtualenv-args"], stdout=stdout, stderr=stderr)
     virtualenv.install(
         packages=arguments["installs"],
         requirements=arguments["requirements"],

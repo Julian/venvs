@@ -26,7 +26,7 @@ class CLIMixin(object):
         )
         self.installed = {}
 
-    def fake_create(self, virtualenv, stdout, stderr):
+    def fake_create(self, virtualenv, arguments, stdout, stderr):
         virtualenv.path.createDirectory()
 
     def fake_install(self, virtualenv, packages, requirements, stdout, stderr):

@@ -189,6 +189,33 @@ class _Exclusivity(object):
             return self.argument.consume(command_line=command_line)
 
 
+@attributes(
+    [
+        Attribute(name="name"),
+        Attribute(name="help", default_value="", exclude_from_repr=True),
+    ],
+)
+class Remainder(object):
+    def __init__(self, dest=None):
+        if dest is None:
+            dest = self.name
+        self.dest = dest
+
+    def consume(self, command_line):
+        command_line.see(self, value=None)
+        next(command_line)  # discard the --
+        return [(self.dest, list(command_line))]
+
+    def require(self, command_line):
+        if command_line.seen(self):
+            return []
+        return [(self.dest, [])]
+
+    def format_help(self):
+        # TODO: make this more obvious
+        return "  {self.name:<20}        {self.help:<57}\n".format(self=self)
+
+
 class CLI(object):
 
     HELP = Argument(
@@ -200,7 +227,11 @@ class CLI(object):
         help="Show version information."
     )
 
-    def __init__(self, *argspec):
+    def __init__(self, *argspec, **kwargs):
+        remainder = self._remainder = kwargs.pop("remainder", None)
+        if kwargs:
+            raise TypeError("unexpected keyword arguments: " + repr(kwargS))
+
         self._nonpositionals = nonpositionals = {}
         self._positionals = positionals = []
 
@@ -209,6 +240,8 @@ class CLI(object):
             positionals.extend(for_positionals)
             nonpositionals.update(for_nonpositionals)
 
+        if remainder is not None:
+            argspec += (remainder,)
         self.argspec = argspec
 
     def __call__(self, fn):
@@ -250,7 +283,12 @@ class CLI(object):
 
         while command_line:
             argument = command_line.peek()
-            if not argument.startswith("-"):
+            if argument == "--":
+                parsed.update(
+                    self._remainder.consume(command_line=command_line),
+                )
+                break
+            elif not argument.startswith("-"):
                 found = next(positionals, None)
                 if found is None:
                     raise UsageError("no such argument " + repr(argument))
