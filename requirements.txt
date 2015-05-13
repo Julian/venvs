@@ -1,0 +1,5 @@
+appdirs
+characteristic
+virtualenv
+
+git+https://github.com/Julian/betterpath#egg=betterpath
