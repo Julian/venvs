@@ -23,10 +23,10 @@ class UsageError(Exception):
     ],
 )
 class Argument(object):
-    def __init__(self, dest=None, nargs=None, required=None):
-        if dest is None:
-            dest = max(self.names, key=len).lstrip("-")
-        self.dest = dest
+    def __init__(self, destination=None, nargs=None, required=None):
+        if destination is None:
+            destination = max(self.names, key=len).lstrip("-")
+        self.destination = destination
 
         if nargs is None:
             nargs = getattr(self.kind, "nargs", 1)
@@ -69,7 +69,7 @@ class Argument(object):
             raise UsageError("{0!r} specified multiple times".format(name))
         if infinite_repeat or repeat > 1:
             value = seen
-        return [(self.dest, value)]
+        return [(self.destination, value)]
 
     def default(self):
         default = self._default
@@ -93,7 +93,7 @@ class Argument(object):
     def emit_defaults(self, command_line):
         if command_line.seen(self):
             return []
-        return [(self.dest, self.default())]
+        return [(self.destination, self.default())]
 
     def require(self, command_line):
         if self.required and not command_line.seen(self):
@@ -160,7 +160,7 @@ class Group(object):
         # TODO: probably something different for required groups
         seen = set(command_line.seen(self))
         return [
-            (argument.dest, None)
+            (argument.destination, None)
             for argument in self.members if argument not in seen
         ]
 
@@ -171,7 +171,7 @@ class Group(object):
 class _Exclusivity(object):
     def __init__(self):
         self.names = self.argument.names
-        self.dest = self.argument.dest
+        self.destination = self.argument.destination
 
     @classmethod
     def wrap(cls, argument, group):
@@ -196,20 +196,20 @@ class _Exclusivity(object):
     ],
 )
 class Remainder(object):
-    def __init__(self, dest=None):
-        if dest is None:
-            dest = self.name
-        self.dest = dest
+    def __init__(self, destination=None):
+        if destination is None:
+            destination = self.name
+        self.destination = destination
 
     def consume(self, command_line):
         command_line.see(self, value=None)
         next(command_line)  # discard the --
-        return [(self.dest, list(command_line))]
+        return [(self.destination, list(command_line))]
 
     def require(self, command_line):
         if command_line.seen(self):
             return []
-        return [(self.dest, [])]
+        return [(self.destination, [])]
 
     def format_help(self):
         # TODO: make this more obvious

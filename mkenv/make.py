@@ -34,14 +34,14 @@ from mkenv._cli import (
     ),
     Argument(
         kind=Option(names=("-i", "--install")),
-        dest="installs",
+        destination="installs",
         repeat=True,
         help="install the given specifier (package) into the "
         "virtualenv with pip after it is created",
     ),
     Argument(
         kind=Option(names=("-r", "--requirement")),
-        dest="requirements",
+        destination="requirements",
         repeat=True,
         help="install the given requirements file into the "
         "virtualenv with pip after it is created",

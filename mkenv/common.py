@@ -121,7 +121,7 @@ class Locator(object):
 _ROOT = Argument(
     kind=Option(names=("-R", "--root")),
     default=Locator.default,
-    dest="locator",
+    destination="locator",
     type=lambda root : Locator(root=FilePath(root)),
     help="Specify a different root directory for virtualenvs.",
 )
