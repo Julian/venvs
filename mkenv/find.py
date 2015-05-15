@@ -12,11 +12,12 @@ from mkenv._cli import CLI, Argument, Flag, Group, Option, Positional
     Group(
         members=[
             Argument(
-                kind=Option(names=("-d", "--directory")),
-                default=lambda : FilePath("."),
+                kind=Option(
+                    names=("-d", "--directory"),
+                    bare=lambda : FilePath("."),
+                ),
                 type=FilePath,
-                nargs="?",
-                help="Find the virtualenv associated with the given directory.",
+                help="Find the virtualenv associated with the given directory."
             ),
             Argument(
                 kind=Option(names=("-n", "--name")),

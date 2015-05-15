@@ -21,6 +21,7 @@ from mkenv._cli import (
             Argument(
                 kind=Positional(name="name"),
                 help="create a new named virtualenv",
+                required=False,
             ),
             Argument(
                 kind=Flag(names=("-t", "--temp", "--temporary")),

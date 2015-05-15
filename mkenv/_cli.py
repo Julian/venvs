@@ -23,14 +23,10 @@ class UsageError(Exception):
     ],
 )
 class Argument(object):
-    def __init__(self, destination=None, nargs=None, required=None):
+    def __init__(self, destination=None, required=None):
         if destination is None:
             destination = max(self.names, key=len).lstrip("-")
         self.destination = destination
-
-        if nargs is None:
-            nargs = getattr(self.kind, "nargs", 1)
-        self.nargs = nargs
 
         if required is None:
             required = getattr(self.kind, "required", False)
@@ -44,24 +40,8 @@ class Argument(object):
         return names
 
     def consume(self, command_line):
-        consume = getattr(self.kind, "consume", None)
-        if consume is not None:
-            value = consume(command_line=command_line)
-        else:
-            nargs = self.nargs
-            if nargs == 1:
-                value = self.type(next(command_line))
-            elif nargs == "?":
-                argument = next(command_line, None)
-                if argument is None:
-                    value = self.default()
-                else:
-                    value = self.type(argument)
-            else:
-                value = [self.type(next(command_line)) for _ in xrange(nargs)]
-
+        value = self.kind.consume(command_line=command_line, argument=self)
         seen = command_line.see(argument=self, value=value)
-
         repeat = self.repeat
         infinite_repeat = repeat is True
         if not infinite_repeat and len(seen) > repeat:
@@ -102,6 +82,12 @@ class Argument(object):
             )
         return self.emit_defaults(command_line=command_line)
 
+    def hook(self):
+        return [(self.destination, self)]
+
+    def unhook(self):
+        return [self.destination]
+
     def format_help(self):
         return "  {names:<20}        {self.help:<57}\n".format(
             names=", ".join(self.names),
@@ -118,22 +104,43 @@ class Argument(object):
 class Flag(object):
     is_positional = False
 
-    def consume(self, command_line):
+    def consume(self, command_line, argument):
         return self.store
 
     def default(self):
         return {True : False, False : True}.get(self.store)
 
 
-@attributes([Attribute(name="names")])
+@attributes(
+    [
+        Attribute(name="names"),
+        Attribute(name="consumes", default_value=1),
+        Attribute(name="bare", default_value=None),
+    ],
+)
 class Option(object):
     is_positional = False
+
+    def consume(self, command_line, argument):
+        try:
+            value = command_line.consume(
+                argument=argument, number=self.consumes,
+            )
+        except StopIteration:
+            bare = self.bare
+            if bare is None:
+                raise
+            value = self.bare()
+        return value
 
 
 @attributes([Attribute(name="name")])
 class Positional(object):
     is_positional = True
     required = True
+
+    def consume(self, command_line, argument):
+        return argument.type(next(command_line))
 
 
 @attributes([Attribute(name="members")], apply_with_cmp=False)
@@ -165,6 +172,12 @@ class Group(object):
         ]
 
     require = emit_defaults
+
+    def hook(self):
+        return [hook for argument in self.members for hook in argument.hook()]
+
+    def unhook(self):
+        return []
 
 
 @attributes([Attribute(name="argument"), Attribute(name="group")])
@@ -214,6 +227,12 @@ class Remainder(object):
     def format_help(self):
         # TODO: make this more obvious
         return "  {self.name:<20}        {self.help:<57}\n".format(self=self)
+
+    def hook(self):
+        return [(self.destination, self)]
+
+    def unhook(self):
+        return []
 
 
 class CLI(object):
@@ -277,6 +296,8 @@ class CLI(object):
         return main
 
     def parse(self, command_line, help=""):  # XXX: help
+        command_line.expect(argspec=self.argspec)
+
         parsed = {}
         positionals = iter(self._positionals)
         nonpositionals = self._nonpositionals
@@ -308,14 +329,9 @@ class CLI(object):
                 command_line.stdout.write("\n")
                 return
             else:
-                try:
-                    parsed.update(found.consume(command_line=command_line))
-                except StopIteration:
-                    message = "{0} takes {1} argument(s)"
-                    raise UsageError(message.format(argument, found.nargs))
+                parsed.update(found.consume(command_line=command_line))
 
-        for argument in self.argspec:
-            parsed.update(argument.require(command_line=command_line))
+        parsed.update(command_line.finish())
         return parsed
 
     def show_help(self, help, stdout):
@@ -351,6 +367,7 @@ class CommandLine(object):
     def __init__(self):
         self._remaining = self.argv[::-1]
         self._seen = defaultdict(list)
+        self._destinations = defaultdict(list)
 
     def __iter__(self):
         return self
@@ -365,13 +382,19 @@ class CommandLine(object):
             raise StopIteration()
 
     def peek(self):
-        return self._remaining[-1]
+        try:
+            return self._remaining[-1]
+        except IndexError:
+            raise StopIteration()
 
     def see(self, argument, value):
         """
         See a new value for the given argument.
 
         """
+
+        for destination in argument.unhook():
+            self._destinations.pop(destination, None)
 
         seen = self.seen(argument)
         seen.append(value)
@@ -380,10 +403,32 @@ class CommandLine(object):
     def seen(self, argument):
         return self._seen[argument]
 
-    def unseen(self, argspec):
-        """
-        Filter out any unseen arguments during parsing.
+    def expect(self, argspec):
+        for argument in argspec:
+            self._destinations.update(argument.hook())
 
-        """
+    def finish(self):
+        for argument in self._destinations.itervalues():
+            for thing in argument.require(command_line=self):
+                yield thing
 
-        return (argument for argument in argspec if argument not in self._seen)
+    def consume(self, argument, number):
+        if number == 1:
+            return argument.type(self._consume())
+        values = []
+        for _ in xrange(number):
+            try:
+                values.append(argument.type(self._consume()))
+            except StopIteration:
+                if not values:
+                    raise
+                message = "{0!r} takes {1} argument(s)"
+                raise UsageError(
+                    message.format(" / ".join(argument.names), number),
+                )
+        return values
+
+    def _consume(self):
+        if self.peek().startswith("-"):
+            raise StopIteration()
+        return next(self)

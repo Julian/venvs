@@ -56,6 +56,64 @@ class TestOption(TestCase):
         arguments = cli.parse(CommandLine(argv=[]))
         self.assertEqual(arguments, {"foo" : None})
 
+    def test_bare_provided(self):
+        cli = CLI(Argument(kind=Option(names=("--bar",))))
+        arguments = cli.parse(CommandLine(argv=["--bar", "123"]))
+        self.assertEqual(arguments, {"bar" : "123"})
+
+    def test_bare_unprovided(self):
+        cli = CLI(Argument(kind=Option(names=("--bar",), bare=lambda : "12")))
+        arguments = cli.parse(CommandLine(argv=["--bar"]))
+        self.assertEqual(arguments, {"bar" : "12"})
+
+    def test_bare_multiconsumer_provided(self):
+        cli = CLI(
+            Argument(
+                kind=Option(
+                    names=("--bar",),
+                    bare=lambda : ["a", "b", "c"],
+                    consumes=3,
+                ),
+            ),
+        )
+        arguments = cli.parse(CommandLine(argv=["--bar", "2", "3", "4"]))
+        self.assertEqual(arguments, {"bar" : ["2", "3", "4"]})
+
+    def test_bare_multiconsumer_unprovided(self):
+        cli = CLI(
+            Argument(
+                kind=Option(
+                    names=("--bar",),
+                    bare=lambda : ["a", "b", "c"],
+                    consumes=3,
+                ),
+            ),
+        )
+        arguments = cli.parse(CommandLine(argv=["--bar"]))
+        self.assertEqual(arguments, {"bar" : ["a", "b", "c"]})
+
+    def test_bare_multiconsumer_underprovided(self):
+        cli = CLI(
+            Argument(
+                kind=Option(
+                    names=("--bar",),
+                    bare=lambda : ["a", "b", "c"],
+                    consumes=3,
+                ),
+            ),
+        )
+        with self.assertRaises(UsageError) as e:
+            cli.parse(CommandLine(argv=["--bar", "2", "3"]))
+        self.assertIn("'--bar' takes 3 argument(s)", str(e.exception))
+
+    def test_bare_unprovided_before_another_option(self):
+        cli = CLI(
+            Argument(kind=Option(names=("--baz",))),
+            Argument(kind=Option(names=("--bar",), bare=lambda : "11")),
+        )
+        arguments = cli.parse(CommandLine(argv=["--bar", "--baz", "22"]))
+        self.assertEqual(arguments, {"bar" : "11", "baz" : "22"})
+
 
 class TestPositional(TestCase):
     def test_provided(self):
@@ -71,7 +129,7 @@ class TestPositional(TestCase):
 
 
 class TestGroup(TestCase):
-    def test_one_provided(self):
+    def test_one_provided_option(self):
         cli = CLI(
             Group(
                 members=[
@@ -83,7 +141,7 @@ class TestGroup(TestCase):
         arguments = cli.parse(CommandLine(argv=["--foo", "bla"]))
         self.assertEqual(arguments, {"foo" : "bla", "bar" : None})
 
-    def test_two_provided(self):
+    def test_two_provided_options(self):
         cli = CLI(
             Group(
                 members=[
@@ -98,7 +156,7 @@ class TestGroup(TestCase):
             "specify only one of '--foo' or '--bar'", str(e.exception),
         )
 
-    def test_neither_provided(self):
+    def test_neither_option_provided(self):
         cli = CLI(
             Group(
                 members=[
@@ -109,6 +167,34 @@ class TestGroup(TestCase):
         )
         arguments = cli.parse(CommandLine(argv=[]))
         self.assertEqual(arguments, {"foo" : None, "bar" : None})
+
+
+class TestAsymmetricGroup(TestCase):
+    cli = CLI(
+        Group(
+            members=[
+                Argument(kind=Positional(name="foo"), required=False),
+                Argument(kind=Flag(names=("--bar",))),
+            ],
+        )
+    )
+
+    def test_positional(self):
+        arguments = self.cli.parse(CommandLine(argv=["123"]))
+        self.assertEqual(arguments, {"foo" : "123", "bar" : False})
+
+    def test_flag(self):
+        arguments = self.cli.parse(CommandLine(argv=["--bar"]))
+        self.assertEqual(arguments, {"foo" : None, "bar" : True})
+
+    def test_both(self):
+        with self.assertRaises(UsageError) as e:
+            self.cli.parse(CommandLine(argv=["123", "--bar"]))
+        self.assertIn("specify only one of 'foo' or '--bar'", str(e.exception))
+
+    def test_neither(self):
+        arguments = self.cli.parse(CommandLine(argv=[]))
+        self.assertEqual(arguments, {"foo" : None, "bar" : False})
 
 
 class TestRemainder(TestCase):
@@ -137,3 +223,24 @@ class TestRemainder(TestCase):
         )
         arguments = cli.parse(CommandLine(argv=["123", "--"]))
         self.assertEqual(arguments, {"argument" : "123", "remaining" : []})
+
+
+class TestCLI(TestCase):
+    def test_defaults_are_set_per_dest(self):
+        """
+        Two arguments that set the same ``dest`` do not quash each other by
+        overriding the ``dest`` with a default when one of the two are seen.
+
+        """
+
+        cli = CLI(
+            Argument(kind=Flag(names=("-a",)), destination="foo"),
+            Argument(kind=Flag(names=("-b",)), destination="foo"),
+        )
+        self.assertEqual(
+            (
+                cli.parse(CommandLine(argv=["-a"])),
+                cli.parse(CommandLine(argv=["-b"])),
+            ),
+            ({"foo" : True}, {"foo" : True}),
+        )
