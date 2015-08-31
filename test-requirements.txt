@@ -1,2 +1,2 @@
-bzr+lp:~julian+/testscenarios/testscenarios#egg=testscenarios
+git+https://github.com/Julian/testscenarios.git#egg=testscenarios
 -e .
