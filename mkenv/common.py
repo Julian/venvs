@@ -63,7 +63,7 @@ class VirtualEnv(object):
     def recreate(self, **kwargs):
         try:
             self.remove()
-        except IOError as error:
+        except EnvironmentError as error:
             if error.errno != errno.ENOENT:
                 raise
         self._create(virtualenv=self, **kwargs)

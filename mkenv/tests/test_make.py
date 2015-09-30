@@ -1,3 +1,4 @@
+from errno import ENOENT
 from functools import partial
 from tempfile import mkdtemp
 from unittest import TestCase
@@ -20,7 +21,32 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["made"])
         self.assertTrue(self.locator.for_name("made").exists)
 
-    def test_make_t_creates_a_global_temporary_environment(self):
+    def test_make_t_creates_a_global_temporary_environment_OSError(self):
+        temporary = self.locator.temporary()
+        self.assertFalse(temporary.exists)
+
+        def real_fake_remove(path):
+            """
+            os.remove will raise an OSError, not an IOError.
+
+            """
+
+            raise OSError(ENOENT, "NOPE")
+
+        MemoryPath = temporary.path.__class__
+        remove, MemoryPath.remove = MemoryPath.remove, real_fake_remove
+        self.addCleanup(setattr, MemoryPath, "remove", remove)
+
+        self.run_cli(["--temporary"])
+        self.assertTrue(temporary.exists)
+
+    def test_make_t_creates_a_global_temporary_environment_IOError(self):
+        """
+        If we use os.remove, this one actually should never happen, since that
+        will raise OSError, but we ensure we cover both cases.
+
+        """
+
         temporary = self.locator.temporary()
         self.assertFalse(temporary.exists)
 
