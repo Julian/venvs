@@ -1,27 +1,30 @@
 import errno
 import os
 
-from mkenv._cli import CLI, Argument, Flag, Positional
+import click
+
 from mkenv.common import _ROOT
 
 
-@CLI(
-    Argument(
-        kind=Positional(name="name"),
-        help="remove the named virtualenv",
-    ),
-    Argument(
-        kind=Flag(names=("-f", "--force")),
-        help="ignore errors if the virtualenv does not exist",
-    ),
-    _ROOT,
-)
-def run(arguments, stdin, stdout, stderr):
-    virtualenv = arguments["locator"].for_name(arguments["name"])
+def run(locator, name, force):
+    virtualenv = locator.for_name(name=name)
     try:
         virtualenv.remove()
     except (IOError, OSError) as error:  # FIXME: Once bp has exceptions
         if error.errno != errno.ENOENT:
             raise
-        if not arguments["force"]:
+        if not force:
             return os.EX_NOINPUT
+
+
+@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
+@_ROOT
+@click.option(
+    "-f", "--force",
+    flag_value=True,
+    help="Ignore errors if the virtualenv does not exist.",
+)
+@click.argument("name")
+@click.pass_context
+def main(context, **kwargs):
+    context.exit(run(**kwargs) or 0)

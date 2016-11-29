@@ -25,15 +25,17 @@ setup(
     setup_requires=["vcversioner"],
     entry_points={
         "console_scripts": [
-            "mkenv = mkenv.make:run",
-            "mkvenv = mkenv.make:run",
-            "findenv = mkenv.find:run",
-            "findvenv = mkenv.find:run",
-            "rmenv = mkenv.remove:run",
-            "rmvenv = mkenv.remove:run",
+            "mkenv = mkenv.make:main",
+            "mkvenv = mkenv.make:main",
+            "findenv = mkenv.find:main",
+            "findvenv = mkenv.find:main",
+            "rmenv = mkenv.remove:main",
+            "rmvenv = mkenv.remove:main",
         ],
     },
-    install_requires=["appdirs", "betterpath", "characteristic", "virtualenv"],
+    install_requires=[
+        "appdirs", "betterpath", "characteristic", "click", "virtualenv",
+    ],
     author="Julian Berman",
     author_email="Julian@GrayVines.com",
     classifiers=classifiers,
@@ -41,5 +43,5 @@ setup(
     long_description=long_description,
     url="https://github.com/Julian/mkenv",
     description="A simpler tool for creating venvs in a central location",
-    vcversioner={"version_module_paths" : ["mkenv/__init__.py"]},
+    vcversioner={"version_module_paths" : ["mkenv/_version.py"]},
 )

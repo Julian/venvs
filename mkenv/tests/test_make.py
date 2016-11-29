@@ -3,12 +3,12 @@ from functools import partial
 from tempfile import mkdtemp
 from unittest import TestCase
 import os
+import sys
 
 from bp.filepath import FilePath
 
 from mkenv import find, make
 from mkenv.common import Locator
-from mkenv._cli import CommandLine
 from mkenv.tests.utils import CLIMixin
 
 
@@ -69,15 +69,12 @@ class TestMake(CLIMixin, TestCase):
 
     def test_cannot_specify_both_name_and_temporary(self):
         stdin, stdout, stderr = self.run_cli(
-            ["--temporary", "foo"], exit_status=os.EX_USAGE,
+            ["--temporary", "foo"], exit_status=2,
         )
-        self.assertEqual(
-            (stdin, stdout, stderr), (
-                "",
-                stdout,
-                "error: specify only one of "
-                "'-t / --temp / --temporary' or 'name'\n\n",
-            ),
+        self.assertTrue(
+            stderr.endswith(
+                "specify only one of '-t / --temp / --temporary' or 'name'\n"
+            ), msg=stderr,
         )
 
     def test_recreate(self):
@@ -95,8 +92,8 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["-i", "foo", "-i", "bar", "-r", "reqs.txt", "bla"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed[self.locator.for_name("bla")],
-            [(["foo", "bar"], ["reqs.txt"])],
+            self.installed.get(self.locator.for_name("bla")),
+            [(("foo", "bar"), ("reqs.txt",))],
         )
 
 
@@ -105,31 +102,37 @@ class TestIntegration(TestCase):
         self.root = FilePath(mkdtemp())
         self.addCleanup(self.root.remove)
 
+        # Fucking click.
+        stdout = sys.stdout
+        self.addCleanup(lambda: setattr(sys, "stdout", stdout))
+
     def test_it_works(self):
         with self.root.child("make_stdout").open("w") as stdout:
-            make.run(
-                exit=partial(self.assertEqual, 0),
-                command_line=CommandLine(
-                    stdout=stdout,
-                    argv=[
+            sys.stdout = stdout
+
+            try:
+                make.main(
+                    args=[
                         "--root", self.root.path,
                         "mkenv-unittest-should-be-deleted",
                     ],
-                ),
-            )
+                )
+            except SystemExit:
+                pass
 
         with self.root.child("find_stdout").open("w") as stdout:
-            find.run(
-                exit=partial(self.assertEqual, 0),
-                command_line=CommandLine(
-                    stdout=stdout,
-                    argv=[
-                        "--existing-only",
+            sys.stdout = stdout
+
+            try:
+                find.main(
+                    [
                         "--root", self.root.path,
-                        "--name", "mkenv-unittest-should-be-deleted",
+                        "--existing-only",
+                        "name", "mkenv-unittest-should-be-deleted",
                     ],
-                ),
-            )
+                )
+            except SystemExit:
+                pass
 
         locator = Locator(root=self.root)
         virtualenv = locator.for_name("mkenv-unittest-should-be-deleted")

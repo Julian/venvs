@@ -5,7 +5,7 @@ from mkenv import remove
 from mkenv.tests.utils import CLIMixin
 
 
-class TestMake(CLIMixin, TestCase):
+class TestRemove(CLIMixin, TestCase):
 
     cli = remove
 

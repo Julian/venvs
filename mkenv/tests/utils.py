@@ -1,9 +1,10 @@
 from StringIO import StringIO
 import os
+import sys
 
 from bp.memory import MemoryFS, MemoryPath
+import click.testing
 
-from mkenv._cli import CommandLine
 from mkenv.common import Locator, VirtualEnv
 
 
@@ -26,7 +27,7 @@ class CLIMixin(object):
         )
         self.installed = {}
 
-    def fake_create(self, virtualenv, arguments, stdout, stderr):
+    def fake_create(self, virtualenv, **kwargs):
         virtualenv.path.createDirectory()
 
     def fake_install(self, virtualenv, packages, requirements, stdout, stderr):
@@ -35,18 +36,21 @@ class CLIMixin(object):
         )
 
     def run_cli(self, argv=(), exit_status=os.EX_OK):
-        self.cli.run(
-            arguments={"locator" : self.locator},
-            command_line=CommandLine(
-                argv=argv,
-                stdin=self.stdin,
-                stdout=self.stdout,
-                stderr=self.stderr,
-            ),
-            exit=lambda got : self.assertEqual(
-                got,
-                exit_status,
-                msg=(got, exit_status, self.stderr.getvalue()),
+        runner = click.testing.CliRunner()
+        result = runner.invoke(
+            self._fix_click(self.cli.main),
+            args=argv,
+            default_map=dict(locator=self.locator),
+        )
+        if result.exception and not isinstance(result.exception, SystemExit):
+            cls, exc, tb = result.exc_info
+            raise cls, exc, tb
+
+        self.assertEqual(
+            result.exit_code,
+            exit_status,
+            msg="Different exit code, {} != {}\n\nstderr:\n\n{!r}".format(
+                result.exit_code, exit_status, self.stderr.getvalue(),
             ),
         )
         return (
@@ -54,3 +58,23 @@ class CLIMixin(object):
             self.stdout.getvalue(),
             self.stderr.getvalue(),
         )
+
+    def _fix_click(self, real_main):
+        """
+        Click is really really really annoying.
+
+        It patches sys.stdout and sys.stderr to the same exact StringIO.
+
+        """
+
+        class Fixed(object):
+            def __getattr__(self, attr):
+                return getattr(real_main, attr)
+
+            def main(this, *args, **kwargs):
+                stdout, sys.stdout = sys.stdout, self.stdout
+                stderr, sys.stderr = sys.stderr, self.stderr
+                real_main.main(*args, **kwargs)
+                sys.stdout = stdout
+                sys.stderr = stderr
+        return Fixed()

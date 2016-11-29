@@ -7,8 +7,7 @@ import sys
 
 from bp.filepath import FilePath
 from characteristic import Attribute, attributes
-
-from mkenv._cli import Argument, Option
+import click
 
 
 def _create_virtualenv(virtualenv, arguments, stdout, stderr):
@@ -118,10 +117,34 @@ class Locator(object):
         return self.for_name(".mkenv-temporary-env")
 
 
-_ROOT = Argument(
-    kind=Option(names=("-R", "--root")),
+class _FilePath(click.ParamType):
+
+    name = "path"
+
+    def convert(self, value, param, context):
+        if not isinstance(value, str):
+            return value
+        return FilePath(str(value))
+
+
+class _Locator(click.ParamType):
+
+    name = "locator"
+
+    def convert(self, value, param, context):
+        if not isinstance(value, str):
+            return value
+        return Locator(root=FilePath(value))
+
+
+FILEPATH = _FilePath()
+_ROOT = click.option(
+    "-R", "--root", "locator",
     default=Locator.default,
-    destination="locator",
-    type=lambda root : Locator(root=FilePath(root)),
+    type=_Locator(),
     help="Specify a different root directory for virtualenvs.",
 )
+
+
+class BadParameter(click.BadParameter):
+    exit_code = os.EX_USAGE
