@@ -96,6 +96,19 @@ class TestMake(CLIMixin, TestCase):
             [(("foo", "bar"), ("reqs.txt",))],
         )
 
+    def test_install_default_name(self):
+        """
+        If you install one single package and don't specify a name, the name of
+        the installed package is used.
+
+        """
+
+        self.run_cli(["-i", "foo"])
+        # We've stubbed out our Locator's venvs' install to just store.
+        self.assertEqual(
+            self.installed.get(self.locator.for_name("foo")), [(("foo",), ())],
+        )
+
 
 class TestIntegration(TestCase):
     def setUp(self):

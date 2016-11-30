@@ -59,9 +59,13 @@ def run(
 )
 @click.argument("name", required=False)
 @click.argument("virtualenv_args", nargs=-1)
-def main(name, temporary, **kwargs):
-    if name and temporary:
-        raise click.BadParameter(
-            "specify only one of '-t / --temp / --temporary' or 'name'",
-        )
-    run(name=name, temporary=temporary, **kwargs)
+def main(name, temporary, installs, **kwargs):
+    if name:
+        if temporary:
+            raise click.BadParameter(
+                "specify only one of '-t / --temp / --temporary' or 'name'",
+            )
+    elif len(installs) == 1:
+        # When there's just one package to install, default to using that name.
+        name, = installs
+    run(name=name, temporary=temporary, installs=installs, **kwargs)
