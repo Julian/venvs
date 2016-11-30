@@ -34,7 +34,12 @@ setup(
         ],
     },
     install_requires=[
-        "appdirs", "betterpath", "characteristic", "click", "virtualenv",
+        "appdirs",
+        "betterpath",
+        "characteristic",
+        "click",
+        "packaging",
+        "virtualenv",
     ],
     author="Julian Berman",
     author_email="Julian@GrayVines.com",

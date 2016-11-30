@@ -109,6 +109,14 @@ class TestMake(CLIMixin, TestCase):
             self.installed.get(self.locator.for_name("foo")), [(("foo",), ())],
         )
 
+    def test_install_default_name_with_version_specification(self):
+        self.run_cli(["-i", "thing[foo]>=2,<3"])
+        # We've stubbed out our Locator's venvs' install to just store.
+        self.assertEqual(
+            self.installed.get(self.locator.for_name("thing")),
+            [(("thing[foo]>=2,<3",), ())],
+        )
+
 
 class TestIntegration(TestCase):
     def setUp(self):

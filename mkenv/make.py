@@ -7,6 +7,7 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 :command:`mkvirtualenv`.
 
 """
+from packaging.requirements import Requirement
 import click
 
 from mkenv.common import _ROOT
@@ -67,5 +68,6 @@ def main(name, temporary, installs, **kwargs):
             )
     elif len(installs) == 1:
         # When there's just one package to install, default to using that name.
-        name, = installs
+        requirement, = installs
+        name = Requirement(requirement).name
     run(name=name, temporary=temporary, installs=installs, **kwargs)
