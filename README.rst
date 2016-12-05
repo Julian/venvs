@@ -78,12 +78,12 @@ The 5 Minute Tutorial
 Besides the ``mkenv`` for named-virtualenv creation and ``mkenv -t`` for
 temporary-virtualenv creation described above::
 
-    $ findenv -n name
+    $ findenv name foo
 
 will output (to standard output) the path to a virtualenv with the given name
 (see also ``--existing-only``), and::
 
-    $ rmenv name
+    $ rmenv foo
 
 will remove it.
 
