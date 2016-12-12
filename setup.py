@@ -35,8 +35,8 @@ setup(
     },
     install_requires=[
         "appdirs",
+        "attrs",
         "betterpath",
-        "characteristic",
         "click",
         "packaging",
         "virtualenv",

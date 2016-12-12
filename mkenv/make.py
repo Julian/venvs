@@ -13,23 +13,6 @@ import click
 from mkenv.common import _ROOT
 
 
-def run(
-    locator, name, installs, requirements, temporary, recreate, virtualenv_args
-):
-    if temporary:
-        virtualenv = locator.temporary()
-        act = virtualenv.recreate
-    else:
-        virtualenv = locator.for_name(name=name)
-        if recreate:
-            act = virtualenv.recreate
-        else:
-            act = virtualenv.create
-
-    act(arguments=virtualenv_args)
-    virtualenv.install(packages=installs, requirements=requirements)
-
-
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @_ROOT
 @click.option(
@@ -60,7 +43,7 @@ def run(
 )
 @click.argument("name", required=False)
 @click.argument("virtualenv_args", nargs=-1)
-def main(name, temporary, installs, **kwargs):
+def main(name, temporary, installs, requirements, recreate, virtualenv_args):
     if name:
         if temporary:
             raise click.BadParameter(
@@ -70,4 +53,16 @@ def main(name, temporary, installs, **kwargs):
         # When there's just one package to install, default to using that name.
         requirement, = installs
         name = Requirement(requirement).name
-    run(name=name, temporary=temporary, installs=installs, **kwargs)
+
+    if temporary:
+        virtualenv = locator.temporary()
+        act = virtualenv.recreate
+    else:
+        virtualenv = locator.for_name(name=name)
+        if recreate:
+            act = virtualenv.recreate
+        else:
+            act = virtualenv.create
+
+    act(arguments=virtualenv_args)
+    virtualenv.install(packages=installs, requirements=requirements)

@@ -1,5 +1,5 @@
 appdirs==1.4.0
-characteristic==14.3.0
+attrs==16.2.0
 virtualenv==15.1.0
 
 git+https://github.com/Julian/betterpath#egg=betterpath

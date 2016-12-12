@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 from bp.filepath import FilePath
-from characteristic import Attribute, attributes
+import attr
 import click
 
 
@@ -33,18 +33,16 @@ def _install_into_virtualenv(
     )
 
 
-@attributes(
-    [
-        Attribute(name="path"),
-        Attribute(name="_create", default_value=_create_virtualenv),
-        Attribute(name="_install", default_value=_install_into_virtualenv),
-    ]
-)
+@attr.s
 class VirtualEnv(object):
     """
     A virtual environment.
 
     """
+
+    path = attr.ib()
+    _create = attr.ib(default=_create_virtualenv, repr=False)
+    _install = attr.ib(default=_install_into_virtualenv, repr=False)
 
     @property
     def exists(self):
@@ -71,17 +69,15 @@ class VirtualEnv(object):
         self._install(virtualenv=self, stdout=stdout, stderr=stderr, **kwargs)
 
 
-@attributes(
-    [
-        Attribute(name="root"),
-        Attribute(name="make_virtualenv", default_value=VirtualEnv),
-    ],
-)
+@attr.s
 class Locator(object):
     """
     Locates virtualenvs from a common root directory.
 
     """
+
+    root = attr.ib()
+    make_virtualenv = attr.ib(default=VirtualEnv)
 
     @classmethod
     def default(cls, **kwargs):
