@@ -43,7 +43,9 @@ from mkenv.common import _ROOT
 )
 @click.argument("name", required=False)
 @click.argument("virtualenv_args", nargs=-1)
-def main(name, temporary, installs, requirements, recreate, virtualenv_args):
+def main(
+    name, locator, temporary, installs, requirements, recreate, virtualenv_args
+):
     if name:
         if temporary:
             raise click.BadParameter(
