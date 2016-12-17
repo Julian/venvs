@@ -63,7 +63,7 @@ class VirtualEnv(object):
         except EnvironmentError as error:
             if error.errno != errno.ENOENT:
                 raise
-        self._create(virtualenv=self, **kwargs)
+        self.create(**kwargs)
 
     def install(self, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
         self._install(virtualenv=self, stdout=stdout, stderr=stderr, **kwargs)
