@@ -1,6 +1,4 @@
-from StringIO import StringIO
 from unittest import TestCase
-import os
 
 from bp.filepath import FilePath
 from bp.memory import MemoryPath
@@ -62,7 +60,7 @@ class TestFind(CLIMixin, TestCase):
         stdin, stdout, stderr = self.run_cli(
             ["--existing-only", "name", "bla"], exit_status=1,
         )
-        self.assertEqual((stdin, stdout, stderr), ("", "", "")) 
+        self.assertEqual((stdin, stdout, stderr), ("", "", ""))
 
     def test_find_existing_by_name_succeeds_for_existing_virtualenvs(self):
         path = MemoryPath(fs=self.fs, path=("bla",))

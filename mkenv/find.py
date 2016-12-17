@@ -2,10 +2,9 @@ from functools import partial
 
 from bp.filepath import FilePath
 import click
-import os
 import sys
 
-from mkenv.common import _ROOT, FILEPATH, BadParameter
+from mkenv.common import _ROOT, FILEPATH
 
 
 def run(locator, binary=None, directory=None, name=None, existing_only=False):

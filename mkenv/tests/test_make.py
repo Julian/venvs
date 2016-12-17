@@ -1,8 +1,6 @@
 from errno import ENOENT
-from functools import partial
 from tempfile import mkdtemp
 from unittest import TestCase
-import os
 import sys
 
 from bp.filepath import FilePath

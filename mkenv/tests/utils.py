@@ -19,7 +19,7 @@ class CLIMixin(object):
         self.fs = MemoryFS()
         self.locator = Locator(
             root=MemoryPath(fs=self.fs),
-            make_virtualenv=lambda **kwargs : VirtualEnv(
+            make_virtualenv=lambda **kwargs: VirtualEnv(
                 create=self.fake_create,
                 install=self.fake_install,
                 **kwargs
