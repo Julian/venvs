@@ -35,8 +35,11 @@ class TestMake(CLIMixin, TestCase):
         remove, MemoryPath.remove = MemoryPath.remove, real_fake_remove
         self.addCleanup(setattr, MemoryPath, "remove", remove)
 
-        self.run_cli(["--temporary"])
-        self.assertTrue(temporary.exists)
+        stdin, stdout, stderr = self.run_cli(["--temporary"])
+        self.assertEqual(
+            (temporary.exists, stdin, stdout, stderr),
+            (True, "", temporary.path.path + "\n", ""),
+        )
 
     def test_make_t_creates_a_global_temporary_environment_IOError(self):
         """

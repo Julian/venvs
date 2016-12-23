@@ -28,7 +28,7 @@ def _install_into_virtualenv(
     )
     subprocess.check_call(
         [virtualenv.binary("python").path, "-m", "pip", "install"] + things,
-        stdout=stdout,
+        stdout=stderr,  # Let virtualenv have stderr, but not pollute stdout.
         stderr=stderr,
     )
 
