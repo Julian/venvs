@@ -7,6 +7,10 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 :command:`mkvirtualenv`.
 
 """
+
+import sysconfig
+
+from bp.filepath import FilePath
 from packaging.requirements import Requirement
 import click
 
@@ -21,6 +25,15 @@ from mkenv.common import _ROOT
     help=(
         "install the given specifier (package) into the "
         "virtualenv with pip after it is created"
+    ),
+)
+@click.option(
+    "-l", "--link", "links",
+    multiple=True,
+    help=(
+        "After installing any specified packages, link the specified "
+        "binaries into the directory they would have been installed into "
+        "globally."
     ),
 )
 @click.option(
@@ -44,7 +57,14 @@ from mkenv.common import _ROOT
 @click.argument("name", required=False)
 @click.argument("virtualenv_args", nargs=-1)
 def main(
-    name, locator, temporary, installs, requirements, recreate, virtualenv_args
+    name,
+    locator,
+    temporary,
+    installs,
+    links,
+    requirements,
+    recreate,
+    virtualenv_args,
 ):
     if name:
         if temporary:
@@ -68,3 +88,7 @@ def main(
 
     act(arguments=virtualenv_args)
     virtualenv.install(packages=installs, requirements=requirements)
+
+    scripts = FilePath(sysconfig.get_path("scripts", "posix_user"))
+    for link in links:
+        virtualenv.binary(name=link).linkTo(scripts.child(link))
