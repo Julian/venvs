@@ -38,7 +38,7 @@ class TestMake(CLIMixin, TestCase):
         stdin, stdout, stderr = self.run_cli(["--temporary"])
         self.assertEqual(
             (temporary.exists, stdin, stdout, stderr),
-            (True, "", temporary.path.path + "\n", ""),
+            (True, "", temporary.path.child("bin").path + "\n", ""),
         )
 
     def test_make_t_creates_a_global_temporary_environment_IOError(self):

@@ -78,7 +78,7 @@ def main(
 
     if temporary:
         virtualenv = locator.temporary()
-        click.echo(virtualenv.path.path)
+        click.echo(virtualenv.binary("python").dirname())
         act = virtualenv.recreate
     else:
         virtualenv = locator.for_name(name=name)
