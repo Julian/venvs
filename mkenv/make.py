@@ -55,7 +55,7 @@ from mkenv.common import _ROOT
     help="create or reuse the global temporary virtualenv",
 )
 @click.argument("name", required=False)
-@click.argument("virtualenv_args", nargs=-1)
+@click.argument("virtualenv_args", nargs=-1, type=click.UNPROCESSED)
 def main(
     name,
     locator,
