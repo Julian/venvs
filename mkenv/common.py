@@ -13,7 +13,7 @@ import click
 def _create_virtualenv(virtualenv, arguments, stdout, stderr):
     subprocess.check_call(
         ["virtualenv"] + list(arguments) + [virtualenv.path.path],
-        stdout=stdout,
+        stdout=stderr,  # Let virtualenv have stderr, but not pollute stdout.
         stderr=stderr,
     )
 
@@ -28,7 +28,7 @@ def _install_into_virtualenv(
     )
     subprocess.check_call(
         [virtualenv.binary("python").path, "-m", "pip", "install"] + things,
-        stdout=stderr,  # Let virtualenv have stderr, but not pollute stdout.
+        stdout=stdout,
         stderr=stderr,
     )
 
