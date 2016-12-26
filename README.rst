@@ -23,13 +23,39 @@ Usage
 -----
 
 Usage is similar to ``mkvirtualenv``, although ``mkenv`` passes
-arguments directly through to ``virtualenv``::
+arguments directly through to ``virtualenv``:
+
+.. code-block:: sh
 
     $ mkenv nameofvenv -- -p pypy
 
 will create a virtual environment in an appropriate platform-specific
 data directory, or in the directory specified by ``WORKON_HOME`` for
 compatibility with virtualenvwrapper.
+
+
+Single-Purpose Virtualenvs
+--------------------------
+
+A common use case for virtualenvs is for single-purpose installations, e.g.:
+
+"I want to install fabric and give it its own virtualenv so that its
+dependencies can be independently upgraded, all while still being able to use
+the ``fab`` binary globally".
+
+``mkenv`` supports a ``--link`` option for this use case:
+
+.. code-block:: sh
+
+    $ mkenv -i fabric --link fab
+
+will create a virtualenv for fabric (in the same normal location), but will
+symlink the ``fab`` binary from within the virtualenv into your
+``~/.local/bin`` directory.
+
+(You may have heard of `pipsi <https://github.com/mitsuhiko/pipsi>`_ which is a
+similar tool for this use case, but with less customization than I would have
+liked.)
 
 
 Temporary Virtualenvs
