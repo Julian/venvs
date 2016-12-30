@@ -75,6 +75,9 @@ def main(
         # When there's just one package to install, default to using that name.
         requirement, = installs
         name = Requirement(requirement).name
+    elif len(links) == 1:
+        # When there's just one binary to link, go for the gold.
+        name, = installs = links
 
     if temporary:
         virtualenv = locator.temporary()

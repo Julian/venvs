@@ -118,6 +118,20 @@ class TestMake(CLIMixin, TestCase):
             [(("thing[foo]>=2,<3",), ())],
         )
 
+    def test_link_default_name(self):
+        """
+        If you link one single binary and don't specify a name, the name of
+        the binary is probably both the package and what you want to call the
+        environment.
+
+        """
+
+        self.run_cli(["-l", "foo"])
+        # We've stubbed out our Locator's venvs' install to just store.
+        self.assertEqual(
+            self.installed.get(self.locator.for_name("foo")), [(("foo",), ())],
+        )
+
 
 class TestIntegration(TestCase):
     def setUp(self):
