@@ -16,6 +16,18 @@ class TestRemove(CLIMixin, TestCase):
         self.run_cli(["boom"])
         self.assertFalse(boom.exists)
 
+    def test_remove_multiple(self):
+        names = ["boom", "bang", "whiz"]
+        venvs = [self.locator.for_name(name=name) for name in names]
+
+        for venv in venvs:
+            venv.create()
+
+        self.run_cli(names)
+        self.assertEqual(
+            [venv.exists for venv in venvs], [False, False, False],
+        )
+
     def test_cannot_remove_non_existing_envs(self):
         boom = self.locator.for_name("boom")
         self.assertFalse(boom.exists)
