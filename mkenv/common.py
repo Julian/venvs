@@ -25,7 +25,7 @@ def _install_into_virtualenv(
         chain(packages, (("-r", requirement) for requirement in requirements))
     )
     subprocess.check_call(
-        [virtualenv.binary("python").path, "-m", "pip", "install"] + things,
+        [str(virtualenv.binary("python")), "-m", "pip", "install"] + things,
         stdout=stdout,
         stderr=stderr,
     )
