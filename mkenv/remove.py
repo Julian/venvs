@@ -1,24 +1,23 @@
-import errno
 import os
 
+from filesystems.exceptions import FileNotFound
 import click
 
-from mkenv.common import _ROOT
+from mkenv.common import _FILESYSTEM, _ROOT
 
 
-def run(locator, names, force):
+def run(locator, filesystem, names, force):
     for name in names:
         virtualenv = locator.for_name(name=name)
         try:
-            virtualenv.remove()
-        except (IOError, OSError) as error:  # FIXME: Once bp has exceptions
-            if error.errno != errno.ENOENT:
-                raise
+            virtualenv.remove_from(filesystem=filesystem)
+        except FileNotFound:
             if not force:
                 return os.EX_NOINPUT
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
+@_FILESYSTEM
 @_ROOT
 @click.option(
     "-f", "--force",

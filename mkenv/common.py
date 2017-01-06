@@ -1,19 +1,17 @@
 from itertools import chain
-import errno
 import os
 import platform
 import subprocess
 import sys
 
-from bp.filepath import FilePath
 import attr
 import click
+import filesystems.native
 
 
 def _create_virtualenv(virtualenv, arguments, stdout, stderr):
     subprocess.check_call(
-        ["virtualenv"] + list(arguments) + [virtualenv.path.path],
-        stdout=stderr,  # Let virtualenv have stderr, but not pollute stdout.
+        ["virtualenv"] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
     )
 
@@ -44,25 +42,23 @@ class VirtualEnv(object):
     _create = attr.ib(default=_create_virtualenv, repr=False)
     _install = attr.ib(default=_install_into_virtualenv, repr=False)
 
-    @property
-    def exists(self):
-        return self.path.isdir()
+    def exists_on(self, filesystem):
+        return filesystem.is_dir(path=self.path)
 
     def binary(self, name):
-        return self.path.descendant(["bin", name])
+        return self.path.descendant("bin", name)
 
     def create(self, arguments=(), stdout=sys.stdout, stderr=sys.stderr):
         self._create(self, arguments=arguments, stdout=stdout, stderr=stderr)
 
-    def remove(self):
-        self.path.remove()
+    def remove_from(self, filesystem):
+        filesystem.remove(self.path)
 
-    def recreate(self, **kwargs):
+    def recreate_on(self, filesystem, **kwargs):
         try:
-            self.remove()
-        except EnvironmentError as error:
-            if error.errno != errno.ENOENT:
-                raise
+            self.remove_from(filesystem=filesystem)
+        except filesystems.exceptions.FileNotFound:
+            pass
         self.create(**kwargs)
 
     def install(self, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
@@ -95,7 +91,7 @@ class Locator(object):
             else:
                 from appdirs import user_data_dir
                 root = user_data_dir(appname="virtualenvs")
-        return cls(root=FilePath(root), **kwargs)
+        return cls(root=filesystems.Path.from_string(root), **kwargs)
 
     def for_directory(self, directory):
         """
@@ -106,21 +102,21 @@ class Locator(object):
         return self.for_name(directory.basename())
 
     def for_name(self, name):
-        child = self.root.child(name.lower().replace("-", "_"))
+        child = self.root.descendant(name.lower().replace("-", "_"))
         return self.make_virtualenv(path=child)
 
     def temporary(self):
         return self.for_name(".mkenv-temporary-env")
 
 
-class _FilePath(click.ParamType):
+class _Path(click.ParamType):
 
     name = "path"
 
     def convert(self, value, param, context):
         if not isinstance(value, str):
             return value
-        return FilePath(str(value))
+        return filesystems.Path.from_string(str(value))
 
 
 class _Locator(click.ParamType):
@@ -130,15 +126,21 @@ class _Locator(click.ParamType):
     def convert(self, value, param, context):
         if not isinstance(value, str):
             return value
-        return Locator(root=FilePath(value))
+        return Locator(root=filesystems.Path.from_string(str(value)))
 
 
-FILEPATH = _FilePath()
+PATH = _Path()
 _ROOT = click.option(
     "-R", "--root", "locator",
     default=Locator.default,
     type=_Locator(),
     help="Specify a different root directory for virtualenvs.",
+)
+# Fucking click, cannot find a way to be able to override this
+# parameter unless it actually is an argument, so make it one.
+_FILESYSTEM = click.option(
+    "--filesystem",
+    default=filesystems.native.FS(),
 )
 
 

@@ -36,8 +36,8 @@ setup(
     install_requires=[
         "appdirs",
         "attrs",
-        "betterpath",
         "click",
+        "filesystems",
         "packaging",
         "virtualenv",
     ],

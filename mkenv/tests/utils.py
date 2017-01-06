@@ -2,8 +2,9 @@ from StringIO import StringIO
 import os
 import sys
 
-from bp.memory import MemoryFS, MemoryPath
+from filesystems import Path
 import click.testing
+import filesystems.memory
 
 from mkenv.common import Locator, VirtualEnv
 
@@ -16,9 +17,12 @@ class CLIMixin(object):
         self.stdout = StringIO()
         self.stderr = StringIO()
 
-        self.fs = MemoryFS()
+        self.filesystem = filesystems.memory.FS()
+        self.link_dir = Path("bin")
+        self.filesystem.create_directory(self.link_dir)
+
         self.locator = Locator(
-            root=MemoryPath(fs=self.fs),
+            root=Path.root(),
             make_virtualenv=lambda **kwargs: VirtualEnv(
                 create=self.fake_create,
                 install=self.fake_install,
@@ -28,7 +32,7 @@ class CLIMixin(object):
         self.installed = {}
 
     def fake_create(self, virtualenv, **kwargs):
-        virtualenv.path.createDirectory()
+        self.filesystem.create_directory(path=virtualenv.path)
 
     def fake_install(self, virtualenv, packages, requirements, **kwargs):
         self.installed.setdefault(virtualenv, []).append(
@@ -40,7 +44,11 @@ class CLIMixin(object):
         result = runner.invoke(
             self._fix_click(self.cli.main),
             args=argv,
-            default_map=dict(locator=self.locator),
+            default_map=dict(
+                link_dir=self.link_dir,
+                locator=self.locator,
+                filesystem=self.filesystem,
+            ),
         )
         if result.exception and not isinstance(result.exception, SystemExit):
             cls, exc, tb = result.exc_info

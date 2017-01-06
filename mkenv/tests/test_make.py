@@ -1,9 +1,8 @@
-from errno import ENOENT
-from tempfile import mkdtemp
 from unittest import TestCase
 import sys
 
-from bp.filepath import FilePath
+from filesystems import Path
+import filesystems.native
 
 from mkenv import find, make
 from mkenv.common import Locator
@@ -15,58 +14,33 @@ class TestMake(CLIMixin, TestCase):
     cli = make
 
     def test_make_creates_an_env_with_the_given_name(self):
-        self.assertFalse(self.locator.for_name("made").exists)
-        self.run_cli(["made"])
-        self.assertTrue(self.locator.for_name("made").exists)
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+        self.run_cli(["a"])
+        self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
 
-    def test_make_t_creates_a_global_temporary_environment_OSError(self):
+    def test_make_t_creates_a_global_temporary_environment(self):
         temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists)
-
-        def real_fake_remove(path):
-            """
-            os.remove will raise an OSError, not an IOError.
-
-            """
-
-            raise OSError(ENOENT, "NOPE")
-
-        MemoryPath = temporary.path.__class__
-        remove, MemoryPath.remove = MemoryPath.remove, real_fake_remove
-        self.addCleanup(setattr, MemoryPath, "remove", remove)
+        self.assertFalse(temporary.exists_on(self.filesystem))
 
         stdin, stdout, stderr = self.run_cli(["--temporary"])
         self.assertEqual(
-            (temporary.exists, stdin, stdout, stderr),
-            (True, "", temporary.path.child("bin").path + "\n", ""),
+            (temporary.exists_on(self.filesystem), stdin, stdout, stderr),
+            (True, "", str(temporary.path.descendant("bin")) + "\n", ""),
         )
-
-    def test_make_t_creates_a_global_temporary_environment_IOError(self):
-        """
-        If we use os.remove, this one actually should never happen, since that
-        will raise OSError, but we ensure we cover both cases.
-
-        """
-
-        temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists)
-
-        self.run_cli(["--temporary"])
-        self.assertTrue(temporary.exists)
 
     def test_make_t_recreates_the_environment_if_it_exists(self):
         temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists)
+        self.assertFalse(temporary.exists_on(self.filesystem))
         self.run_cli(["--temporary"])
-        self.assertTrue(temporary.exists)
+        self.assertTrue(temporary.exists_on(self.filesystem))
 
-        foo = temporary.path.child("foo")
-        foo.setContent("testing123")
-        self.assertTrue(foo.exists())
+        foo = temporary.path.descendant("foo")
+        self.filesystem.touch(path=foo)
+        self.assertTrue(self.filesystem.exists(path=foo))
 
         self.run_cli(["--temporary"])
-        self.assertTrue(temporary.exists)
-        self.assertFalse(foo.exists())
+        self.assertTrue(temporary.exists_on(self.filesystem))
+        self.assertFalse(self.filesystem.exists(path=foo))
 
     def test_cannot_specify_both_name_and_temporary(self):
         stdin, stdout, stderr = self.run_cli(
@@ -80,14 +54,18 @@ class TestMake(CLIMixin, TestCase):
 
     def test_recreate(self):
         virtualenv = self.locator.for_name("something")
-        self.assertFalse(virtualenv.exists)
+        self.assertFalse(virtualenv.exists_on(self.filesystem))
 
         virtualenv.create()
-        virtualenv.path.child("thing").setContent("")
+
+        thing = virtualenv.path.descendant("thing")
+        self.filesystem.touch(path=thing)
+        self.assertTrue(self.filesystem.exists(thing))
 
         self.run_cli(["--recreate", "something"])
-        self.assertTrue(virtualenv.exists)
-        self.assertFalse(virtualenv.path.child("thing").exists())
+        self.assertTrue(virtualenv.exists_on(self.filesystem))
+
+        self.assertFalse(self.filesystem.exists(thing))
 
     def test_install_and_requirements(self):
         self.run_cli(["-i", "foo", "-i", "bar", "-r", "reqs.txt", "bla"])
@@ -96,6 +74,18 @@ class TestMake(CLIMixin, TestCase):
             self.installed.get(self.locator.for_name("bla")),
             [(("foo", "bar"), ("reqs.txt",))],
         )
+
+    def test_mkenv_default_name(self):
+        """
+        Just saying ``mkenv`` creates an environment based on the current
+        directory's name.
+
+        """
+
+        virtualenv = self.locator.for_directory(Path.cwd())
+        self.assertFalse(virtualenv.exists_on(self.filesystem))
+        self.run_cli([])
+        self.assertTrue(virtualenv.exists_on(self.filesystem))
 
     def test_install_default_name(self):
         """
@@ -118,6 +108,13 @@ class TestMake(CLIMixin, TestCase):
             [(("thing[foo]>=2,<3",), ())],
         )
 
+    def test_temporary_env_with_single_install(self):
+        self.run_cli(["-t", "-i", "thing"])
+        # We've stubbed out our Locator's venvs' install to just store.
+        self.assertEqual(
+            self.installed.get(self.locator.temporary()), [(("thing",), ())],
+        )
+
     def test_link_default_name(self):
         """
         If you link one single binary and don't specify a name, the name of
@@ -135,34 +132,35 @@ class TestMake(CLIMixin, TestCase):
 
 class TestIntegration(TestCase):
     def setUp(self):
-        self.root = FilePath(mkdtemp())
-        self.addCleanup(self.root.remove)
+        self.fs = filesystems.native.FS()
+        self.root = self.fs.temporary_directory()
+        self.addCleanup(self.fs.remove, self.root)
 
         # Fucking click.
         stdout = sys.stdout
         self.addCleanup(lambda: setattr(sys, "stdout", stdout))
 
     def test_it_works(self):
-        with self.root.child("make_stdout").open("w") as stdout:
+        with self.fs.open(self.root.descendant("make_stdout"), "wb") as stdout:
             sys.stdout = stdout
 
             try:
                 make.main(
                     args=[
-                        "--root", self.root.path,
+                        "--root", str(self.root),
                         "mkenv-unittest-should-be-deleted",
                     ],
                 )
             except SystemExit:
                 pass
 
-        with self.root.child("find_stdout").open("w") as stdout:
+        with self.fs.open(self.root.descendant("find_stdout"), "wb") as stdout:
             sys.stdout = stdout
 
             try:
                 find.main(
                     [
-                        "--root", self.root.path,
+                        "--root", str(self.root),
                         "--existing-only",
                         "name", "mkenv-unittest-should-be-deleted",
                     ],
@@ -173,6 +171,6 @@ class TestIntegration(TestCase):
         locator = Locator(root=self.root)
         virtualenv = locator.for_name("mkenv-unittest-should-be-deleted")
         self.assertEqual(
-            self.root.child("find_stdout").getContent(),
-            virtualenv.path.path + "\n",
+            self.fs.contents_of(self.root.descendant("find_stdout")),
+            str(virtualenv.path) + "\n",
         )

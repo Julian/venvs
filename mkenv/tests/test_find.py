@@ -1,7 +1,6 @@
 from unittest import TestCase
 
-from bp.filepath import FilePath
-from bp.memory import MemoryPath
+from filesystems import Path
 
 from mkenv import find
 from mkenv.tests.utils import CLIMixin
@@ -12,11 +11,11 @@ class TestFind(CLIMixin, TestCase):
     cli = find
 
     def test_find_directory_finds_envs_by_directory(self):
-        this_dir = FilePath(__file__).parent()
-        stdin, stdout, stderr = self.run_cli(["directory", this_dir.path])
+        this_dir = Path.from_string(__file__).parent()
+        stdin, stdout, stderr = self.run_cli(["directory", str(this_dir)])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", self.locator.for_directory(this_dir).path.path + "\n", ""),
+            ("", str(self.locator.for_directory(this_dir).path) + "\n", ""),
         )
 
     def test_find_directory_defaults_to_cwd(self):
@@ -24,7 +23,8 @@ class TestFind(CLIMixin, TestCase):
         self.assertEqual(
             (stdin, stdout, stderr), (
                 "",
-                self.locator.for_directory(FilePath(".")).path.path + "\n",
+                str(self.locator.for_directory(Path.from_string(".")).path) +
+                "\n",
                 "",
             ),
         )
@@ -33,26 +33,24 @@ class TestFind(CLIMixin, TestCase):
         stdin, stdout, stderr = self.run_cli(["name", "bla"])
         self.assertEqual(
             (stdin, stdout, stderr),
-            ("", self.locator.for_name("bla").path.path + "\n", ""),
+            ("", str(self.locator.for_name("bla").path) + "\n", ""),
         )
 
     def test_find_without_args_finds_the_virtualenv_root(self):
         stdin, stdout, stderr = self.run_cli()
         self.assertEqual(
-            (stdin, stdout, stderr), ("", self.locator.root.path + "\n", ""),
+            (stdin, stdout, stderr), ("", str(self.locator.root) + "\n", ""),
         )
 
     def test_find_directory_with_binary(self):
-        this_dir = FilePath(__file__).parent()
+        this_dir = Path.from_string(__file__).parent()
         stdin, stdout, stderr = self.run_cli(
-            ["directory", this_dir.path, "python"],
+            ["directory", str(this_dir), "python"],
         )
         this_dir_venv = self.locator.for_directory(this_dir)
         self.assertEqual(
             (stdin, stdout, stderr), (
-                "",
-                this_dir_venv.binary("python").path + "\n",
-                "",
+                "", str(this_dir_venv.binary("python")) + "\n", "",
             ),
         )
 
@@ -63,15 +61,15 @@ class TestFind(CLIMixin, TestCase):
         self.assertEqual((stdin, stdout, stderr), ("", "", ""))
 
     def test_find_existing_by_name_succeeds_for_existing_virtualenvs(self):
-        path = MemoryPath(fs=self.fs, path=("bla",))
-        path.createDirectory()
+        self.filesystem.create_directory(self.locator.root.descendant("bla"))
+
         stdin, stdout, stderr = self.run_cli(
             ["--existing-only", "name", "bla"],
         )
         self.assertEqual(
             (stdin, stdout, stderr), (
                 "",
-                self.locator.for_name("bla").path.path + "\n",
+                str(self.locator.for_name("bla").path) + "\n",
                 "",
             ),
         )
@@ -83,15 +81,16 @@ class TestFind(CLIMixin, TestCase):
         self.assertEqual((stdin, stdout, stderr), ("", "", ""))
 
     def test_find_existing_by_dir_succeeds_for_existing_virtualenvs(self):
-        self.locator.root.child("bla").createDirectory()
-        mem = MemoryPath(fs=self.fs, path=("foo", "bla",))
+        self.filesystem.create_directory(self.locator.root.descendant("bla"))
+
+        path = Path("foo", "bla")
         stdin, stdout, stderr = self.run_cli(
-            ["--existing-only", "directory", mem.path],
+            ["--existing-only", "directory", str(path)],
         )
         self.assertEqual(
             (stdin, stdout, stderr), (
                 "",
-                self.locator.for_directory(mem).path.path + "\n",
+                str(self.locator.for_directory(path).path) + "\n",
                 "",
             ),
         )
