@@ -26,11 +26,8 @@ setup(
     entry_points={
         "console_scripts": [
             "mkenv = mkenv.make:main",
-            "mkvenv = mkenv.make:main",
             "findenv = mkenv.find:main",
-            "findvenv = mkenv.find:main",
             "rmenv = mkenv.remove:main",
-            "rmvenv = mkenv.remove:main",
         ],
     },
     install_requires=[
