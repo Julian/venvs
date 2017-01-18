@@ -22,7 +22,7 @@ def _install_into_virtualenv(
     if not packages and not requirements:
         return
     things = list(
-        chain(packages, (("-r", requirement) for requirement in requirements))
+        chain(packages, *(("-r", requirement) for requirement in requirements))
     )
     subprocess.check_call(
         [str(virtualenv.binary("python")), "-m", "pip", "install"] + things,
