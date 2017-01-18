@@ -129,6 +129,18 @@ class TestMake(CLIMixin, TestCase):
             self.installed.get(self.locator.for_name("foo")), [(("foo",), ())],
         )
 
+    def test_multiple_installs_one_link(self):
+        self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo", "baz"])
+        # We've stubbed out our Locator's venvs' install to just store.
+        self.assertEqual(
+            self.installed.get(self.locator.for_name("baz")), [
+                (("foo", "bar"), ()),
+            ],
+        )
+
+    def test_multiple_installs_one_link_no_name(self):
+        self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo"], exit_status=2)
+
 
 class TestIntegration(TestCase):
     def setUp(self):

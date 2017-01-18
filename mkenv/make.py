@@ -91,6 +91,8 @@ def main(
         requirement, = installs
         name = Requirement(requirement).name
         virtualenv = locator.for_name(name=name)
+    elif installs:
+        raise click.BadParameter("A name is required.")
     elif len(links) == 1:
         # When there's just one binary to link, go for the gold.
         name, = installs = links
