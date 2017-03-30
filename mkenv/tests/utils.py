@@ -18,11 +18,15 @@ class CLIMixin(object):
         self.stderr = StringIO()
 
         self.filesystem = filesystems.memory.FS()
+
+        self.root_dir = Path("virtualenvs")
+        self.filesystem.create_directory(self.root_dir)
+
         self.link_dir = Path("bin")
         self.filesystem.create_directory(self.link_dir)
 
         self.locator = Locator(
-            root=Path.root(),
+            root=self.root_dir,
             make_virtualenv=lambda **kwargs: VirtualEnv(
                 create=self.fake_create,
                 install=self.fake_install,
