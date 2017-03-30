@@ -23,12 +23,24 @@ class TestConverge(CLIMixin, TestCase):
                 """
                 [virtualenv.a]
                 [virtualenv.b]
+                install = ["foo", "bar", "bla"]
+                requirements = ["requirements.txt"]
                 [virtualenv.c]
+                install = ["foo"]
+                link = ["bar", "baz"]
                 """
             )
 
         self.run_cli([])
 
-        self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
-        self.assertTrue(self.locator.for_name("b").exists_on(self.filesystem))
-        self.assertTrue(self.locator.for_name("c").exists_on(self.filesystem))
+        self.assertEqual(
+            (
+                self.installed.get(self.locator.for_name("a")),
+                self.installed.get(self.locator.for_name("b")),
+                self.installed.get(self.locator.for_name("c")),
+            ), (
+                [([], [])],
+                [(["foo", "bar", "bla"], ["requirements.txt"])],
+                [(["foo"], [])],
+            ),
+        )

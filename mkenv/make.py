@@ -9,17 +9,17 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 """
 
 from functools import partial
-import sysconfig
 
 from filesystems import Path
 from packaging.requirements import Requirement
 import click
 
-from mkenv.common import _FILESYSTEM, _ROOT
+from mkenv.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @_FILESYSTEM
+@_LINK_DIR
 @_ROOT
 @click.option(
     "-i", "--install", "installs",
@@ -37,11 +37,6 @@ from mkenv.common import _FILESYSTEM, _ROOT
         "binaries into the directory they would have been installed into "
         "globally."
     ),
-)
-@click.option(
-    "--link-dir",
-    default=Path.from_string(sysconfig.get_path("scripts", "posix_user")),
-    help="The directory to link scripts into.",
 )
 @click.option(
     "-r", "--requirement", "requirements",

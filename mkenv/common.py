@@ -3,6 +3,7 @@ import os
 import platform
 import subprocess
 import sys
+import sysconfig
 
 import attr
 import click
@@ -141,6 +142,13 @@ _ROOT = click.option(
 _FILESYSTEM = click.option(
     "--filesystem",
     default=filesystems.native.FS(),
+)
+_LINK_DIR = click.option(
+    "--link-dir",
+    default=filesystems.Path.from_string(
+        sysconfig.get_path("scripts", "posix_user"),
+    ),
+    help="The directory to link scripts into.",
 )
 
 
