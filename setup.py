@@ -26,6 +26,7 @@ setup(
     entry_points={
         "console_scripts": [
             "mkenv = mkenv.make:main",
+            "convergeenvs = mkenv.converge:main",
             "findenv = mkenv.find:main",
             "rmenv = mkenv.remove:main",
         ],
@@ -36,6 +37,7 @@ setup(
         "click",
         "filesystems",
         "packaging",
+        "toml",
         "virtualenv",
     ],
     author="Julian Berman",
