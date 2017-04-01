@@ -2,8 +2,6 @@
 Converge the set of installed virtualenvs.
 
 """
-from functools import partial
-
 from filesystems.exceptions import FileExists, FileNotFound
 import click
 import toml

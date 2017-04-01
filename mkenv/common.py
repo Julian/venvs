@@ -27,7 +27,8 @@ def _install_into_virtualenv(
     )
     subprocess.check_call(
         [
-            str(virtualenv.binary("python")), "-m", "pip", "--quiet", "install"
+            str(virtualenv.binary("python")), "-m", "pip", "--quiet",
+            "install",
         ] + things,
         stdout=stdout,
         stderr=stderr,
