@@ -12,7 +12,7 @@ import filesystems.native
 
 def _create_virtualenv(virtualenv, arguments, stdout, stderr):
     subprocess.check_call(
-        ["virtualenv"] + list(arguments) + [str(virtualenv.path)],
+        ["virtualenv", "--quiet"] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
     )
 
@@ -26,7 +26,9 @@ def _install_into_virtualenv(
         chain(packages, *(("-r", requirement) for requirement in requirements))
     )
     subprocess.check_call(
-        [str(virtualenv.binary("python")), "-m", "pip", "install"] + things,
+        [
+            str(virtualenv.binary("python")), "-m", "pip", "--quiet", "install"
+        ] + things,
         stdout=stdout,
         stderr=stderr,
     )
