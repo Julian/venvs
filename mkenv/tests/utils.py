@@ -3,6 +3,7 @@ import os
 import sys
 
 from filesystems import Path
+from filesystems.exceptions import FileExists
 import click.testing
 import filesystems.memory
 
@@ -33,15 +34,37 @@ class CLIMixin(object):
                 **kwargs
             ),
         )
-        self.installed = {}
+
+    def installed(self, virtualenv):
+        base = virtualenv.path
+        try:
+            with self.filesystem.open(base.descendant("packages")) as f:
+                packages = set(line.strip() for line in f)
+        except FileNotFound:
+            packages = set()
+
+        try:
+            with self.filesystem.open(base.descendant("reqs")) as f:
+                reqs = set(line.strip() for line in f)
+        except FileNotFound:
+            reqs = set()
+
+        return packages, reqs
 
     def fake_create(self, virtualenv, **kwargs):
-        self.filesystem.create_directory(path=virtualenv.path)
+        try:
+            self.filesystem.create_directory(path=virtualenv.path)
+        except FileExists:
+            pass
 
     def fake_install(self, virtualenv, packages, requirements, **kwargs):
-        self.installed.setdefault(virtualenv, []).append(
-            (packages, requirements),
-        )
+        base = virtualenv.path
+        with self.filesystem.open(base.descendant("packages"), "a") as f:
+            f.writelines(
+                package.encode("utf-8") + "\n" for package in packages
+            )
+        with self.filesystem.open(base.descendant("reqs"), "a") as f:
+            f.writelines(req.encode("utf-8") + "\n" for req in requirements)
 
     def run_cli(self, argv=(), exit_status=os.EX_OK):
         runner = click.testing.CliRunner()

@@ -35,12 +35,48 @@ class TestConverge(CLIMixin, TestCase):
 
         self.assertEqual(
             (
-                self.installed.get(self.locator.for_name("a")),
-                self.installed.get(self.locator.for_name("b")),
-                self.installed.get(self.locator.for_name("c")),
+                self.installed(self.locator.for_name("a")),
+                self.installed(self.locator.for_name("b")),
+                self.installed(self.locator.for_name("c")),
             ), (
-                [([], [])],
-                [(["foo", "bar", "bla"], ["requirements.txt"])],
-                [(["foo"], [])],
+                (set(), set()),
+                ({"foo", "bar", "bla"}, {"requirements.txt"}),
+                ({"foo"}, set()),
             ),
+        )
+
+    def test_it_converges_existing_virtualenvs(self):
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("b").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("c").exists_on(self.filesystem))
+
+        with self.filesystem.open(
+            self.locator.root.descendant("virtualenvs.toml"), "w",
+        ) as venvs:
+            venvs.write(
+                """
+                [virtualenv.a]
+                install = ["foo", "bar"]
+                requirements = ["requirements.txt"]
+                """
+            )
+
+        self.run_cli([])
+
+        with self.filesystem.open(
+            self.locator.root.descendant("virtualenvs.toml"), "w",
+        ) as venvs:
+            venvs.write(
+                """
+                [virtualenv.a]
+                install = ["baz", "quux"]
+                requirements = ["requirements.txt", "other.txt"]
+                """
+            )
+
+        self.run_cli([])
+
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            ({"baz", "quux"}, {"requirements.txt", "other.txt"}),
         )

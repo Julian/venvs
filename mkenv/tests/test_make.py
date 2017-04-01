@@ -71,8 +71,8 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["-i", "foo", "-i", "bar", "-r", "reqs.txt", "bla"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed.get(self.locator.for_name("bla")),
-            [(("foo", "bar"), ("reqs.txt",))],
+            self.installed(self.locator.for_name("bla")),
+            ({"foo", "bar"}, {"reqs.txt"}),
         )
 
     def test_mkenv_default_name(self):
@@ -97,22 +97,22 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["-i", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed.get(self.locator.for_name("foo")), [(("foo",), ())],
+            self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
         )
 
     def test_install_default_name_with_version_specification(self):
         self.run_cli(["-i", "thing[foo]>=2,<3"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed.get(self.locator.for_name("thing")),
-            [(("thing[foo]>=2,<3",), ())],
+            self.installed(self.locator.for_name("thing")),
+            ({"thing[foo]>=2,<3"}, set()),
         )
 
     def test_temporary_env_with_single_install(self):
         self.run_cli(["-t", "-i", "thing"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed.get(self.locator.temporary()), [(("thing",), ())],
+            self.installed(self.locator.temporary()), ({"thing"}, set()),
         )
 
     def test_link_default_name(self):
@@ -126,16 +126,15 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["-l", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed.get(self.locator.for_name("foo")), [(("foo",), ())],
+            self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
         )
 
     def test_multiple_installs_one_link(self):
         self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo", "baz"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed.get(self.locator.for_name("baz")), [
-                (("foo", "bar"), ()),
-            ],
+            self.installed(self.locator.for_name("baz")),
+            ({"foo", "bar"}, set()),
         )
 
     def test_multiple_installs_one_link_no_name(self):

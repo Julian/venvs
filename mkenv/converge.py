@@ -2,8 +2,9 @@
 Converge the set of installed virtualenvs.
 
 """
+from functools import partial
 
-from filesystems.exceptions import FileExists
+from filesystems.exceptions import FileExists, FileNotFound
 import click
 import toml
 
@@ -20,7 +21,17 @@ def main(filesystem, locator, link_dir):
 
     for name, config in contents["virtualenv"].iteritems():
         virtualenv = locator.for_name(name=name)
-        virtualenv.create()
+        existing_config_path = virtualenv.path.descendant("installed.toml")
+
+        try:
+            with filesystem.open(existing_config_path) as existing_config:
+                if toml.loads(existing_config.read()) == config:
+                    continue
+        except FileNotFound:
+            virtualenv.create()
+        else:
+            virtualenv.recreate_on(filesystem=filesystem)
+
         virtualenv.install(
             packages=config.get("install", []),
             requirements=config.get("requirements", []),
@@ -28,7 +39,12 @@ def main(filesystem, locator, link_dir):
         for link in config.get("link", []):
             source = virtualenv.binary(name=link)
             try:
-                filesystem.link(source=source, to=link_dir.descendant(link))
+                filesystem.link(
+                    source=source, to=link_dir.descendant(link),
+                )
             except FileExists as error:
                 if filesystem.realpath(error.value) != source:
                     raise
+
+        with filesystem.open(existing_config_path, "w") as existing_config:
+            existing_config.write(toml.dumps(config).encode("utf-8"))

@@ -1,6 +1,6 @@
 appdirs==1.4.0
 attrs==16.3.0
 click==6.6
-filesystems==0.13.1
+filesystems==0.13.2
 packaging==16.8
 virtualenv==15.1.0
