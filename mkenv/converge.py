@@ -2,6 +2,8 @@
 Converge the set of installed virtualenvs.
 
 """
+import sys
+
 from filesystems.exceptions import FileExists, FileNotFound
 import click
 import toml
@@ -18,6 +20,8 @@ def main(filesystem, locator, link_dir):
         contents = toml.load(venvs)
 
     for name, config in contents["virtualenv"].iteritems():
+        config.setdefault("python", sys.version)
+
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path.descendant("installed.toml")
 
