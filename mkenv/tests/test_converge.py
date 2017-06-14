@@ -1,4 +1,5 @@
 from unittest import TestCase
+import os
 
 from mkenv import converge
 from mkenv.tests.utils import CLIMixin
@@ -23,7 +24,7 @@ class TestConverge(CLIMixin, TestCase):
                 install = ["foo", "bar", "bla"]
                 requirements = ["requirements.txt"]
                 [virtualenv.c]
-                install = ["foo"]
+                install = ["foo", "$HOME", "~/a"]
                 link = ["bar", "baz"]
                 """
             )
@@ -38,7 +39,7 @@ class TestConverge(CLIMixin, TestCase):
             ), (
                 (set(), set()),
                 ({"foo", "bar", "bla"}, {"requirements.txt"}),
-                ({"foo"}, set()),
+                ({"foo", os.getenv("HOME"), os.path.expanduser("~/a")}, set()),
             ),
         )
 

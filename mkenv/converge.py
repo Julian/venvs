@@ -2,6 +2,7 @@
 Converge the set of installed virtualenvs.
 
 """
+import os
 import sys
 
 from filesystems.exceptions import FileExists, FileNotFound
@@ -34,10 +35,15 @@ def main(filesystem, locator, link_dir):
         else:
             virtualenv.recreate_on(filesystem=filesystem)
 
-        virtualenv.install(
-            packages=config.get("install", []),
-            requirements=config.get("requirements", []),
-        )
+        packages = [
+            os.path.expandvars(os.path.expanduser(package))
+            for package in config.get("install", [])
+        ]
+        requirements = [
+            os.path.expandvars(os.path.expanduser(requirement))
+            for requirement in config.get("requirements", [])
+        ]
+        virtualenv.install(packages=packages, requirements=requirements)
         for link in config.get("link", []):
             source = virtualenv.binary(name=link)
             try:
