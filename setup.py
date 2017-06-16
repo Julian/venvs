@@ -37,7 +37,7 @@ setup(
         "click",
         "filesystems",
         "packaging",
-        "toml",
+        "pytoml",
         "virtualenv",
     ],
     author="Julian Berman",

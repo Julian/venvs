@@ -7,7 +7,7 @@ import sys
 
 from filesystems.exceptions import FileExists, FileNotFound
 import click
-import toml
+import pytoml
 
 from mkenv.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
@@ -18,7 +18,7 @@ from mkenv.common import _FILESYSTEM, _LINK_DIR, _ROOT
 @_ROOT
 def main(filesystem, locator, link_dir):
     with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
-        contents = toml.load(venvs)
+        contents = pytoml.load(venvs)
 
     for name, config in contents["virtualenv"].iteritems():
         config.setdefault("python", sys.version)
@@ -28,7 +28,7 @@ def main(filesystem, locator, link_dir):
 
         try:
             with filesystem.open(existing_config_path) as existing_config:
-                if toml.loads(existing_config.read()) == config:
+                if pytoml.loads(existing_config.read()) == config:
                     continue
         except FileNotFound:
             virtualenv.create()
@@ -55,4 +55,4 @@ def main(filesystem, locator, link_dir):
                     raise
 
         with filesystem.open(existing_config_path, "w") as existing_config:
-            existing_config.write(toml.dumps(config).encode("utf-8"))
+            existing_config.write(pytoml.dumps(config).encode("utf-8"))
