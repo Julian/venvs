@@ -22,8 +22,32 @@ The usual::
 Usage
 -----
 
-Usage is similar to ``mkvirtualenv``, although ``mkenv`` passes
-arguments directly through to ``virtualenv``:
+The best way to use ``mkenv`` is by creating a file named
+``~/.local/share/virtualenvs/virtualenvs.toml``. Here's an example of what goes
+in it:
+
+.. code-block:: toml
+
+    [virtualenvs.development]
+    install = [
+        "pudb",
+        "twisted",
+    ]
+    link = ["trial"]
+
+    [virtualenvs.app]
+    install = ["$DEVELOPMENT/myapp"]
+
+After creating the above, running ``convergeenvs`` will create 2 virtualenvs,
+one called "development" with pudb and twisted installed into it and trial
+linked from within it onto your ``PATH``, and a second called "app" installing
+the corresponding directory.
+
+That's about all you need to know. If you insist on reading further though,
+mkenv has an older, not-very-recommended mutable interface which allows you to
+create virtualenvs in a central location without tracking them in a config file
+(or converging them). For that, usage is similar to ``mkvirtualenv``,
+although ``mkenv`` passes arguments directly through to ``virtualenv``:
 
 .. code-block:: sh
 
