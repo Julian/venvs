@@ -28,14 +28,14 @@ in it:
 
 .. code-block:: toml
 
-    [virtualenvs.development]
+    [virtualenv.development]
     install = [
         "pudb",
         "twisted",
     ]
     link = ["trial"]
 
-    [virtualenvs.app]
+    [virtualenv.app]
     install = ["$DEVELOPMENT/myapp"]
 
 After creating the above, running ``convergeenvs`` will create 2 virtualenvs,
