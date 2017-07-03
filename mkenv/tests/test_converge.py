@@ -39,7 +39,14 @@ class TestConverge(CLIMixin, TestCase):
             ), (
                 (set(), set()),
                 ({"foo", "bar", "bla"}, {"requirements.txt"}),
-                ({"foo", os.getenv("HOME"), os.path.expanduser("~/a")}, set()),
+                (
+                    {
+                        "foo",
+                        os.path.expandvars("$HOME"),
+                        os.path.expanduser("~/a"),
+                    },
+                    set(),
+                ),
             ),
         )
 
