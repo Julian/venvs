@@ -21,7 +21,7 @@ def main(filesystem, locator, link_dir):
         contents = pytoml.load(venvs)
 
     for name, config in contents["virtualenv"].iteritems():
-        config.setdefault("python", sys.version)
+        config.setdefault("sys.version", sys.version)
 
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path.descendant("installed.toml")
