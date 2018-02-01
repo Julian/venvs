@@ -2,13 +2,9 @@
 mkenv
 =====
 
-mkenv is a simpler tool for creating and maintaining virtualenvs in a central
-location.
-
-It consists of the 5% of `virtualenvwrapper
-<https://virtualenvwrapper.readthedocs.org/en/latest/>`_ that I actually use,
-and is in some ways meant to more closely complement ``virtualenv`` rather than
-completely wrapping or hiding it.
+mkenv is a tool for configuring, in a single file, a set of virtualenvs,
+which packages to install into each, and any binaries to make globally
+available from within.
 
 
 Installation
