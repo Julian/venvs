@@ -12,25 +12,29 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 2.7",
-    "Programming Language :: Python :: 3.4",
     "Programming Language :: Python :: 2",
-    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
 setup(
     name="mkenv",
+    url="https://github.com/Julian/mkenv",
+
+    description="A simpler tool for creating venvs in a central location",
+    long_description=long_description,
+
+    author="Julian Berman",
+    author_email="Julian@GrayVines.com",
+
+    classifiers=classifiers,
+    license="MIT",
+
     packages=find_packages(),
-    setup_requires=["vcversioner"],
-    entry_points={
-        "console_scripts": [
-            "mkenv = mkenv.make:main",
-            "convergeenvs = mkenv.converge:main",
-            "findenv = mkenv.find:main",
-            "rmenv = mkenv.remove:main",
-        ],
-    },
+
+    setup_requires=["setuptools_scm"],
+    use_scm_version=True,
+
     install_requires=[
         "appdirs",
         "attrs",
@@ -40,12 +44,12 @@ setup(
         "pytoml",
         "virtualenv",
     ],
-    author="Julian Berman",
-    author_email="Julian@GrayVines.com",
-    classifiers=classifiers,
-    license="MIT",
-    long_description=long_description,
-    url="https://github.com/Julian/mkenv",
-    description="A simpler tool for creating venvs in a central location",
-    vcversioner={"version_module_paths" : ["mkenv/_version.py"]},
+    entry_points={
+        "console_scripts": [
+            "mkenv = mkenv.make:main",
+            "convergeenvs = mkenv.converge:main",
+            "findenv = mkenv.find:main",
+            "rmenv = mkenv.remove:main",
+        ],
+    },
 )
