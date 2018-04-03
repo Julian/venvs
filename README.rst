@@ -2,6 +2,9 @@
 mkenv
 =====
 
+.. image:: https://travis-ci.org/Julian/mkenv.svg?branch=master
+.. image:: https://ci.appveyor.com/api/projects/status/9ybhc3jvygurtl90?svg=true
+
 mkenv is a tool for configuring, in a single file, a set of virtualenvs,
 which packages to install into each, and any binaries to make globally
 available from within.
