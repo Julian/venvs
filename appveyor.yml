@@ -1,0 +1,24 @@
+environment:
+  VENV: "%APPVEYOR_BUILD_FOLDER%\\venv"
+
+  matrix:
+    - TOXENV: py27
+      PYTHON: "C:\\Python27"
+
+    - TOXENV: py27
+      PYTHON: "C:\\Python27-x64"
+
+init:
+  - echo "TOXENV- %TOXENV%"
+
+install:
+  - virtualenv -p "%PYTHON%\\python.exe" "%VENV%"
+  - "%VENV%\\Scripts\\activate"
+  - pip install -e .
+  - pip install tox
+  - ps: Update-AppveyorBuild -Version "v$(python -c 'import sys; import mkenv; sys.stdout.write(mkenv.__version__)') b$Env:APPVEYOR_BUILD_NUMBER"
+
+build: false
+
+test_script:
+  - tox
