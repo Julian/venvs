@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 
 from filesystems import Path
@@ -39,7 +40,8 @@ class TestFind(CLIMixin, TestCase):
     def test_find_without_args_finds_the_virtualenv_root(self):
         stdin, stdout, stderr = self.run_cli()
         self.assertEqual(
-            (stdin, stdout, stderr), ("", str(self.locator.root) + "\n", ""),
+            (stdin, stdout, stderr),
+            ("", str(self.locator.root) + os.linesep, ""),
         )
 
     def test_find_directory_with_binary(self):
