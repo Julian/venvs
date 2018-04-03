@@ -18,8 +18,7 @@ install:
   - pip install tox
   - ps: Update-AppveyorBuild -Version "v$(python -c 'import sys; import mkenv; sys.stdout.write(mkenv.__version__)') b$Env:APPVEYOR_BUILD_NUMBER"
 
-build_script:
-  - echo NOP
+build: false
 
 test_script:
   - tox
