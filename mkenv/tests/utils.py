@@ -1,5 +1,4 @@
 from StringIO import StringIO
-import os
 import sys
 
 from filesystems import Path
@@ -7,7 +6,7 @@ from filesystems.exceptions import FileExists, FileNotFound
 import click.testing
 import filesystems.memory
 
-from mkenv.common import Locator, VirtualEnv
+from mkenv.common import Locator, VirtualEnv, _EX_OK
 
 
 class CLIMixin(object):
@@ -66,7 +65,7 @@ class CLIMixin(object):
         with self.filesystem.open(base.descendant("reqs"), "a") as f:
             f.writelines(req.encode("utf-8") + "\n" for req in requirements)
 
-    def run_cli(self, argv=(), exit_status=os.EX_OK):
+    def run_cli(self, argv=(), exit_status=_EX_OK):
         runner = click.testing.CliRunner()
         result = runner.invoke(
             self._fix_click(self.cli.main),
