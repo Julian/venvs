@@ -1,7 +1,7 @@
 from unittest import TestCase
-import os
 
 from mkenv import remove
+from mkenv.common import EX_NOINPUT
 from mkenv.tests.utils import CLIMixin
 
 
@@ -32,7 +32,7 @@ class TestRemove(CLIMixin, TestCase):
     def test_cannot_remove_non_existing_envs(self):
         boom = self.locator.for_name("boom")
         self.assertFalse(boom.exists_on(filesystem=self.filesystem))
-        self.run_cli(["boom"], exit_status=os.EX_NOINPUT)
+        self.run_cli(["boom"], exit_status=EX_NOINPUT)
 
     def test_can_remove_non_existing_envs_with_force(self):
         boom = self.locator.for_name("boom")

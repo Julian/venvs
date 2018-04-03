@@ -154,6 +154,10 @@ _LINK_DIR = click.option(
     help="The directory to link scripts into.",
 )
 
+EX_OK = getattr(os, 'EX_OK', 0)
+EX_USAGE = getattr(os, 'EX_USAGE', 1)
+EX_NOINPUT = getattr(os, 'EX_NOINPUT', 1)
+
 
 class BadParameter(click.BadParameter):
-    exit_code = os.EX_USAGE
+    exit_code = EX_USAGE

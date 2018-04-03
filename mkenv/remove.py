@@ -3,7 +3,7 @@ import os
 from filesystems.exceptions import FileNotFound
 import click
 
-from mkenv.common import _FILESYSTEM, _ROOT
+from mkenv.common import _FILESYSTEM, _ROOT, EX_NOINPUT
 
 
 def run(locator, filesystem, names, force):
@@ -13,7 +13,7 @@ def run(locator, filesystem, names, force):
             virtualenv.remove_from(filesystem=filesystem)
         except FileNotFound:
             if not force:
-                return os.EX_NOINPUT
+                return EX_NOINPUT
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
