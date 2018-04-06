@@ -2,8 +2,7 @@
 mkenv
 =====
 
-.. image:: https://travis-ci.org/Julian/mkenv.svg?branch=master
-.. image:: https://ci.appveyor.com/api/projects/status/9ybhc3jvygurtl90?svg=true
+|PyPI| |Pythons| |Travis| |AppVeyor|
 
 mkenv is a tool for configuring, in a single file, a set of virtualenvs,
 which packages to install into each, and any binaries to make globally
@@ -166,3 +165,20 @@ to use. Specifically:
 
 Basically, I just want a thing that is managing a central repository of
 virtualenvs for me. So that's what ``mkenv`` does.
+
+
+.. |PyPI| image:: https://img.shields.io/pypi/v/mkenv.svg
+   :alt: PyPI version
+   :target: https://pypi.python.org/pypi/mkenv
+
+.. |Pythons| image:: https://img.shields.io/pypi/pyversions/mkenv.svg
+   :alt: Supported Python versions
+   :target: https://pypi.python.org/pypi/mkenv
+
+.. |Travis| image:: https://travis-ci.org/Julian/mkenv.svg?branch=master
+   :alt: Travis build status
+   :target: https://travis-ci.org/Julian/mkenv
+
+.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/9ybhc3jvygurtl90/branch/master?svg=true
+   :alt: AppVeyor build status
+   :target: https://ci.appveyor.com/project/Julian/mkenv
