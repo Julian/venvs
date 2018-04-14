@@ -1,4 +1,4 @@
-from StringIO import StringIO
+from io import BytesIO
 import sys
 
 from filesystems import Path
@@ -9,13 +9,17 @@ import filesystems.memory
 from mkenv.common import Locator, VirtualEnv, _EX_OK
 
 
+def decode(args, encoding='utf-8'):
+    return tuple(arg.decode(encoding) for arg in args)
+
+
 class CLIMixin(object):
     def setUp(self):
         super(CLIMixin, self).setUp()
 
-        self.stdin = StringIO()
-        self.stdout = StringIO()
-        self.stderr = StringIO()
+        self.stdin = BytesIO()
+        self.stdout = BytesIO()
+        self.stderr = BytesIO()
 
         self.filesystem = filesystems.memory.FS()
 
@@ -60,10 +64,10 @@ class CLIMixin(object):
         base = virtualenv.path
         with self.filesystem.open(base.descendant("packages"), "a") as f:
             f.writelines(
-                package.encode("utf-8") + "\n" for package in packages
+                (package + "\n").encode("utf-8") for package in packages
             )
         with self.filesystem.open(base.descendant("reqs"), "a") as f:
-            f.writelines(req.encode("utf-8") + "\n" for req in requirements)
+            f.writelines((req + "\n").encode("utf-8") for req in requirements)
 
     def run_cli(self, argv=(), exit_status=_EX_OK):
         runner = click.testing.CliRunner()
@@ -75,10 +79,8 @@ class CLIMixin(object):
                 locator=self.locator,
                 filesystem=self.filesystem,
             ),
+            catch_exceptions=False,
         )
-        if result.exception and not isinstance(result.exception, SystemExit):
-            cls, exc, tb = result.exc_info
-            raise cls, exc, tb
 
         self.assertEqual(
             result.exit_code,

@@ -26,7 +26,7 @@ class TestConverge(CLIMixin, TestCase):
                 [virtualenv.c]
                 install = ["foo", "$HOME", "~/a"]
                 link = ["bar", "baz"]
-                """
+                """.encode("utf-8")
             )
 
         self.run_cli([])
@@ -38,12 +38,12 @@ class TestConverge(CLIMixin, TestCase):
                 self.installed(self.locator.for_name("c")),
             ), (
                 (set(), set()),
-                ({"foo", "bar", "bla"}, {"requirements.txt"}),
+                ({b"foo", b"bar", b"bla"}, {b"requirements.txt"}),
                 (
                     {
-                        "foo",
-                        os.path.expandvars("$HOME"),
-                        os.path.expanduser("~/a"),
+                        b"foo",
+                        os.path.expandvars("$HOME").encode("utf-8"),
+                        os.path.expanduser("~/a").encode("utf-8"),
                     },
                     set(),
                 ),
@@ -63,7 +63,7 @@ class TestConverge(CLIMixin, TestCase):
                 [virtualenv.a]
                 install = ["foo", "bar"]
                 requirements = ["requirements.txt"]
-                """
+                """.encode("utf-8")
             )
 
         self.run_cli([])
@@ -76,12 +76,12 @@ class TestConverge(CLIMixin, TestCase):
                 [virtualenv.a]
                 install = ["baz", "quux"]
                 requirements = ["requirements.txt", "other.txt"]
-                """
+                """.encode("utf-8")
             )
 
         self.run_cli([])
 
         self.assertEqual(
             self.installed(self.locator.for_name("a")),
-            ({"baz", "quux"}, {"requirements.txt", "other.txt"}),
+            ({b"baz", b"quux"}, {b"requirements.txt", b"other.txt"}),
         )
