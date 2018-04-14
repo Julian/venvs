@@ -3,7 +3,6 @@ import sys
 
 from filesystems import Path
 from filesystems.exceptions import FileExists, FileNotFound
-from six import reraise
 import click.testing
 import filesystems.memory
 
