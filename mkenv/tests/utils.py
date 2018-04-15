@@ -75,10 +75,8 @@ class CLIMixin(object):
                 locator=self.locator,
                 filesystem=self.filesystem,
             ),
+            catch_exceptions=False,
         )
-        if result.exception and not isinstance(result.exception, SystemExit):
-            cls, exc, tb = result.exc_info
-            raise cls, exc, tb
 
         self.assertEqual(
             result.exit_code,
