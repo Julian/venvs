@@ -20,7 +20,7 @@ def main(filesystem, locator, link_dir):
     with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
         contents = pytoml.load(venvs)
 
-    for name, config in contents["virtualenv"].iteritems():
+    for name, config in contents["virtualenv"].items():
         config.setdefault("sys.version", sys.version)
 
         virtualenv = locator.for_name(name=name)
