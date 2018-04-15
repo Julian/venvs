@@ -12,11 +12,30 @@ import pytoml
 from mkenv.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
+def _fail(virtualenv):
+    raise
+
+
+def _do_not_fail(virtualenv):
+    sys.stderr.write("Converging {!r} failed!\n".format(virtualenv))
+
+
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @_FILESYSTEM
 @_LINK_DIR
 @_ROOT
-def main(filesystem, locator, link_dir):
+@click.option(
+    "--fail-fast", "handle_error",
+    flag_value=_fail,
+    help="Fail if any virtualenv cannot be converged.",
+)
+@click.option(
+    "--no-fail-fast", "handle_error",
+    default=True,
+    flag_value=_do_not_fail,
+    help="Do not fail if a virtualenv cannot be converged.",
+)
+def main(filesystem, locator, link_dir, handle_error):
     with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
         contents = pytoml.load(venvs)
 
@@ -43,7 +62,13 @@ def main(filesystem, locator, link_dir):
             os.path.expandvars(os.path.expanduser(requirement))
             for requirement in config.get("requirements", [])
         ]
-        virtualenv.install(packages=packages, requirements=requirements)
+
+        try:
+            virtualenv.install(packages=packages, requirements=requirements)
+        except Exception:
+            handle_error(virtualenv)
+            continue
+
         for link in config.get("link", []):
             source = virtualenv.binary(name=link)
             try:

@@ -58,6 +58,10 @@ class CLIMixin(object):
             pass
 
     def fake_install(self, virtualenv, packages, requirements, **kwargs):
+        # FIXME: ...
+        if virtualenv.path.basename() == "magicexplodingvirtualenv":
+            raise ZeroDivisionError("Hey you told me to blow up!")
+
         base = virtualenv.path
         with self.filesystem.open(base.descendant("packages"), "a") as f:
             f.writelines(

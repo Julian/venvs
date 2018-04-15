@@ -85,3 +85,53 @@ class TestConverge(CLIMixin, TestCase):
             self.installed(self.locator.for_name("a")),
             ({"baz", "quux"}, {"requirements.txt", "other.txt"}),
         )
+
+    def test_it_does_not_blow_up_by_default_on_install(self):
+        with self.filesystem.open(
+            self.locator.root.descendant("virtualenvs.toml"), "w",
+        ) as venvs:
+            venvs.write(
+                """
+                [virtualenv.a]
+                [virtualenv.b]
+                [virtualenv.magicExplodingVirtualenv]
+                [virtualenv.c]
+                """
+            )
+
+        self.run_cli([])
+
+        self.assertEqual(
+            (
+                self.installed(self.locator.for_name("a")),
+                self.installed(self.locator.for_name("b")),
+                self.installed(self.locator.for_name("c")),
+                self.locator.for_name("c").exists_on(self.filesystem),
+            ),
+            tuple((set(), set()) for _ in "abc") + (True,),
+        )
+
+    def test_it_can_be_asked_to_blow_up_immediately_on_install(self):
+        with self.filesystem.open(
+            self.locator.root.descendant("virtualenvs.toml"), "w",
+        ) as venvs:
+            venvs.write(
+                """
+                [virtualenv.a]
+                [virtualenv.b]
+                [virtualenv.magicExplodingVirtualenv]
+                [virtualenv.c]
+                """
+            )
+
+        with self.assertRaises(ZeroDivisionError):
+            self.run_cli(["--fail-fast"])
+
+        self.assertEqual(
+            (
+                self.installed(self.locator.for_name("a")),
+                self.installed(self.locator.for_name("b")),
+                self.locator.for_name("c").exists_on(self.filesystem),
+            ),
+            ((set(), set()), (set(), set()), False),
+        )
