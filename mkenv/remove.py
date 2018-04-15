@@ -1,5 +1,3 @@
-import os
-
 from filesystems.exceptions import FileNotFound
 import click
 
