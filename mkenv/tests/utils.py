@@ -1,4 +1,3 @@
-from StringIO import StringIO
 import sys
 
 from filesystems import Path
@@ -10,13 +9,25 @@ import filesystems.memory
 from mkenv.common import Locator, VirtualEnv, _EX_OK
 
 
+if sys.version_info < (3, 0):
+    _PY3 = False
+else:
+    _PY3 = True
+
+
+if _PY3:
+    from io import StringIO as NativeStringIO
+else:
+    from io import BytesIO as NativeStringIO
+
+
 class CLIMixin(object):
     def setUp(self):
         super(CLIMixin, self).setUp()
 
-        self.stdin = StringIO()
-        self.stdout = StringIO()
-        self.stderr = StringIO()
+        self.stdin = NativeStringIO()
+        self.stdout = NativeStringIO()
+        self.stderr = NativeStringIO()
 
         self.filesystem = filesystems.memory.FS()
 
