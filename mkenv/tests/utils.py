@@ -3,7 +3,6 @@ import sys
 
 from filesystems import Path
 from filesystems.exceptions import FileExists, FileNotFound
-from six import reraise
 import click.testing
 import filesystems.memory
 
@@ -79,7 +78,7 @@ class CLIMixin(object):
         )
         if result.exception and not isinstance(result.exception, SystemExit):
             cls, exc, tb = result.exc_info
-            reraise(cls, exc, tb)
+            raise cls, exc, tb
 
         self.assertEqual(
             result.exit_code,
