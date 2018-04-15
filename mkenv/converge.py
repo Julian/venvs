@@ -54,15 +54,7 @@ def main(filesystem, locator, link_dir, handle_error):
         else:
             virtualenv.recreate_on(filesystem=filesystem)
 
-        packages = [
-            os.path.expandvars(os.path.expanduser(package))
-            for package in config.get("install", [])
-        ]
-        requirements = [
-            os.path.expandvars(os.path.expanduser(requirement))
-            for requirement in config.get("requirements", [])
-        ]
-
+        packages, requirements = _to_install(config=config)
         try:
             virtualenv.install(packages=packages, requirements=requirements)
         except Exception:
@@ -70,14 +62,31 @@ def main(filesystem, locator, link_dir, handle_error):
             continue
 
         for link in config.get("link", []):
-            source = virtualenv.binary(name=link)
-            try:
-                filesystem.link(
-                    source=source, to=link_dir.descendant(link),
-                )
-            except FileExists as error:
-                if filesystem.realpath(error.value) != source:
-                    raise
+            _link(
+                source=virtualenv.binary(name=link),
+                to=link_dir.descendant(link),
+                filesystem=filesystem,
+            )
 
         with filesystem.open(existing_config_path, "w") as existing_config:
             existing_config.write(pytoml.dumps(config).encode("utf-8"))
+
+
+def _to_install(config):
+    packages = [
+        os.path.expandvars(os.path.expanduser(package))
+        for package in config.get("install", [])
+    ]
+    requirements = [
+        os.path.expandvars(os.path.expanduser(requirement))
+        for requirement in config.get("requirements", [])
+    ]
+    return packages, requirements
+
+
+def _link(source, to, filesystem):
+    try:
+        filesystem.link(source=source, to=to)
+    except FileExists as error:
+        if filesystem.realpath(error.value) != source:
+            raise
