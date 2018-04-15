@@ -152,7 +152,7 @@ class TestIntegration(TestCase):
         self.addCleanup(lambda: setattr(sys, "stdout", stdout))
 
     def test_it_works(self):
-        with self.fs.open(self.root.descendant("make_stdout"), "wb") as stdout:
+        with self.fs.open(self.root.descendant("make_stdout"), "w") as stdout:
             sys.stdout = stdout
 
             try:
@@ -165,7 +165,7 @@ class TestIntegration(TestCase):
             except SystemExit:
                 pass
 
-        with self.fs.open(self.root.descendant("find_stdout"), "wb") as stdout:
+        with self.fs.open(self.root.descendant("find_stdout"), "w") as stdout:
             sys.stdout = stdout
 
             try:
