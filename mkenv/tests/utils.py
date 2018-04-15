@@ -8,12 +8,7 @@ import filesystems.memory
 from mkenv.common import Locator, VirtualEnv, _EX_OK
 
 
-if sys.version_info < (3, 0):
-    _PY3 = False
-else:
-    _PY3 = True
-
-
+_PY3 = sys.version_info[0] >= 3
 if _PY3:
     from io import StringIO as NativeStringIO
 else:
