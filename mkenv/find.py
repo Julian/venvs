@@ -37,11 +37,11 @@ def run(
         return 1
 
     if binary is not None:
-        sys.stdout.write(str(virtualenv.binary(binary)))
+        sys.stdout.write(str(virtualenv.binary(binary)).encode('utf-8'))
     else:
-        sys.stdout.write(str(virtualenv.path))
+        sys.stdout.write(str(virtualenv.path).encode('utf-8'))
 
-    sys.stdout.write("\n")
+    sys.stdout.write("\n".encode("utf-8"))
 
 
 @click.group(

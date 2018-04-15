@@ -6,7 +6,7 @@ import filesystems.native
 
 from mkenv import find, make
 from mkenv.common import Locator
-from mkenv.tests.utils import CLIMixin
+from mkenv.tests.utils import CLIMixin, decode
 
 
 class TestMake(CLIMixin, TestCase):
@@ -22,7 +22,7 @@ class TestMake(CLIMixin, TestCase):
         temporary = self.locator.temporary()
         self.assertFalse(temporary.exists_on(self.filesystem))
 
-        stdin, stdout, stderr = self.run_cli(["--temporary"])
+        stdin, stdout, stderr = decode(self.run_cli(["--temporary"]))
         self.assertEqual(
             (temporary.exists_on(self.filesystem), stdin, stdout, stderr),
             (True, "", str(temporary.path.descendant("bin")) + "\n", ""),
@@ -48,7 +48,7 @@ class TestMake(CLIMixin, TestCase):
         )
         self.assertTrue(
             stderr.endswith(
-                "specify only one of '-t / --temp / --temporary' or 'name'\n"
+                b"specify only one of '-t / --temp / --temporary' or 'name'\n"
             ), msg=stderr,
         )
 
@@ -72,7 +72,7 @@ class TestMake(CLIMixin, TestCase):
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("bla")),
-            ({"foo", "bar"}, {"reqs.txt"}),
+            ({b"foo", b"bar"}, {b"reqs.txt"}),
         )
 
     def test_mkenv_default_name(self):
@@ -97,7 +97,7 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["-i", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
+            self.installed(self.locator.for_name("foo")), ({b"foo"}, set()),
         )
 
     def test_install_default_name_with_version_specification(self):
@@ -105,14 +105,14 @@ class TestMake(CLIMixin, TestCase):
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("thing")),
-            ({"thing[foo]>=2,<3"}, set()),
+            ({b"thing[foo]>=2,<3"}, set()),
         )
 
     def test_temporary_env_with_single_install(self):
         self.run_cli(["-t", "-i", "thing"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed(self.locator.temporary()), ({"thing"}, set()),
+            self.installed(self.locator.temporary()), ({b"thing"}, set()),
         )
 
     def test_link_default_name(self):
@@ -126,7 +126,7 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["-l", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
+            self.installed(self.locator.for_name("foo")), ({b"foo"}, set()),
         )
 
     def test_multiple_installs_one_link(self):
@@ -134,7 +134,7 @@ class TestMake(CLIMixin, TestCase):
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("baz")),
-            ({"foo", "bar"}, set()),
+            ({b"foo", b"bar"}, set()),
         )
 
     def test_multiple_installs_one_link_no_name(self):
@@ -183,5 +183,5 @@ class TestIntegration(TestCase):
         virtualenv = locator.for_name("mkenv-unittest-should-be-deleted")
         self.assertEqual(
             self.fs.contents_of(self.root.descendant("find_stdout")),
-            str(virtualenv.path) + "\n",
+            (str(virtualenv.path) + "\n").encode('utf-8'),
         )
