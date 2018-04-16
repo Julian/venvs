@@ -24,8 +24,9 @@ class TestFind(CLIMixin, TestCase):
         self.assertEqual(
             (stdin, stdout, stderr), (
                 "",
-                str(self.locator.for_directory(Path.from_string(".")).path) +
-                "\n",
+                str(self.locator.for_directory(
+                    Path.from_string(os.getcwd()),
+                ).path) + "\n",
                 "",
             ),
         )
