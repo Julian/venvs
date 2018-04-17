@@ -1,7 +1,7 @@
 appdirs==1.4.0
 attrs==17.1.0
 click==6.6
-filesystems==0.14.0
+filesystems==0.16.1
 packaging==16.8
 pytoml==0.1.13
 virtualenv==15.1.0
