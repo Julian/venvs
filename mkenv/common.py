@@ -10,6 +10,9 @@ import click
 import filesystems.native
 
 
+_PY3 = sys.version_info[0] >= 3
+
+
 def _create_virtualenv(virtualenv, arguments, stdout, stderr):
     subprocess.check_call(
         ["virtualenv", "--quiet"] + list(arguments) + [str(virtualenv.path)],

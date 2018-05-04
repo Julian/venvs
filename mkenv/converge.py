@@ -9,7 +9,7 @@ from filesystems.exceptions import FileExists, FileNotFound
 import click
 import pytoml
 
-from mkenv.common import _FILESYSTEM, _LINK_DIR, _ROOT
+from mkenv.common import _FILESYSTEM, _LINK_DIR, _ROOT, _PY3
 
 
 def _fail(virtualenv):
@@ -69,7 +69,10 @@ def main(filesystem, locator, link_dir, handle_error):
             )
 
         with filesystem.open(existing_config_path, "w") as existing_config:
-            existing_config.write(pytoml.dumps(config).encode("utf-8"))
+            value = pytoml.dumps(config)
+            if not _PY3:
+                value = value.encode("utf-8")
+            existing_config.write(value)
 
 
 def _to_install(config):

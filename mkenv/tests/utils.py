@@ -5,10 +5,9 @@ from filesystems.exceptions import FileExists, FileNotFound
 import click.testing
 import filesystems.memory
 
-from mkenv.common import Locator, VirtualEnv, _EX_OK
+from mkenv.common import Locator, VirtualEnv, _EX_OK, _PY3
 
 
-_PY3 = sys.version_info[0] >= 3
 if _PY3:
     from io import StringIO as NativeStringIO
 else:
@@ -67,13 +66,20 @@ class CLIMixin(object):
         if virtualenv.path.basename() == "magicexplodingvirtualenv":
             raise ZeroDivisionError("Hey you told me to blow up!")
 
+        def line(x):
+            if not _PY3:
+                # pytoml is giving us unicodes
+                x = x.encode()
+
+            return x + "\n"
+
         base = virtualenv.path
         with self.filesystem.open(base.descendant("packages"), "a") as f:
             f.writelines(
-                package.encode("utf-8") + "\n" for package in packages
+                line(package) for package in packages
             )
         with self.filesystem.open(base.descendant("reqs"), "a") as f:
-            f.writelines(req.encode("utf-8") + "\n" for req in requirements)
+            f.writelines(line(req) for req in requirements)
 
     def run_cli(self, argv=(), exit_status=_EX_OK):
         runner = click.testing.CliRunner()
