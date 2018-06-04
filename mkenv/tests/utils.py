@@ -68,12 +68,12 @@ class CLIMixin(object):
             raise ZeroDivisionError("Hey you told me to blow up!")
 
         base = virtualenv.path
-        with self.filesystem.open(base.descendant("packages"), "a") as f:
+        with self.filesystem.open(base.descendant("packages"), "at") as f:
             f.writelines(
-                package.encode("utf-8") + "\n" for package in packages
+                package + u"\n" for package in packages
             )
-        with self.filesystem.open(base.descendant("reqs"), "a") as f:
-            f.writelines(req.encode("utf-8") + "\n" for req in requirements)
+        with self.filesystem.open(base.descendant("reqs"), "at") as f:
+            f.writelines(req + u"\n" for req in requirements)
 
     def run_cli(self, argv=(), exit_status=_EX_OK):
         runner = click.testing.CliRunner()

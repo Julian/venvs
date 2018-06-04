@@ -68,8 +68,8 @@ def main(filesystem, locator, link_dir, handle_error):
                 filesystem=filesystem,
             )
 
-        with filesystem.open(existing_config_path, "w") as existing_config:
-            existing_config.write(pytoml.dumps(config).encode("utf-8"))
+        with filesystem.open(existing_config_path, "wt") as existing_config:
+            existing_config.write(pytoml.dumps(config))
 
 
 def _to_install(config):
