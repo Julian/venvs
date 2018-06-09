@@ -12,7 +12,11 @@ import filesystems.native
 
 def _create_virtualenv(virtualenv, arguments, stdout, stderr):
     subprocess.check_call(
-        ["virtualenv", "--quiet"] + list(arguments) + [str(virtualenv.path)],
+        [
+            sys.executable,
+            "-m", "virtualenv",
+            "--quiet",
+        ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
     )
 
