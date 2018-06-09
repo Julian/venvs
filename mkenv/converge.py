@@ -2,6 +2,7 @@
 Converge the set of installed virtualenvs.
 
 """
+import collections
 import os
 import sys
 
@@ -37,7 +38,10 @@ def _do_not_fail(virtualenv):
 )
 def main(filesystem, locator, link_dir, handle_error):
     with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
-        contents = pytoml.load(venvs)
+        contents = pytoml.load(
+            venvs,
+            object_pairs_hook=collections.OrderedDict,
+        )
 
     for name, config in contents["virtualenv"].items():
         config.setdefault("sys.version", sys.version)
