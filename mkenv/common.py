@@ -18,7 +18,7 @@ def _create_virtualenv(
         stdout,
         stderr,
 ):
-    _ensure_virtualenv(
+    _ensure_virtualenv_install(
         filesystem=filesystem,
         virtualenv_install=virtualenv_install,
         stdout=stdout,
@@ -53,7 +53,7 @@ def _install_into_virtualenv(
     )
 
 
-def _ensure_virtualenv(filesystem, virtualenv_install, stdout, stderr):
+def _ensure_virtualenv_install(filesystem, virtualenv_install, stdout, stderr):
     if filesystem.is_dir(virtualenv_install):
         return
 
