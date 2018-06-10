@@ -166,7 +166,7 @@ class Locator(object):
         return self.for_name(".mkenv-temporary-env")
 
     def virtualenv_install(self):
-        return self.root.descendant("_mkenv_virtualenv")
+        return self.root.descendant("_mkenv_virtualenv_install")
 
 
 class _Path(click.ParamType):
