@@ -4,11 +4,11 @@ import click
 from mkenv.common import _FILESYSTEM, _ROOT, _EX_NOINPUT
 
 
-def run(locator, filesystem, names, force):
+def run(locator, names, force):
     for name in names:
         virtualenv = locator.for_name(name=name)
         try:
-            virtualenv.remove_from(filesystem=filesystem)
+            virtualenv.remove_from()
         except FileNotFound:
             if not force:
                 return _EX_NOINPUT
@@ -24,5 +24,7 @@ def run(locator, filesystem, names, force):
 )
 @click.argument("names", nargs=-1)
 @click.pass_context
-def main(context, **kwargs):
-    context.exit(run(**kwargs) or 0)
+def main(context, locator, filesystem, **kwargs):
+    locator.filesystem = filesystem
+
+    context.exit(run(locator=locator, **kwargs) or 0)

@@ -83,7 +83,10 @@ class VirtualEnv(object):
     _create = attr.ib(default=_create_virtualenv, repr=False)
     _install = attr.ib(default=_install_into_virtualenv, repr=False)
 
-    def exists_on(self, filesystem):
+    def exists_on(self, filesystem=None):
+        if filesystem is None:
+            filesystem = self._filesystem
+
         return filesystem.is_dir(path=self.path)
 
     def binary(self, name):
@@ -112,7 +115,10 @@ class VirtualEnv(object):
             stderr=stderr,
         )
 
-    def remove_from(self, filesystem):
+    def remove_from(self, filesystem=None):
+        if filesystem is None:
+            filesystem = self._filesystem
+
         filesystem.remove(self.path)
 
     def recreate_on(self, filesystem=None, virtualenv_install=None, **kwargs):

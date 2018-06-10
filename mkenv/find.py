@@ -9,7 +9,6 @@ from mkenv.common import _FILESYSTEM, _ROOT, PATH
 
 def run(
     locator,
-    filesystem,
     binary=None,
     directory=None,
     name=None,
@@ -33,7 +32,7 @@ def run(
 
         virtualenv = locator.for_name(name=name)
 
-    if existing_only and not virtualenv.exists_on(filesystem=filesystem):
+    if existing_only and not virtualenv.exists_on():
         return 1
 
     if binary is not None:
@@ -57,6 +56,8 @@ def run(
 )
 @click.pass_context
 def main(context, locator, existing_only, filesystem):
+    locator.filesystem = filesystem
+
     if context.invoked_subcommand is None:
         click.echo(locator.root)
     else:
@@ -65,7 +66,6 @@ def main(context, locator, existing_only, filesystem):
                 run,
                 locator=locator,
                 existing_only=existing_only,
-                filesystem=filesystem,
             ),
         )
 

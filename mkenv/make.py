@@ -68,6 +68,8 @@ def main(
     recreate,
     virtualenv_args,
 ):
+    locator.filesystem = filesystem
+
     if name:
         if temporary:
             raise click.BadParameter(
@@ -98,7 +100,7 @@ def main(
     else:
         act = virtualenv.create
 
-    act(arguments=virtualenv_args, filesystem=filesystem)
+    act(arguments=virtualenv_args)
     virtualenv.install(packages=installs, requirements=requirements)
 
     for link in links:
