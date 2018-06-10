@@ -101,7 +101,7 @@ def main(
     act(
         arguments=virtualenv_args,
         filesystem=filesystem,
-        floating_virtualenv=locator.floating_virtualenv(),
+        virtualenv_install=locator.virtualenv_install(),
     )
     virtualenv.install(packages=installs, requirements=requirements)
 

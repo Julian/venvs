@@ -56,12 +56,12 @@ def main(filesystem, locator, link_dir, handle_error):
         except FileNotFound:
             virtualenv.create(
                 filesystem=filesystem,
-                floating_virtualenv=locator.floating_virtualenv()
+                virtualenv_install=locator.virtualenv_install()
             )
         else:
             virtualenv.recreate_on(
                 filesystem=filesystem,
-                floating_virtualenv=locator.floating_virtualenv(),
+                virtualenv_install=locator.virtualenv_install(),
             )
 
         packages, requirements = _to_install(config=config)

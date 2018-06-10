@@ -58,7 +58,7 @@ class TestMake(CLIMixin, TestCase):
 
         virtualenv.create(
             filesystem=self.filesystem,
-            floating_virtualenv=self.locator.floating_virtualenv(),
+            virtualenv_install=self.locator.virtualenv_install(),
         )
 
         thing = virtualenv.path.descendant("thing")
