@@ -1,7 +1,7 @@
 appdirs==1.4.0
 attrs==17.1.0
 click==6.6
-filesystems==0.16.1
+git+https://github.com/Julian/Filesystems@fb36337a597bd43f91815ff0b80f3bd3f9e61f09
 packaging==16.8
-pytoml==0.1.13
+pytoml==0.1.16
 virtualenv==15.1.0
