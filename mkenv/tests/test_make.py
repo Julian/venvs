@@ -56,7 +56,10 @@ class TestMake(CLIMixin, TestCase):
         virtualenv = self.locator.for_name("something")
         self.assertFalse(virtualenv.exists_on(self.filesystem))
 
-        virtualenv.create()
+        virtualenv.create(
+            filesystem=self.filesystem,
+            floating_virtualenv=self.locator.floating_virtualenv(),
+        )
 
         thing = virtualenv.path.descendant("thing")
         self.filesystem.touch(path=thing)

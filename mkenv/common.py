@@ -10,11 +10,25 @@ import click
 import filesystems.native
 
 
-def _create_virtualenv(virtualenv, arguments, stdout, stderr):
+def _create_virtualenv(
+        virtualenv,
+        filesystem,
+        floating_virtualenv,
+        arguments,
+        stdout,
+        stderr,
+):
+    _ensure_virtualenv(
+        filesystem=filesystem,
+        floating_virtualenv=floating_virtualenv,
+        stdout=stdout,
+        stderr=stderr,
+    )
+
     subprocess.check_call(
         [
             sys.executable,
-            "-m", "virtualenv",
+            str(floating_virtualenv.descendant('virtualenv.py')),
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
@@ -39,6 +53,23 @@ def _install_into_virtualenv(
     )
 
 
+def _ensure_virtualenv(filesystem, floating_virtualenv, stdout, stderr):
+    if filesystem.is_dir(floating_virtualenv):
+        return
+
+    subprocess.check_call(
+        [
+            sys.executable,
+            '-m', 'pip',
+            'install',
+            '--target', str(floating_virtualenv),
+            'virtualenv',
+        ],
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
 @attr.s
 class VirtualEnv(object):
     """
@@ -56,18 +87,36 @@ class VirtualEnv(object):
     def binary(self, name):
         return self.path.descendant("bin", name)
 
-    def create(self, arguments=(), stdout=sys.stdout, stderr=sys.stderr):
-        self._create(self, arguments=arguments, stdout=stdout, stderr=stderr)
+    def create(
+            self,
+            filesystem,
+            floating_virtualenv,
+            arguments=(),
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+    ):
+        self._create(
+            self,
+            filesystem=filesystem,
+            floating_virtualenv=floating_virtualenv,
+            arguments=arguments,
+            stdout=stdout,
+            stderr=stderr,
+        )
 
     def remove_from(self, filesystem):
         filesystem.remove(self.path)
 
-    def recreate_on(self, filesystem, **kwargs):
+    def recreate_on(self, filesystem, floating_virtualenv, **kwargs):
         try:
             self.remove_from(filesystem=filesystem)
         except filesystems.exceptions.FileNotFound:
             pass
-        self.create(**kwargs)
+        self.create(
+            filesystem=filesystem,
+            floating_virtualenv=floating_virtualenv,
+            **kwargs
+        )
 
     def install(self, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
         self._install(virtualenv=self, stdout=stdout, stderr=stderr, **kwargs)
@@ -115,6 +164,9 @@ class Locator(object):
 
     def temporary(self):
         return self.for_name(".mkenv-temporary-env")
+
+    def floating_virtualenv(self):
+        return self.root.descendant("_mkenv_virtualenv")
 
 
 class _Path(click.ParamType):

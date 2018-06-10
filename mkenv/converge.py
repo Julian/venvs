@@ -54,9 +54,15 @@ def main(filesystem, locator, link_dir, handle_error):
                 if pytoml.loads(existing_config.read()) == config:
                     continue
         except FileNotFound:
-            virtualenv.create()
+            virtualenv.create(
+                filesystem=filesystem,
+                floating_virtualenv=locator.floating_virtualenv()
+            )
         else:
-            virtualenv.recreate_on(filesystem=filesystem)
+            virtualenv.recreate_on(
+                filesystem=filesystem,
+                floating_virtualenv=locator.floating_virtualenv(),
+            )
 
         packages, requirements = _to_install(config=config)
         try:

@@ -11,7 +11,10 @@ class TestRemove(CLIMixin, TestCase):
 
     def test_remove_removes_an_env_with_the_given_name(self):
         boom = self.locator.for_name("boom")
-        boom.create()
+        boom.create(
+            filesystem=self.filesystem,
+            floating_virtualenv=self.locator.floating_virtualenv(),
+        )
         self.assertTrue(boom.exists_on(filesystem=self.filesystem))
         self.run_cli(["boom"])
         self.assertFalse(boom.exists_on(filesystem=self.filesystem))
@@ -21,7 +24,10 @@ class TestRemove(CLIMixin, TestCase):
         venvs = [self.locator.for_name(name=name) for name in names]
 
         for venv in venvs:
-            venv.create()
+            venv.create(
+                filesystem=self.filesystem,
+                floating_virtualenv=self.locator.floating_virtualenv(),
+            )
 
         self.run_cli(names)
         self.assertEqual(
