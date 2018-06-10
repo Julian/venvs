@@ -12,8 +12,8 @@ import filesystems.native
 
 def _create_virtualenv(
         virtualenv,
-        filesystem,
         virtualenv_install,
+        filesystem,
         arguments,
         stdout,
         stderr,
@@ -78,6 +78,7 @@ class VirtualEnv(object):
     """
 
     path = attr.ib()
+    _virtualenv_install = attr.ib()
     _create = attr.ib(default=_create_virtualenv, repr=False)
     _install = attr.ib(default=_install_into_virtualenv, repr=False)
 
@@ -90,11 +91,14 @@ class VirtualEnv(object):
     def create(
             self,
             filesystem,
-            virtualenv_install,
+            virtualenv_install=None,
             arguments=(),
             stdout=sys.stdout,
             stderr=sys.stderr,
     ):
+        if virtualenv_install is None:
+            virtualenv_install = self._virtualenv_install
+
         self._create(
             self,
             filesystem=filesystem,
@@ -107,7 +111,7 @@ class VirtualEnv(object):
     def remove_from(self, filesystem):
         filesystem.remove(self.path)
 
-    def recreate_on(self, filesystem, virtualenv_install, **kwargs):
+    def recreate_on(self, filesystem, virtualenv_install=None, **kwargs):
         try:
             self.remove_from(filesystem=filesystem)
         except filesystems.exceptions.FileNotFound:
@@ -160,7 +164,10 @@ class Locator(object):
 
     def for_name(self, name):
         child = self.root.descendant(name.lower().replace("-", "_"))
-        return self.make_virtualenv(path=child)
+        return self.make_virtualenv(
+            path=child,
+            virtualenv_install=self.virtualenv_install(),
+        )
 
     def temporary(self):
         return self.for_name(".mkenv-temporary-env")

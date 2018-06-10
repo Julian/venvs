@@ -98,11 +98,7 @@ def main(
     else:
         act = virtualenv.create
 
-    act(
-        arguments=virtualenv_args,
-        filesystem=filesystem,
-        virtualenv_install=locator.virtualenv_install(),
-    )
+    act(arguments=virtualenv_args, filesystem=filesystem)
     virtualenv.install(packages=installs, requirements=requirements)
 
     for link in links:
