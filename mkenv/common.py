@@ -79,6 +79,7 @@ class VirtualEnv(object):
 
     path = attr.ib()
     _virtualenv_install = attr.ib()
+    _filesystem = attr.ib()
     _create = attr.ib(default=_create_virtualenv, repr=False)
     _install = attr.ib(default=_install_into_virtualenv, repr=False)
 
@@ -90,7 +91,7 @@ class VirtualEnv(object):
 
     def create(
             self,
-            filesystem,
+            filesystem=None,
             virtualenv_install=None,
             arguments=(),
             stdout=sys.stdout,
@@ -98,6 +99,9 @@ class VirtualEnv(object):
     ):
         if virtualenv_install is None:
             virtualenv_install = self._virtualenv_install
+
+        if filesystem is None:
+            filesystem = self._filesystem
 
         self._create(
             self,
@@ -111,7 +115,10 @@ class VirtualEnv(object):
     def remove_from(self, filesystem):
         filesystem.remove(self.path)
 
-    def recreate_on(self, filesystem, virtualenv_install=None, **kwargs):
+    def recreate_on(self, filesystem=None, virtualenv_install=None, **kwargs):
+        if filesystem is None:
+            filesystem = self._filesystem
+
         try:
             self.remove_from(filesystem=filesystem)
         except filesystems.exceptions.FileNotFound:
@@ -134,6 +141,7 @@ class Locator(object):
     """
 
     root = attr.ib()
+    filesystem = attr.ib(default=None)
     make_virtualenv = attr.ib(default=VirtualEnv)
 
     @classmethod
@@ -166,6 +174,7 @@ class Locator(object):
         child = self.root.descendant(name.lower().replace("-", "_"))
         return self.make_virtualenv(
             path=child,
+            filesystem=self.filesystem,
             virtualenv_install=self.virtualenv_install(),
         )
 

@@ -37,6 +37,8 @@ def _do_not_fail(virtualenv):
     help="Do not fail if a virtualenv cannot be converged.",
 )
 def main(filesystem, locator, link_dir, handle_error):
+    locator.filesystem = filesystem
+
     with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
         contents = pytoml.load(
             venvs,
@@ -54,9 +56,9 @@ def main(filesystem, locator, link_dir, handle_error):
                 if pytoml.loads(existing_config.read()) == config:
                     continue
         except FileNotFound:
-            virtualenv.create(filesystem=filesystem)
+            virtualenv.create()
         else:
-            virtualenv.recreate_on(filesystem=filesystem)
+            virtualenv.recreate_on()
 
         packages, requirements = _to_install(config=config)
         try:
