@@ -46,6 +46,7 @@ setup(
         "filesystems",
         "packaging",
         "pytoml",
+        "tqdm",
         "virtualenv",
     ],
     entry_points={
