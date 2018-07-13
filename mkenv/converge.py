@@ -92,5 +92,5 @@ def _link(source, to, filesystem):
     try:
         filesystem.link(source=source, to=to)
     except FileExists as error:
-        if filesystem.realpath(error.value) != source:
+        if filesystem.realpath(error.value) != filesystem.realpath(source):
             raise
