@@ -45,7 +45,7 @@ setup(
         "click",
         "filesystems",
         "packaging",
-        "pytoml",
+        "pytoml>=0.1.16",
         "tqdm",
         "virtualenv",
     ],
