@@ -44,7 +44,10 @@ def main(filesystem, locator, link_dir, handle_error):
             object_pairs_hook=collections.OrderedDict,
         )
 
-    for name, config in tqdm(contents["virtualenv"].items()):
+    progress = tqdm(contents["virtualenv"].items())
+    for name, config in progress:
+        progress.set_description(name)
+
         config.setdefault("sys.version", sys.version)
 
         virtualenv = locator.for_name(name=name)
