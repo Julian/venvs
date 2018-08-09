@@ -7,6 +7,7 @@ import os
 import sys
 
 from filesystems.exceptions import FileExists, FileNotFound
+from tqdm import tqdm
 import click
 import pytoml
 
@@ -43,7 +44,10 @@ def main(filesystem, locator, link_dir, handle_error):
             object_pairs_hook=collections.OrderedDict,
         )
 
-    for name, config in contents["virtualenv"].items():
+    progress = tqdm(contents["virtualenv"].items())
+    for name, config in progress:
+        progress.set_description(name)
+
         config.setdefault("sys.version", sys.version)
 
         virtualenv = locator.for_name(name=name)
@@ -92,5 +96,5 @@ def _link(source, to, filesystem):
     try:
         filesystem.link(source=source, to=to)
     except FileExists as error:
-        if filesystem.realpath(error.value) != source:
+        if filesystem.realpath(error.value) != filesystem.realpath(source):
             raise
