@@ -1,5 +1,6 @@
 .idea
 /venv*
+*.pyz
 
 # Created by https://www.gitignore.io/api/git,vim,python
 
