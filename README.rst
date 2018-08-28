@@ -24,7 +24,7 @@ The best way to use ``venvs`` is by creating a file named
 ``~/.local/share/virtualenvs/virtualenvs.toml``. Here's an example of what goes
 in it:
 
-.. code-block:: toml
+.. code-block::
 
     [virtualenv.development]
     install = [
