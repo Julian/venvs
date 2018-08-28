@@ -114,7 +114,7 @@ class Locator(object):
         return self.make_virtualenv(path=child)
 
     def temporary(self):
-        return self.for_name(".mkenv-temporary-env")
+        return self.for_name(".venvs-temporary-env")
 
 
 class _Path(click.ParamType):

@@ -1,10 +1,10 @@
 =====
-mkenv
+venvs
 =====
 
 |PyPI| |Pythons| |Travis| |AppVeyor|
 
-mkenv is a tool for configuring, in a single file, a set of virtualenvs,
+venvs is a tool for configuring, in a single file, a set of virtualenvs,
 which packages to install into each, and any binaries to make globally
 available from within.
 
@@ -14,13 +14,13 @@ Installation
 
 The usual::
 
-    $ pip install mkenv
+    $ pip install venvs
 
 
 Usage
 -----
 
-The best way to use ``mkenv`` is by creating a file named
+The best way to use ``venvs`` is by creating a file named
 ``~/.local/share/virtualenvs/virtualenvs.toml``. Here's an example of what goes
 in it:
 
@@ -42,14 +42,14 @@ linked from within it onto your ``PATH``, and a second called "app" installing
 the corresponding directory.
 
 That's about all you need to know. If you insist on reading further though,
-mkenv has an older, not-very-recommended mutable interface which allows you to
+venvs has an older, not-very-recommended mutable interface which allows you to
 create virtualenvs in a central location without tracking them in a config file
 (or converging them). For that, usage is similar to ``mkvirtualenv``,
-although ``mkenv`` passes arguments directly through to ``virtualenv``:
+although ``venvs`` passes arguments directly through to ``virtualenv``:
 
 .. code-block:: sh
 
-    $ mkenv nameofvenv -- -p pypy
+    $ venvs nameofvenv -- -p pypy
 
 will create a virtual environment in an appropriate platform-specific
 data directory, or in the directory specified by ``WORKON_HOME`` for
@@ -65,11 +65,11 @@ A common use case for virtualenvs is for single-purpose installations, e.g.:
 dependencies can be independently upgraded, all while still being able to use
 the ``fab`` binary globally".
 
-``mkenv`` supports a ``--link`` option for this use case:
+``venvs`` supports a ``--link`` option for this use case:
 
 .. code-block:: sh
 
-    $ mkenv -i fabric --link fab
+    $ venvs -i fabric --link fab
 
 will create a virtualenv for fabric (in the same normal location), but will
 symlink the ``fab`` binary from within the virtualenv into your
@@ -84,12 +84,12 @@ Temporary Virtualenvs
 ---------------------
 
 I also find ``mktmpenv`` useful for quick testing. To support its use case,
-``mkenv`` currently supports a different but similar style of temporary
+``venvs`` currently supports a different but similar style of temporary
 virtualenv.
 
 Invoking::
 
-    $ venv=$(mkenv -t)
+    $ venv=$(venvs -t)
 
 in your shell will create (or re-create) a global temporary virtualenv,
 and print its ``bin/`` subdirectory (which in this case will be then
@@ -105,16 +105,16 @@ et cetera.
 
 You may prefer using::
 
-    $ cd $(mkenv -t)
+    $ cd $(venvs -t)
 
 as your temporary venv workflow if you're into that sort of thing instead.
 
-The global virtualenv is cleared each time you invoke ``mkenv -t``.
+The global virtualenv is cleared each time you invoke ``venvs -t``.
 Unless you care, unlike virtualenvwrapper's ``mktmpenv``, there's no
 need to care about cleaning it up, whenever it matters for the next
 time, it will be cleared and overwritten.
 
-``mkenv`` may support the more similar "traditional" one-use virtualenv in the
+``venvs`` may support the more similar "traditional" one-use virtualenv in the
 future, but given that it does not activate virtualenvs by default (see below),
 the current recommendation for this use case would be to simply use the
 ``virtualenv`` binary directly.
@@ -123,7 +123,7 @@ the current recommendation for this use case would be to simply use the
 The 5 Minute Tutorial
 ---------------------
 
-Besides the ``mkenv`` for named-virtualenv creation and ``mkenv -t`` for
+Besides the ``venvs`` for named-virtualenv creation and ``venvs -t`` for
 temporary-virtualenv creation described above::
 
     $ findenv name foo
@@ -164,21 +164,21 @@ to use. Specifically:
       to handle association.
 
 Basically, I just want a thing that is managing a central repository of
-virtualenvs for me. So that's what ``mkenv`` does.
+virtualenvs for me. So that's what ``venvs`` does.
 
 
-.. |PyPI| image:: https://img.shields.io/pypi/v/mkenv.svg
+.. |PyPI| image:: https://img.shields.io/pypi/v/venvs.svg
    :alt: PyPI version
-   :target: https://pypi.python.org/pypi/mkenv
+   :target: https://pypi.org/project/venvs/
 
-.. |Pythons| image:: https://img.shields.io/pypi/pyversions/mkenv.svg
+.. |Pythons| image:: https://img.shields.io/pypi/pyversions/venvs.svg
    :alt: Supported Python versions
-   :target: https://pypi.python.org/pypi/mkenv
+   :target: https://pypi.org/project/venvs/
 
-.. |Travis| image:: https://travis-ci.org/Julian/mkenv.svg?branch=master
+.. |Travis| image:: https://travis-ci.org/Julian/venvs.svg?branch=master
    :alt: Travis build status
-   :target: https://travis-ci.org/Julian/mkenv
+   :target: https://travis-ci.org/Julian/venvs
 
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/9ybhc3jvygurtl90/branch/master?svg=true
    :alt: AppVeyor build status
-   :target: https://ci.appveyor.com/project/Julian/mkenv
+   :target: https://ci.appveyor.com/project/Julian/venvs

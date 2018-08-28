@@ -3,8 +3,8 @@ from unittest import TestCase
 
 from filesystems import Path
 
-from mkenv import find
-from mkenv.tests.utils import CLIMixin
+from venvs import find
+from venvs.tests.utils import CLIMixin
 
 
 class TestFind(CLIMixin, TestCase):

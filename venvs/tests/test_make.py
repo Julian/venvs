@@ -4,9 +4,9 @@ import sys
 from filesystems import Path
 import filesystems.native
 
-from mkenv import find, make
-from mkenv.common import Locator
-from mkenv.tests.utils import CLIMixin
+from venvs import find, make
+from venvs.common import Locator
+from venvs.tests.utils import CLIMixin
 
 
 class TestMake(CLIMixin, TestCase):
@@ -75,9 +75,9 @@ class TestMake(CLIMixin, TestCase):
             ({"foo", "bar"}, {"reqs.txt"}),
         )
 
-    def test_mkenv_default_name(self):
+    def test_venvs_default_name(self):
         """
-        Just saying ``mkenv`` creates an environment based on the current
+        Just saying ``venvs`` creates an environment based on the current
         directory's name.
 
         """
@@ -159,7 +159,7 @@ class TestIntegration(TestCase):
                 make.main(
                     args=[
                         "--root", str(self.root),
-                        "mkenv-unittest-should-be-deleted",
+                        "venvs-unittest-should-be-deleted",
                     ],
                 )
             except SystemExit:
@@ -173,14 +173,14 @@ class TestIntegration(TestCase):
                     [
                         "--root", str(self.root),
                         "--existing-only",
-                        "name", "mkenv-unittest-should-be-deleted",
+                        "name", "venvs-unittest-should-be-deleted",
                     ],
                 )
             except SystemExit:
                 pass
 
         locator = Locator(root=self.root)
-        virtualenv = locator.for_name("mkenv-unittest-should-be-deleted")
+        virtualenv = locator.for_name("venvs-unittest-should-be-deleted")
         self.assertEqual(
             self.fs.contents_of(self.root.descendant("find_stdout")),
             str(virtualenv.path) + "\n",

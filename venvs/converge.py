@@ -11,7 +11,7 @@ from tqdm import tqdm
 import click
 import pytoml
 
-from mkenv.common import _FILESYSTEM, _LINK_DIR, _ROOT
+from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
 def _fail(virtualenv):

@@ -5,7 +5,7 @@ from filesystems.exceptions import FileExists, FileNotFound
 import click.testing
 import filesystems.memory
 
-from mkenv.common import Locator, VirtualEnv, _EX_OK
+from venvs.common import Locator, VirtualEnv, _EX_OK
 
 
 _PY3 = sys.version_info[0] >= 3
