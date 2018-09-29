@@ -185,7 +185,7 @@ class Locator(object):
         )
 
     def temporary(self):
-        return self.for_name(".mkenv-temporary-env")
+        return self.for_name(".venvs-temporary-env")
 
     def virtualenv_install(self):
         return self.root.descendant("_mkenv_virtualenv_install")

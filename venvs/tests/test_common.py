@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from filesystems import Path, native
 
-from mkenv.common import Locator, VirtualEnv
+from venvs.common import Locator, VirtualEnv
 
 
 class TestLocator(TestCase):

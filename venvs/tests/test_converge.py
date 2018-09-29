@@ -1,8 +1,8 @@
 from unittest import TestCase
 import os
 
-from mkenv import converge
-from mkenv.tests.utils import CLIMixin
+from venvs import converge
+from venvs.tests.utils import CLIMixin
 
 
 class TestConverge(CLIMixin, TestCase):
