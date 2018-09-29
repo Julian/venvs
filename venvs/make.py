@@ -1,5 +1,5 @@
 """
-mkenv creates virtualenvs.
+venvs creates virtualenvs.
 
 By default it places them in the appropriate data directory for your platform
 (See `appdirs <https://pypi.python.org/pypi/appdirs>`_), but it will also
@@ -14,7 +14,7 @@ from filesystems import Path
 from packaging.requirements import Requirement
 import click
 
-from mkenv.common import _FILESYSTEM, _LINK_DIR, _ROOT
+from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))

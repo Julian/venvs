@@ -1,7 +1,7 @@
 from filesystems.exceptions import FileNotFound
 import click
 
-from mkenv.common import _FILESYSTEM, _ROOT, _EX_NOINPUT
+from venvs.common import _FILESYSTEM, _ROOT, _EX_NOINPUT
 
 
 def run(locator, filesystem, names, force):

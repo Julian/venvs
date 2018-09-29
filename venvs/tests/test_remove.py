@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from mkenv import remove
-from mkenv.common import _EX_NOINPUT
-from mkenv.tests.utils import CLIMixin
+from venvs import remove
+from venvs.common import _EX_NOINPUT
+from venvs.tests.utils import CLIMixin
 
 
 class TestRemove(CLIMixin, TestCase):

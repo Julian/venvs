@@ -7,5 +7,5 @@ pyparsing==2.2.0
 pyrsistent==0.14.4
 pytoml==0.1.18
 six==1.11.0
-tqdm==4.24.0
+tqdm==4.25.0
 virtualenv==16.0.0

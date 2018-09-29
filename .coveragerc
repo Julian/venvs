@@ -1,4 +1,4 @@
 # vim: filetype=dosini:
 [run]
 branch = True
-source = mkenv
+source = venvs
