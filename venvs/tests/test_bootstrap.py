@@ -4,11 +4,11 @@ import sys
 from filesystems import native, Path
 import filesystems.native
 
-from mkenv import find, make
-from mkenv.common import Locator
-from mkenv.tests.utils import CLIMixin
+from venvs import find, make
+from venvs.common import Locator
+from venvs.tests.utils import CLIMixin
 
-from mkenv import bootstrap
+from venvs import bootstrap
 
 
 class TestBootstrap(CLIMixin, TestCase):

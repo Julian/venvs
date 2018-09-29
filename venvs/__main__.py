@@ -1,6 +1,6 @@
 import sys
 
-import mkenv.make
+import venvs.make
 
 
-sys.exit(mkenv.make.main())
+sys.exit(venvs.make.main())

@@ -7,15 +7,15 @@ import click
 import click.testing
 from filesystems import Path
 
-import mkenv.make
+import venvs.make
 
 
-@click.command(help='Bootstrap mkenv')
+@click.command(help='Bootstrap venvs')
 def main():
     # entry_points = list(
     #     entry
     #     for entry in pkg_resources.iter_entry_points('console_scripts')
-    #     # if entry.dist.project_name == 'mkenv'
+    #     # if entry.dist.project_name == 'venvs'
     # )
     #
     # link_args = tuple(itertools.chain.from_iterable(
@@ -49,7 +49,7 @@ def main():
         (
             ('--link', name)
             for name in (
-                "mkenv",
+                "venvs",
                 "convergeenvs",
                 "findenv",
                 "rmenv",
@@ -59,17 +59,17 @@ def main():
 
     sys.argv[1:] = (
         '-R',
-        '-i', 'mkenv',
+        '-i', 'venvs',
     ) + link_args
 
-    mkenv.make.main()
+    venvs.make.main()
 
     # runner = click.testing.CliRunner()
     # result = runner.invoke(
-    #     mkenv.make.main,
+    #     venvs.make.main,
     #     (
     #         '-R',
-    #         '-i', 'mkenv',
+    #         '-i', 'venvs',
     #     ) + link_args,
     #     catch_exceptions=False,
     # )
@@ -91,16 +91,16 @@ def main():
     #
     # archive = Path(sys.argv[0]).relative_to(Path.cwd())
     #
-    # import mkenv
+    # import venvs
     # print(sys.argv[0])
-    # print(dir(mkenv))
+    # print(dir(venvs))
     # return
     #
     # args = (
     #         sys.executable,
-    #         '-m', 'mkenv',
+    #         '-m', 'venvs',
     #         '-R',
-    #         '-i', 'mkenv',
+    #         '-i', 'venvs',
     # )
     # args += tuple(itertools.chain.from_iterable(
     #     (
