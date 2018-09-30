@@ -7,5 +7,5 @@ pyparsing==2.2.0
 pyrsistent==0.14.4
 pytoml==0.1.19
 six==1.11.0
-git+https://github.com/altendky/tqdm@3bb5ac9b5e015a1971e148ee2ca22f024297b266#egg=tqdm
+git+https://github.com/altendky/tqdm@b76e47d34f29e65005b2c79b64c248e887f7f94a#egg=tqdm
 virtualenv==16.0.0
