@@ -135,3 +135,22 @@ class TestConverge(CLIMixin, TestCase):
             ),
             ((set(), set()), (set(), set()), False),
         )
+
+    def test_specified_python(self):
+        with self.filesystem.open(
+            self.locator.root.descendant("virtualenvs.toml"), "w",
+        ) as venvs:
+            venvs.write(
+                """
+                [virtualenv.a]
+                python = "python3"
+                """
+            )
+
+        self.run_cli([])
+
+        # FIXME: this doesn't properly assert about the python version...
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            (set(), set()),
+        )
