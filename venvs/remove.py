@@ -1,6 +1,7 @@
 from filesystems.exceptions import FileNotFound
 import click
 
+from venvs import __version__
 from venvs.common import _FILESYSTEM, _ROOT, _EX_NOINPUT
 
 
@@ -24,5 +25,6 @@ def run(locator, filesystem, names, force):
 )
 @click.argument("names", nargs=-1)
 @click.pass_context
+@click.version_option(version=__version__)
 def main(context, **kwargs):
     context.exit(run(**kwargs) or 0)

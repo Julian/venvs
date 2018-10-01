@@ -12,6 +12,7 @@ from tqdm import tqdm
 import click
 import pytoml
 
+from venvs import __version__
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
@@ -38,6 +39,7 @@ def _do_not_fail(virtualenv):
     flag_value=_do_not_fail,
     help="Do not fail if a virtualenv cannot be converged.",
 )
+@click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
     with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
         contents = pytoml.load(
