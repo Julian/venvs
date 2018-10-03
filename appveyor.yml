@@ -41,6 +41,7 @@ environment:
     - TOXENV: vcs_deps
       PYTHON: "C:\\Python37-x64"
 
+matrix:
   allow_failures:
     - TOXENV: pre_deps
     - TOXENV: vcs_deps
