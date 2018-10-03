@@ -14,8 +14,8 @@ matrix:
     - env: TOXENV: pre_deps
     - env: TOXENV: vcs_deps
   allow_failures:
-    - env: TOXENV: pre_deps
-    - env: TOXENV: vcs_deps
+    - env: TOXENV=pre_deps
+    - env: TOXENV=vcs_deps
 install:
   - pip install tox-travis
 script:
