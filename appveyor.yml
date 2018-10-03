@@ -42,8 +42,8 @@ environment:
       PYTHON: "C:\\Python37-x64"
 
   allow_failures:
-    - env: TOXENV: pre_deps
-    - env: TOXENV: vcs_deps
+    - TOXENV: pre_deps
+    - TOXENV: vcs_deps
 
 init:
   - echo "TOXENV- %TOXENV%"
