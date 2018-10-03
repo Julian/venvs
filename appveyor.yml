@@ -32,6 +32,19 @@ environment:
     - TOXENV: py37
       PYTHON: "C:\\Python37-x64"
 
+    - TOXENV: latest_deps
+      PYTHON: "C:\\Python37-x64"
+
+    - TOXENV: pre_deps
+      PYTHON: "C:\\Python37-x64"
+
+    - TOXENV: vcs_deps
+      PYTHON: "C:\\Python37-x64"
+
+  allow_failures:
+    - env: TOXENV: pre_deps
+    - env: TOXENV: vcs_deps
+
 init:
   - echo "TOXENV- %TOXENV%"
 
