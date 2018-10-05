@@ -45,8 +45,7 @@ def build(artifact, script, root):
 
     try:
         to_install = (
-            ('-r', str(root.descendant('requirements.txt'))),
-            (str(root),),
+            ('-r', str(here.descendant('requirements.txt'))),
         )
         for target in to_install:
             subprocess.check_call(
@@ -57,6 +56,11 @@ def build(artifact, script, root):
                     '--target', str(build_path),
                 ) + target,
             )
+
+        shutil.copytree(
+            str(here.parent()),
+            str(build_path.descendant(here.basename())),
+        )
 
         shutil.copyfile(
             str(script),
