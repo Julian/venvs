@@ -56,7 +56,7 @@ def main(filesystem, locator, link_dir, handle_error):
             "sys.version", subprocess.check_output(
                 [python, "--version"],
                 stderr=subprocess.STDOUT,
-            ),
+            ).decode('ascii'),
         )
         arguments = ["-p", python]
 
