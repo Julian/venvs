@@ -1,11 +1,11 @@
-appdirs==1.4.3
-attrs==18.1.0
-click==6.7
-filesystems==0.17.0
-packaging==17.1
-pyparsing==2.2.0
-pyrsistent==0.14.4
-pytoml==0.1.19
-six==1.11.0
+appdirs==1.4.3 ## git+https://github.com/ActiveState/appdirs
+attrs==18.1.0 ## git+https://github.com/python-attrs/attrs
+click==6.7 ## git+https://github.com/pallets/click
+filesystems==0.17.0 ## git+https://github.com/Julian/Filesystems
+packaging==17.1 ## git+https://github.com/pypa/packaging
+pyparsing==2.2.0 ## git+https://github.com/pyparsing/pyparsing
+pyrsistent==0.14.4 ## git+https://github.com/tobgu/pyrsistent
+pytoml==0.1.19 ## git+https://github.com/avakar/pytoml
+six==1.11.0 ## git+https://github.com/benjaminp/six
 git+https://github.com/altendky/tqdm@b76e47d34f29e65005b2c79b64c248e887f7f94a#egg=tqdm
-virtualenv==16.0.0
+virtualenv==16.0.0 ## git+https://github.com/pypa/virtualenv

@@ -13,12 +13,12 @@ matrix:
     - python: 3.7
       dist: xenial
       sudo: true
-      env: TOXENV=latest_deps
-    - env: TOXENV=pre_deps
-    - env: TOXENV=vcs_deps
+      env: TOXENV=py37-latest
+    - env: TOXENV=py37-pre
+    - env: TOXENV=py37-vcs
   allow_failures:
-    - env: TOXENV=pre_deps
-    - env: TOXENV=vcs_deps
+    - env: TOXENV=py37-pre
+    - env: TOXENV=py37-vcs
 install:
   - pip install tox-travis
 script:
