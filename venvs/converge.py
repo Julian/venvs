@@ -4,6 +4,7 @@ Converge the set of installed virtualenvs.
 """
 import collections
 import os
+import subprocess
 import sys
 
 from filesystems.exceptions import FileExists, FileNotFound
@@ -11,6 +12,7 @@ from tqdm import tqdm
 import click
 import pytoml
 
+from venvs import __version__
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
@@ -37,6 +39,7 @@ def _do_not_fail(virtualenv):
     flag_value=_do_not_fail,
     help="Do not fail if a virtualenv cannot be converged.",
 )
+@click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
     with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
         contents = pytoml.load(
@@ -48,7 +51,14 @@ def main(filesystem, locator, link_dir, handle_error):
     for name, config in progress:
         progress.set_description(name)
 
-        config.setdefault("sys.version", sys.version)
+        python = config.pop("python", sys.executable)
+        config.setdefault(
+            "sys.version", subprocess.check_output(
+                [python, "--version"],
+                stderr=subprocess.STDOUT,
+            ).decode('ascii'),
+        )
+        arguments = ["-p", python]
 
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path.descendant("installed.toml")
@@ -58,9 +68,9 @@ def main(filesystem, locator, link_dir, handle_error):
                 if pytoml.loads(existing_config.read()) == config:
                     continue
         except FileNotFound:
-            virtualenv.create()
+            virtualenv.create(arguments=arguments)
         else:
-            virtualenv.recreate_on(filesystem=filesystem)
+            virtualenv.recreate_on(filesystem=filesystem, arguments=arguments)
 
         packages, requirements = _to_install(config=config)
         try:
