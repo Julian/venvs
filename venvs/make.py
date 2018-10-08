@@ -12,6 +12,7 @@ from filesystems import Path
 from packaging.requirements import Requirement
 import click
 
+from venvs import __version__
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
@@ -56,6 +57,7 @@ from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 )
 @click.argument("name", required=False)
 @click.argument("virtualenv_args", nargs=-1, type=click.UNPROCESSED)
+@click.version_option(version=__version__)
 def main(
     filesystem,
     link_dir,
