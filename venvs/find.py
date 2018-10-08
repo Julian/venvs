@@ -4,6 +4,7 @@ from filesystems import Path
 import click
 import sys
 
+from venvs import __version__
 from venvs.common import _FILESYSTEM, _ROOT, PATH
 
 
@@ -56,6 +57,7 @@ def run(
     help="Only consider existing virtualenvs.",
 )
 @click.pass_context
+@click.version_option(version=__version__)
 def main(context, locator, existing_only, filesystem):
     if context.invoked_subcommand is None:
         click.echo(locator.root)
