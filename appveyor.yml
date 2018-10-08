@@ -32,13 +32,16 @@ environment:
     - TOXENV: py37
       PYTHON: "C:\\Python37-x64"
 
-    - TOXENV: latest_deps
+    - TOXENV: py27-latest
+      PYTHON: "C:\\Python27-x64"
+
+    - TOXENV: py37-latest
       PYTHON: "C:\\Python37-x64"
 
-    - TOXENV: pre_deps
+    - TOXENV: py37-pre
       PYTHON: "C:\\Python37-x64"
 
-    - TOXENV: vcs_deps
+    - TOXENV: py37-vcs
       PYTHON: "C:\\Python37-x64"
 
 matrix:
