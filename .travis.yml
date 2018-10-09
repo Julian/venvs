@@ -2,19 +2,25 @@ language: python
 matrix:
   include:
     - python: 2.7
+      env: TOXENV=py27-default
     - python: 3.4
+      env: TOXENV=py34-default
     - python: 3.5
+      env: TOXENV=py35-default
     - python: 3.6
+      env: TOXENV=py36-default
     - python: 3.7
+      env: TOXENV=py37-default
       dist: xenial
       sudo: true
     - python: pypy
     - python: pypy3
-    - env: TOXENV=py27-latest
+    - python: 2.7
+      env: TOXENV=py27-latest
     - python: 3.7
+      env: TOXENV=py37-latest
       dist: xenial
       sudo: true
-      env: TOXENV=py37-latest
     - env: TOXENV=py37-pre
     - env: TOXENV=py37-vcs
   allow_failures:

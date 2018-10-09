@@ -2,34 +2,34 @@ environment:
   VENV: "%APPVEYOR_BUILD_FOLDER%\\venv"
 
   matrix:
-    - TOXENV: py27
+    - TOXENV: py27-default
       PYTHON: "C:\\Python27"
 
-    - TOXENV: py27
+    - TOXENV: py27-default
       PYTHON: "C:\\Python27-x64"
 
-    - TOXENV: py34
+    - TOXENV: py34-default
       PYTHON: "C:\\Python34"
 
-    - TOXENV: py34
+    - TOXENV: py34-default
       PYTHON: "C:\\Python34-x64"
 
-    - TOXENV: py35
+    - TOXENV: py35-default
       PYTHON: "C:\\Python35"
 
-    - TOXENV: py35
+    - TOXENV: py35-default
       PYTHON: "C:\\Python35-x64"
 
-    - TOXENV: py36
+    - TOXENV: py36-default
       PYTHON: "C:\\Python36"
 
-    - TOXENV: py36
+    - TOXENV: py36-default
       PYTHON: "C:\\Python36-x64"
 
-    - TOXENV: py37
+    - TOXENV: py37-default
       PYTHON: "C:\\Python37"
 
-    - TOXENV: py37
+    - TOXENV: py37-default
       PYTHON: "C:\\Python37-x64"
 
     - TOXENV: py27-latest
