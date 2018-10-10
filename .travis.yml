@@ -14,7 +14,9 @@ matrix:
       dist: xenial
       sudo: true
     - python: pypy
+      env: TOXENV=pypy-default
     - python: pypy3
+      env: TOXENV=pypy3-default
     - python: 2.7
       env: TOXENV=py27-latest
     - python: 3.7
