@@ -52,6 +52,7 @@ from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 )
 @click.option(
     "-t", "--temp", "--temporary",
+    "temporary",
     flag_value=True,
     help="create or reuse the global temporary virtualenv",
 )
