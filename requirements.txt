@@ -1,6 +1,6 @@
 appdirs==1.4.3
 attrs==18.1.0
-click==6.7
+click==7.0
 filesystems==0.17.0
 packaging==17.1
 pyparsing==2.2.0
