@@ -1,3 +1,4 @@
+import pathlib
 import shutil
 import subprocess
 import sys
@@ -7,6 +8,7 @@ import click
 
 from filesystems import native, Path
 
+from venvs.bootstrap_script import downloaded_path
 
 this = Path.from_string(__file__)
 here = this.parent()
@@ -42,21 +44,47 @@ def main(artifact, script, root):
 def build(artifact, script, root):
     fs = native.FS()
     build_path = fs.temporary_directory()
+    build_download_path = build_path.descendant(downloaded_path)
 
     try:
         to_install = (
             ('-r', str(root.descendant('requirements.txt'))),
-            ('--no-deps', str(root),),
+            # ('setuptools_scm',),
         )
         for target in to_install:
             subprocess.check_call(
                 (
                     sys.executable,
                     '-m', 'pip',
-                    'install',
-                    '--target', str(build_path),
-                ) + target,
+                    'download',
+                    '--no-deps',
+                    '--dest', str(build_download_path),
+                    *target,
+                ),
+                cwd=str(build_path),
             )
+
+        subprocess.check_call(
+            (
+                sys.executable,
+                str(root.descendant('setup.py')),
+                'bdist_wheel',
+                '--universal',
+                '--dist-dir', str(build_download_path),
+            ),
+        )
+
+        to_install = pathlib.Path(str(build_download_path)).glob('*')
+        subprocess.check_call(
+            (
+                sys.executable,
+                '-m', 'pip',
+                'install',
+                '--target', str(build_path),
+                *(str(p) for p in to_install),
+            ),
+            cwd=str(build_path),
+        )
 
         shutil.copyfile(
             str(script),
@@ -66,6 +94,7 @@ def build(artifact, script, root):
         zipapp.create_archive(
             source=str(build_path),
             target=str(artifact),
+            compressed=True,
         )
     finally:
         fs.remove(build_path)
