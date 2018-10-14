@@ -32,6 +32,9 @@ environment:
     - TOXENV: py37
       PYTHON: "C:\\Python37-x64"
 
+    - TOXENV: bootstrap
+      PYTHON: "C:\\Python37-x64"
+
 init:
   - echo "TOXENV- %TOXENV%"
 
@@ -42,8 +45,7 @@ install:
   - pip install tox
   - ps: Update-AppveyorBuild -Version "v$(python -c 'import sys; import venvs; sys.stdout.write(venvs.__version__)') b$Env:APPVEYOR_BUILD_NUMBER"
 
-build_script:
-  - tox -e bootstrap
+build: false
 
 test_script:
   - tox
