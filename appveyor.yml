@@ -42,7 +42,8 @@ install:
   - pip install tox
   - ps: Update-AppveyorBuild -Version "v$(python -c 'import sys; import venvs; sys.stdout.write(venvs.__version__)') b$Env:APPVEYOR_BUILD_NUMBER"
 
-build: false
+build_script:
+  - tox -e bootstrap
 
 test_script:
   - tox
