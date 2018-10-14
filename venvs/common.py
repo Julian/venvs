@@ -36,6 +36,7 @@ def _install_into_virtualenv(
         ] + things,
         stdout=stdout,
         stderr=stderr,
+        cwd=str(virtualenv.path),  # try to avoid pip detecting packages in `.`
     )
 
 

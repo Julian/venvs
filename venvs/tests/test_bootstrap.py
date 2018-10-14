@@ -8,7 +8,7 @@ from venvs import find, make
 from venvs.common import Locator
 from venvs.tests.utils import CLIMixin
 
-from venvs import bootstrap
+from venvs import bootstrap, bootstrap_script
 
 
 class TestBootstrap(CLIMixin, TestCase):
@@ -23,7 +23,7 @@ class TestBootstrap(CLIMixin, TestCase):
         package = Path.from_string(__file__).parent().parent()
 
         artifact = package.descendant('bootstrap.pyz')
-        script = Path.from_string('bootstrap_script.py')
+        script = Path.cwd().descendant('bootstrap_script.py')
 
         default_script, = (
             parameter.default
@@ -31,7 +31,7 @@ class TestBootstrap(CLIMixin, TestCase):
             if parameter.name == 'script'
         )
         with native_fs.open(default_script, 'rb') as source:
-            with self.filesystem.open(script, 'wb') as destination:
+            with native_fs.open(script, 'wb') as destination:
                 destination.write(source.read())
 
         self.run_cli([
@@ -39,4 +39,4 @@ class TestBootstrap(CLIMixin, TestCase):
             '--script', str(script),
         ])
 
-        self.assertTrue(self.fs.exists(artifact))
+        self.assertTrue(native_fs.exists(artifact))

@@ -8,7 +8,7 @@ import click
 from filesystems import native, Path
 
 
-this = Path.from_string(__file__).relative_to(Path.cwd())
+this = Path.from_string(__file__)
 here = this.parent()
 
 
@@ -45,7 +45,8 @@ def build(artifact, script, root):
 
     try:
         to_install = (
-            ('-r', str(here.descendant('requirements.txt'))),
+            ('-r', str(root.descendant('requirements.txt'))),
+            ('--no-deps', str(root),),
         )
         for target in to_install:
             subprocess.check_call(
@@ -56,11 +57,6 @@ def build(artifact, script, root):
                     '--target', str(build_path),
                 ) + target,
             )
-
-        shutil.copytree(
-            str(here.parent()),
-            str(build_path.descendant(here.basename())),
-        )
 
         shutil.copyfile(
             str(script),
