@@ -8,8 +8,6 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 
 """
 
-from functools import partial
-
 from filesystems import Path
 from packaging.requirements import Requirement
 import click
@@ -73,6 +71,8 @@ def main(
     recreate,
     virtualenv_args,
 ):
+    locator.filesystem = filesystem
+
     if name:
         if temporary:
             raise click.BadParameter(
@@ -83,7 +83,7 @@ def main(
     elif temporary:
         virtualenv = locator.temporary()
         click.echo(virtualenv.binary("python").dirname())
-        act = partial(virtualenv.recreate_on, filesystem=filesystem)
+        act = virtualenv.recreate_on
     elif len(installs) == 1:
         # When there's just one package to install, default to using that name.
         requirement, = installs
@@ -99,7 +99,7 @@ def main(
         virtualenv = locator.for_directory(directory=Path.cwd())
 
     if recreate or temporary:
-        act = partial(virtualenv.recreate_on, filesystem=filesystem)
+        act = virtualenv.recreate_on
     else:
         act = virtualenv.create
 

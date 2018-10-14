@@ -14,32 +14,32 @@ class TestMake(CLIMixin, TestCase):
     cli = make
 
     def test_make_creates_an_env_with_the_given_name(self):
-        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("a").exists_on())
         self.run_cli(["a"])
         self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
 
     def test_make_t_creates_a_global_temporary_environment(self):
         temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists_on(self.filesystem))
+        self.assertFalse(temporary.exists_on())
 
         stdin, stdout, stderr = self.run_cli(["--temporary"])
         self.assertEqual(
-            (temporary.exists_on(self.filesystem), stdin, stdout, stderr),
+            (temporary.exists_on(), stdin, stdout, stderr),
             (True, "", str(temporary.path.descendant("bin")) + "\n", ""),
         )
 
     def test_make_t_recreates_the_environment_if_it_exists(self):
         temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists_on(self.filesystem))
+        self.assertFalse(temporary.exists_on())
         self.run_cli(["--temporary"])
-        self.assertTrue(temporary.exists_on(self.filesystem))
+        self.assertTrue(temporary.exists_on())
 
         foo = temporary.path.descendant("foo")
         self.filesystem.touch(path=foo)
         self.assertTrue(self.filesystem.exists(path=foo))
 
         self.run_cli(["--temporary"])
-        self.assertTrue(temporary.exists_on(self.filesystem))
+        self.assertTrue(temporary.exists_on())
         self.assertFalse(self.filesystem.exists(path=foo))
 
     def test_cannot_specify_both_name_and_temporary(self):
@@ -54,7 +54,7 @@ class TestMake(CLIMixin, TestCase):
 
     def test_recreate(self):
         virtualenv = self.locator.for_name("something")
-        self.assertFalse(virtualenv.exists_on(self.filesystem))
+        self.assertFalse(virtualenv.exists_on())
 
         virtualenv.create()
 
@@ -63,7 +63,7 @@ class TestMake(CLIMixin, TestCase):
         self.assertTrue(self.filesystem.exists(thing))
 
         self.run_cli(["--recreate", "something"])
-        self.assertTrue(virtualenv.exists_on(self.filesystem))
+        self.assertTrue(virtualenv.exists_on())
 
         self.assertFalse(self.filesystem.exists(thing))
 
@@ -83,9 +83,9 @@ class TestMake(CLIMixin, TestCase):
         """
 
         virtualenv = self.locator.for_directory(Path.cwd())
-        self.assertFalse(virtualenv.exists_on(self.filesystem))
+        self.assertFalse(virtualenv.exists_on())
         self.run_cli([])
-        self.assertTrue(virtualenv.exists_on(self.filesystem))
+        self.assertTrue(virtualenv.exists_on())
 
     def test_install_default_name(self):
         """

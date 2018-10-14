@@ -38,6 +38,7 @@ class CLIMixin(object):
                 install=self.fake_install,
                 **kwargs
             ),
+            filesystem=self.filesystem,
         )
 
     def installed(self, virtualenv):

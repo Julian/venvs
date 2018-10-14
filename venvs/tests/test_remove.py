@@ -12,9 +12,9 @@ class TestRemove(CLIMixin, TestCase):
     def test_remove_removes_an_env_with_the_given_name(self):
         boom = self.locator.for_name("boom")
         boom.create()
-        self.assertTrue(boom.exists_on(filesystem=self.filesystem))
+        self.assertTrue(boom.exists_on())
         self.run_cli(["boom"])
-        self.assertFalse(boom.exists_on(filesystem=self.filesystem))
+        self.assertFalse(boom.exists_on())
 
     def test_remove_multiple(self):
         names = ["boom", "bang", "whiz"]
@@ -25,16 +25,16 @@ class TestRemove(CLIMixin, TestCase):
 
         self.run_cli(names)
         self.assertEqual(
-            [venv.exists_on(filesystem=self.filesystem) for venv in venvs],
+            [venv.exists_on() for venv in venvs],
             [False, False, False],
         )
 
     def test_cannot_remove_non_existing_envs(self):
         boom = self.locator.for_name("boom")
-        self.assertFalse(boom.exists_on(filesystem=self.filesystem))
+        self.assertFalse(boom.exists_on())
         self.run_cli(["boom"], exit_status=_EX_NOINPUT)
 
     def test_can_remove_non_existing_envs_with_force(self):
         boom = self.locator.for_name("boom")
-        self.assertFalse(boom.exists_on(filesystem=self.filesystem))
+        self.assertFalse(boom.exists_on())
         self.run_cli(["--force", "boom"])

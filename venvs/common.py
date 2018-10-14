@@ -10,11 +10,25 @@ import click
 import filesystems.native
 
 
-def _create_virtualenv(virtualenv, arguments, stdout, stderr):
+def _create_virtualenv(
+        virtualenv,
+        virtualenv_install,
+        filesystem,
+        arguments,
+        stdout,
+        stderr,
+):
+    _ensure_virtualenv_install(
+        filesystem=filesystem,
+        virtualenv_install=virtualenv_install,
+        stdout=stdout,
+        stderr=stderr,
+    )
+
     subprocess.check_call(
         [
             sys.executable,
-            "-m", "virtualenv",
+            str(virtualenv_install.descendant('virtualenv.py')),
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
@@ -39,6 +53,23 @@ def _install_into_virtualenv(
     )
 
 
+def _ensure_virtualenv_install(filesystem, virtualenv_install, stdout, stderr):
+    if filesystem.is_dir(virtualenv_install):
+        return
+
+    subprocess.check_call(
+        [
+            sys.executable,
+            '-m', 'pip',
+            'install',
+            '--target', str(virtualenv_install),
+            'virtualenv',
+        ],
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
 @attr.s
 class VirtualEnv(object):
     """
@@ -47,27 +78,62 @@ class VirtualEnv(object):
     """
 
     path = attr.ib()
+    _virtualenv_install = attr.ib()
+    _filesystem = attr.ib()
     _create = attr.ib(default=_create_virtualenv, repr=False)
     _install = attr.ib(default=_install_into_virtualenv, repr=False)
 
-    def exists_on(self, filesystem):
+    def exists_on(self, filesystem=None):
+        if filesystem is None:
+            filesystem = self._filesystem
+
         return filesystem.is_dir(path=self.path)
 
     def binary(self, name):
         return self.path.descendant("bin", name)
 
-    def create(self, arguments=(), stdout=sys.stdout, stderr=sys.stderr):
-        self._create(self, arguments=arguments, stdout=stdout, stderr=stderr)
+    def create(
+            self,
+            filesystem=None,
+            virtualenv_install=None,
+            arguments=(),
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+    ):
+        if virtualenv_install is None:
+            virtualenv_install = self._virtualenv_install
 
-    def remove_from(self, filesystem):
+        if filesystem is None:
+            filesystem = self._filesystem
+
+        self._create(
+            self,
+            filesystem=filesystem,
+            virtualenv_install=virtualenv_install,
+            arguments=arguments,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+    def remove_from(self, filesystem=None):
+        if filesystem is None:
+            filesystem = self._filesystem
+
         filesystem.remove(self.path)
 
-    def recreate_on(self, filesystem, **kwargs):
+    def recreate_on(self, filesystem=None, virtualenv_install=None, **kwargs):
+        if filesystem is None:
+            filesystem = self._filesystem
+
         try:
             self.remove_from(filesystem=filesystem)
         except filesystems.exceptions.FileNotFound:
             pass
-        self.create(**kwargs)
+        self.create(
+            filesystem=filesystem,
+            virtualenv_install=virtualenv_install,
+            **kwargs
+        )
 
     def install(self, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
         self._install(virtualenv=self, stdout=stdout, stderr=stderr, **kwargs)
@@ -81,6 +147,7 @@ class Locator(object):
     """
 
     root = attr.ib()
+    filesystem = attr.ib(default=None)
     make_virtualenv = attr.ib(default=VirtualEnv)
 
     @classmethod
@@ -111,10 +178,17 @@ class Locator(object):
 
     def for_name(self, name):
         child = self.root.descendant(name.lower().replace("-", "_"))
-        return self.make_virtualenv(path=child)
+        return self.make_virtualenv(
+            path=child,
+            filesystem=self.filesystem,
+            virtualenv_install=self.virtualenv_install(),
+        )
 
     def temporary(self):
         return self.for_name(".venvs-temporary-env")
+
+    def virtualenv_install(self):
+        return self.root.descendant("_mkenv_virtualenv_install")
 
 
 class _Path(click.ParamType):
