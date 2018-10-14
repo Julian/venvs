@@ -111,6 +111,10 @@ def main(
         filesystem.create_directory(link_dir)
 
     for link in links:
+        if filesystem.exists(link_dir.descendant(link)):
+            continue
+
+        # TODO: add an `overwrite` parameter
         filesystem.link(
             source=virtualenv.binary(name=link),
             to=link_dir.descendant(link),
