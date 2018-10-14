@@ -46,3 +46,6 @@ build: false
 
 test_script:
   - tox
+
+artifacts:
+  - path: "bootstrap.pyz"

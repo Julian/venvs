@@ -72,6 +72,7 @@ def build(artifact, script, root):
                 '--universal',
                 '--dist-dir', str(build_download_path),
             ),
+            cwd=str(root),
         )
 
         to_install = pathlib.Path(str(build_download_path)).glob('*')
