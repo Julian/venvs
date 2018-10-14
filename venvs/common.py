@@ -10,11 +10,24 @@ import click
 import filesystems.native
 
 
+def get_module_path(name):
+    if sys.version_info >= (3, 4):
+        import importlib
+        spec = importlib.util.find_spec(name)
+        path = spec.origin
+    else:
+        import imp
+        f, path, _ = imp.find_module(name)
+        f.close()
+
+    return path
+
+
 def _create_virtualenv(virtualenv, arguments, stdout, stderr):
     subprocess.check_call(
         [
             sys.executable,
-            "-m", "virtualenv",
+            get_module_path('virtualenv'),
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
