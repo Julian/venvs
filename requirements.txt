@@ -1,6 +1,6 @@
 appdirs==1.4.3 ## git+https://github.com/ActiveState/appdirs
 attrs==18.1.0 ## git+https://github.com/python-attrs/attrs
-click==6.7 ## git+https://github.com/pallets/click
+click==7.0 ## git+https://github.com/pallets/click
 filesystems==0.17.0 ## git+https://github.com/Julian/Filesystems
 packaging==17.1 ## git+https://github.com/pypa/packaging
 pyparsing==2.2.0 ## git+https://github.com/pyparsing/pyparsing
