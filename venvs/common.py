@@ -23,10 +23,12 @@ def get_module_path(name):
     return path
 
 
-def _create_virtualenv(virtualenv, arguments, stdout, stderr):
+def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
+    if python is None:
+        python = sys.executable
     subprocess.check_call(
         [
-            sys.executable,
+            python,
             get_module_path('virtualenv'),
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
@@ -69,8 +71,8 @@ class VirtualEnv(object):
     def binary(self, name):
         return self.path.descendant("bin", name)
 
-    def create(self, arguments=(), stdout=sys.stdout, stderr=sys.stderr):
-        self._create(self, arguments=arguments, stdout=stdout, stderr=stderr)
+    def create(self, arguments=(), python=None, stdout=sys.stdout, stderr=sys.stderr):
+        self._create(self, arguments=arguments, python=python, stdout=stdout, stderr=stderr)
 
     def remove_from(self, filesystem):
         filesystem.remove(self.path)
