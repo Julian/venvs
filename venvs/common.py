@@ -139,7 +139,7 @@ class _Locator(click.ParamType):
 
 PATH = _Path()
 _ROOT = click.option(
-    "-R", "--root", "locator",
+    "--root", "locator",
     default=Locator.default,
     type=_Locator(),
     help="Specify a different root directory for virtualenvs.",
