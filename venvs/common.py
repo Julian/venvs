@@ -71,8 +71,20 @@ class VirtualEnv(object):
     def binary(self, name):
         return self.path.descendant("bin", name)
 
-    def create(self, arguments=(), python=None, stdout=sys.stdout, stderr=sys.stderr):
-        self._create(self, arguments=arguments, python=python, stdout=stdout, stderr=stderr)
+    def create(
+            self,
+            arguments=(),
+            python=None,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+    ):
+        self._create(
+            self,
+            arguments=arguments,
+            python=python,
+            stdout=stdout,
+            stderr=stderr,
+        )
 
     def remove_from(self, filesystem):
         filesystem.remove(self.path)
