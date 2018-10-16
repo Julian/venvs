@@ -24,8 +24,6 @@ def get_module_path(name):
 
 
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
-    if python is None:
-        python = sys.executable
     subprocess.check_call(
         [
             python,
@@ -74,7 +72,7 @@ class VirtualEnv(object):
     def create(
             self,
             arguments=(),
-            python=None,
+            python=sys.executable,
             stdout=sys.stdout,
             stderr=sys.stderr,
     ):
