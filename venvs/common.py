@@ -8,26 +8,14 @@ import sysconfig
 import attr
 import click
 import filesystems.native
-
-
-def get_module_path(name):
-    if sys.version_info >= (3, 4):
-        import importlib
-        spec = importlib.util.find_spec(name)
-        path = spec.origin
-    else:
-        import imp
-        f, path, _ = imp.find_module(name)
-        f.close()
-
-    return path
+import virtualenv as virtualenv_for_path
 
 
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
             python,
-            get_module_path('virtualenv'),
+            virtualenv_for_path.__file__,
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
