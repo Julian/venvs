@@ -65,8 +65,7 @@ def main(filesystem, link_dir):
                 'install',
                 '--no-deps',
                 '--no-index',
-                *(str(fd) for fd in full_dists),
-            ),
+            ) + tuple(str(fd) for fd in full_dists),
             cwd=str(virtualenv.path),
         )
     finally:
