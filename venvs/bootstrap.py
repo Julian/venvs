@@ -8,17 +8,23 @@ import click
 
 from filesystems import native, Path
 
+import venvs
 from venvs.bootstrap_script import downloaded_path
 
 this = Path.from_string(__file__)
 here = this.parent()
+
+default_artifact_name = 'venvs-bootstrap-{version}.pyz'.format(
+    version=venvs.__version__,
+)
+default_artifact_path = Path.cwd().descendant(default_artifact_name)
 
 
 @click.command()
 @click.option(
     '--artifact',
     type=click.Path(dir_okay=False),
-    default=str(Path.cwd().descendant('bootstrap.pyz')),
+    default=str(default_artifact_path),
     show_default=True,
 )
 @click.option(

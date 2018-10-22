@@ -51,4 +51,4 @@ test_script:
   - tox
 
 artifacts:
-  - path: "bootstrap.pyz"
+  - path: "*.pyz"
