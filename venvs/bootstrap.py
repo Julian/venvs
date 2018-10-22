@@ -98,10 +98,14 @@ def build(artifact, script, root):
             str(build_path.descendant('__main__.py')),
         )
 
+        extras = {}
+        if sys.version >= (3, 7):
+            extras['compressed'] = True
+
         zipapp.create_archive(
             source=str(build_path),
             target=str(artifact),
-            compressed=True,
+            **extras,
         )
     finally:
         fs.remove(build_path)
