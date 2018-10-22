@@ -58,7 +58,6 @@ def main(filesystem, locator, link_dir, handle_error):
                 stderr=subprocess.STDOUT,
             ).decode('ascii'),
         )
-        arguments = ["-p", python]
 
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path.descendant("installed.toml")
@@ -68,9 +67,9 @@ def main(filesystem, locator, link_dir, handle_error):
                 if pytoml.loads(existing_config.read()) == config:
                     continue
         except FileNotFound:
-            virtualenv.create(arguments=arguments)
+            virtualenv.create(python=python)
         else:
-            virtualenv.recreate_on(filesystem=filesystem, arguments=arguments)
+            virtualenv.recreate_on(filesystem=filesystem, python=python)
 
         packages, requirements = _to_install(config=config)
         try:

@@ -8,13 +8,14 @@ import sysconfig
 import attr
 import click
 import filesystems.native
+import virtualenv as virtualenv_for_path
 
 
-def _create_virtualenv(virtualenv, arguments, stdout, stderr):
+def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
-            sys.executable,
-            "-m", "virtualenv",
+            python,
+            virtualenv_for_path.__file__,
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
@@ -57,8 +58,20 @@ class VirtualEnv(object):
     def binary(self, name):
         return self.path.descendant("bin", name)
 
-    def create(self, arguments=(), stdout=sys.stdout, stderr=sys.stderr):
-        self._create(self, arguments=arguments, stdout=stdout, stderr=stderr)
+    def create(
+            self,
+            arguments=(),
+            python=sys.executable,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+    ):
+        self._create(
+            self,
+            arguments=arguments,
+            python=python,
+            stdout=stdout,
+            stderr=stderr,
+        )
 
     def remove_from(self, filesystem):
         filesystem.remove(self.path)
