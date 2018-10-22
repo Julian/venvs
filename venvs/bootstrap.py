@@ -105,7 +105,7 @@ def build(artifact, script, root):
         zipapp.create_archive(
             source=str(build_path),
             target=str(artifact),
-            **extras,
+            **extras
         )
     finally:
         fs.remove(build_path)
