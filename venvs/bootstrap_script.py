@@ -14,6 +14,17 @@ from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, Locator
 downloaded_path = 'downloaded'
 
 
+def create_virtualenv_with_dash_m(virtualenv, arguments, python, stdout, stderr):
+    subprocess.check_call(
+        [
+            python,
+            '-m', 'virtualenv',
+            "--quiet",
+        ] + list(arguments) + [str(virtualenv.path)],
+        stderr=stderr,
+    )
+
+
 @click.command(help='Bootstrap venvs')
 @_FILESYSTEM
 @_LINK_DIR
@@ -34,11 +45,15 @@ def main(filesystem, link_dir):
     #     ),
     # ))
 
+    # https://github.com/pallets/click/issues/405
+    link_dir = Path.from_string(str(link_dir))
+
     pyz = Path.from_string(__file__)
     pyz = pyz.relative_to(path=Path.cwd())
     pyz = pyz.parent()
 
     virtualenv = Locator.default().for_name('venvs')
+    virtualenv._create = create_virtualenv_with_dash_m
     virtualenv.recreate_on(filesystem=filesystem)
 
     d = Path.from_string(tempfile.mkdtemp())

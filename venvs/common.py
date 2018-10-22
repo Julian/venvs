@@ -11,6 +11,9 @@ import filesystems.native
 import virtualenv as virtualenv_for_path
 
 
+workon_home_env_var = "WORKON_HOME"
+
+
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
@@ -99,7 +102,7 @@ class Locator(object):
 
     @classmethod
     def default(cls, **kwargs):
-        workon_home = os.getenv("WORKON_HOME")
+        workon_home = os.getenv(workon_home_env_var)
         if workon_home:
             root = workon_home
         else:
