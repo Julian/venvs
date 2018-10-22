@@ -8,8 +8,6 @@ from filesystems import native, Path
 
 from venvs.common import Locator, workon_home_env_var
 
-from venvs import bootstrap
-
 
 class TestBootstrap(TestCase):
     if sys.version_info < (3,):
@@ -25,34 +23,36 @@ class TestBootstrap(TestCase):
         package = Path.from_string(__file__).parent().parent()
 
         self.artifact = self.temporary_directory.descendant('bootstrap.pyz')
-        script = self.temporary_directory.descendant('bootstrap_script.py')
 
-        default_script, = (
-            parameter.default
-            for parameter in bootstrap.main.params
-            if parameter.name == 'script'
-        )
-        with self.native_fs.open(default_script, 'rb') as source:
-            with self.native_fs.open(script, 'wb') as destination:
-                destination.write(source.read())
+        requirements_path = package.parent().descendant('requirements.txt')
 
         locator = Locator(root=self.temporary_directory)
         build_venv = locator.for_name('build_venv')
         build_venv.create(python='python3')
         build_venv.install(
             # TODO: shouldn't this be a default or such?
-            packages=[],
+            packages=[os.environ['TOX_INI_DIR']],
             requirements=[
-                str(package.parent().descendant('test-requirements.txt')),
+                str(requirements_path),
             ],
         )
+
+        path = subprocess.check_output(
+            [
+                str(build_venv.binary('python')),
+                '-c', 'import venvs; print(venvs.__file__)'
+            ]
+        ).decode('ascii') # TODO: not ascii...
+        path = Path.from_string(path).parent().parent().descendant('requirements.txt')
+        shutil.copy(str(requirements_path), str(path))
 
         subprocess.check_call(
             [
                 str(build_venv.binary('python')),
                 '-m', 'venvs.bootstrap',
                 '--artifact', str(self.artifact),
-                '--script', str(script),
+                # '--script', str(package.descendant('bootstrap_script.py')),
+                '--root', os.environ['TOX_INI_DIR'],
             ],
         )
 

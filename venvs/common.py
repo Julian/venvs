@@ -18,10 +18,11 @@ def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
             python,
-            virtualenv_for_path.__file__,
+            virtualenv_for_path.__file__.rstrip('c'),
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
+        stdout=stdout,
     )
 
 
