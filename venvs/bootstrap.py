@@ -99,7 +99,7 @@ def build(artifact, script, root):
         )
 
         extras = {}
-        if sys.version >= (3, 7):
+        if sys.version_info >= (3, 7):
             extras['compressed'] = True
 
         zipapp.create_archive(
