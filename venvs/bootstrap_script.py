@@ -34,7 +34,9 @@ def main(filesystem, link_dir):
     #     ),
     # ))
 
-    pyz = Path.from_string(__file__).parent()
+    pyz = Path.from_string(__file__)
+    pyz = pyz.relative_to(path=Path.cwd())
+    pyz = pyz.parent()
 
     virtualenv = Locator.default().for_name('venvs')
     virtualenv.recreate_on(filesystem=filesystem)
