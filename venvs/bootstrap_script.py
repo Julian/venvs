@@ -8,13 +8,19 @@ import zipfile
 import click
 from filesystems import Path
 
-from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, Locator
+from venvs.common import _FILESYSTEM, _LINK_DIR, Locator
 
 
 downloaded_path = 'downloaded'
 
 
-def create_virtualenv_with_dash_m(virtualenv, arguments, python, stdout, stderr):
+def create_virtualenv_with_dash_m(
+        virtualenv,
+        arguments,
+        python,
+        stdout,
+        stderr,
+):
     subprocess.check_call(
         [
             python,
@@ -28,7 +34,6 @@ def create_virtualenv_with_dash_m(virtualenv, arguments, python, stdout, stderr)
 @click.command(help='Bootstrap venvs')
 @_FILESYSTEM
 @_LINK_DIR
-# @_ROOT
 def main(filesystem, link_dir):
     # doesn't work because pkg_resources doesn't work in the pyz
     #
