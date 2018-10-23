@@ -28,7 +28,9 @@ class TestBootstrap(TestCase):
 
         locator = Locator(root=self.temporary_directory)
         build_venv = locator.for_name('build_venv')
-        build_venv.create(python='python3')
+        # TODO: just stop using zipapp and create the zip manually so as
+        #       to support all regularly supported versions
+        build_venv.create(python='python3.5')
         build_venv.install(
             # TODO: shouldn't this be a default or such?
             packages=[os.environ['TOX_INI_DIR']],

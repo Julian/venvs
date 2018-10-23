@@ -65,8 +65,7 @@ def build(artifact, script, root):
                     'download',
                     '--no-deps',
                     '--dest', str(build_download_path),
-                    *target,
-                ),
+                ) + target,
                 cwd=str(build_path),
             )
 
@@ -88,8 +87,7 @@ def build(artifact, script, root):
                 '-m', 'pip',
                 'install',
                 '--target', str(build_path),
-                *(str(p) for p in to_install),
-            ),
+            ) + tuple(str(p) for p in to_install),
             cwd=str(build_path),
         )
 
