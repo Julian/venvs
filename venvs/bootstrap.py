@@ -1,8 +1,8 @@
-import pathlib
+import os
 import shutil
 import subprocess
 import sys
-import zipapp
+import zipfile
 
 import click
 
@@ -80,7 +80,10 @@ def build(artifact, script, root):
             cwd=str(root),
         )
 
-        to_install = pathlib.Path(str(build_download_path)).glob('*')
+        to_install = [
+            build_download_path.descendant(name)
+            for name in os.listdir(str(build_download_path))
+        ]
         subprocess.check_call(
             (
                 sys.executable,
@@ -96,17 +99,16 @@ def build(artifact, script, root):
             str(build_path.descendant('__main__.py')),
         )
 
-        if sys.version_info >= (3, 7):
-            zipapp.create_archive(
-                source=str(build_path),
-                target=str(artifact),
-                compressed=True,
-            )
-        else:
-            zipapp.create_archive(
-                source=str(build_path),
-                target=str(artifact),
-            )
+        with zipfile.ZipFile(file=str(artifact), mode='w') as zip:
+            for root, directories, files in os.walk(str(build_path)):
+                root = Path.from_string(root)
+                for name in files:
+                    path = root.descendant(name)
+                    archive_name = os.path.relpath(
+                        path=str(path),
+                        start=str(build_path),
+                    )
+                    zip.write(filename=str(path), arcname=archive_name)
     finally:
         fs.remove(build_path)
 
