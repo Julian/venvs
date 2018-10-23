@@ -22,7 +22,6 @@ def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
-        stdout=stdout,
     )
 
 
