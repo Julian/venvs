@@ -21,10 +21,10 @@ The unusual:
 A ``venvs-bootstrap-x.y.z.pyz`` file can be used to install venvs using only
 itself and any supported Python version.  The archive includes all dependencies
 for both running and installing venvs.  Running the file will create a
-virtualenv and in the default location and install venvs into it.  It will
-create the symlinks for the venvs package in the ``~/.local/bin`` directory.
-You may have to add this to your ``PATH`` before being able to run venvs
-itself, or specify the full path to the links.
+virtualenv in the default location and install venvs into it.  It will create
+the symlinks for the venvs package in the ``~/.local/bin`` directory.  You may
+have to add this to your ``PATH`` before being able to run venvs itself, or
+specify the full path to the links.
 
 .. code-block:: sh
 
