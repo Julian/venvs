@@ -19,12 +19,20 @@ class TestBootstrap(TestCase):
         self.temporary_directory = self.native_fs.temporary_directory()
         self.artifact = self.temporary_directory.descendant('bootstrap.pyz')
 
+        root = os.environ.get('TOX_INI_DIR')
+        if root is not None:
+            root = Path.from_string(root)
+        else:
+            root = Path.from_string(__file__).relative_to(Path.cwd()).parent()
+            while 'setup.py' not in self.native_fs.list_directory(root):
+                root = root.parent()
+
         build(
             artifact=self.artifact,
             script=Path.from_string(
                 venvs.bootstrap_script.__file__.rstrip('c'),
             ),
-            root=Path.from_string(os.environ['TOX_INI_DIR']),
+            root=root,
         )
 
     def tearDown(self):
