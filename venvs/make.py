@@ -10,6 +10,7 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 
 from functools import partial
 
+import filesystems
 from filesystems import Path
 from packaging.requirements import Requirement
 import click
@@ -20,7 +21,11 @@ from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, dump_config, load_config
 
 
 def add_virtualenv_config(filesystem, locator, installs, links):
-    contents = load_config(filesystem=filesystem, locator=locator)
+    try:
+        contents = load_config(filesystem=filesystem, locator=locator)
+    except filesystems.exceptions.FileNotFound:
+        contents = tomlkit.table()
+        contents.add('virtualenv', {})
 
     contents["virtualenv"].add(
         "_".join(installs), {"install": list(installs), "link": list(links)}
@@ -67,6 +72,12 @@ def add_virtualenv_config(filesystem, locator, installs, links):
     "temporary",
     flag_value=True,
     help="create or reuse the global temporary virtualenv",
+)
+@click.option(
+    "--config/--no-config",
+    is_flag=True,
+    default=True,
+    help="Add to config file when installing."
 )
 @click.argument("name", required=False)
 @click.argument("virtualenv_args", nargs=-1, type=click.UNPROCESSED)
