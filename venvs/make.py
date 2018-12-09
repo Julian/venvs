@@ -13,9 +13,19 @@ from functools import partial
 from filesystems import Path
 from packaging.requirements import Requirement
 import click
+import tomlkit
 
 from venvs import __version__
-from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
+from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, dump_config, load_config
+
+
+def add_virtualenv_config(filesystem, locator, installs, links):
+    contents = load_config(filesystem=filesystem, locator=locator)
+
+    contents["virtualenv"].add(
+        "_".join(installs), {"install": list(installs), "link": list(links)}
+    )
+    dump_config(contents, filesystem=filesystem, locator=locator)
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
@@ -72,11 +82,12 @@ def main(
     requirements,
     recreate,
     virtualenv_args,
+    config,
 ):
     if name:
         if temporary:
             raise click.BadParameter(
-                "specify only one of '-t / --temp / --temporary' or 'name'",
+                "specify only one of '-t / --temp / --temporary' or 'name'"
             )
 
         virtualenv = locator.for_name(name=name)
@@ -108,6 +119,10 @@ def main(
 
     for link in links:
         filesystem.link(
-            source=virtualenv.binary(name=link),
-            to=link_dir.descendant(link),
+            source=virtualenv.binary(name=link), to=link_dir.descendant(link)
+        )
+
+    if installs and config:
+        add_virtualenv_config(
+            filesystem=filesystem, locator=locator, installs=installs, links=links
         )

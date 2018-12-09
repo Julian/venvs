@@ -13,7 +13,7 @@ import click
 import pytoml
 
 from venvs import __version__
-from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
+from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, load_config
 
 
 def _fail(virtualenv):
@@ -41,12 +41,7 @@ def _do_not_fail(virtualenv):
 )
 @click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
-    with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
-        contents = pytoml.load(
-            venvs,
-            object_pairs_hook=collections.OrderedDict,
-        )
-
+    contents = load_config(filesystem=filesystem, locator=locator)
     progress = tqdm(contents["virtualenv"].items())
     for name, config in progress:
         progress.set_description(name)
