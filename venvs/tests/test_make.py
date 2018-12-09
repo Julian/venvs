@@ -5,7 +5,7 @@ from filesystems import Path
 import filesystems.native
 
 from venvs import find, make
-from venvs.common import Locator
+from venvs.common import Locator, load_config
 from venvs.tests.utils import CLIMixin
 
 
@@ -139,6 +139,15 @@ class TestMake(CLIMixin, TestCase):
 
     def test_multiple_installs_one_link_no_name(self):
         self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo"], exit_status=2)
+
+    def test_install_edit_config(self):
+        """Install will automatically edit the config file."""
+        self.run_cli(["-l", "foo", "-i", "bar"])
+        contents = load_config(filesystem=self.filesystem, locator=self.locator)
+        self.assertEqual(
+            contents,
+            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        )
 
 
 class TestIntegration(TestCase):
