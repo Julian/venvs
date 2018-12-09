@@ -149,6 +149,12 @@ class TestMake(CLIMixin, TestCase):
             {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
         )
 
+    def test_install_noconfig(self):
+        """Install --no-config will not edit the config file."""
+        self.run_cli(["-l", "foo", "-i", "bar", "--no-config"])
+        with self.assertRaises(filesystems.exceptions.FileNotFound):
+            load_config(filesystem=self.filesystem, locator=self.locator)
+
 
 class TestIntegration(TestCase):
     def setUp(self):
