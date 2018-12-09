@@ -26,6 +26,10 @@ def add_virtualenv_config(filesystem, locator, installs, links):
     except filesystems.exceptions.FileNotFound:
         contents = tomlkit.table()
         contents.add('virtualenv', {})
+    if 'virtualenv' not in contents:
+        contents = tomlkit.table()
+        contents.add('virtualenv', {})
+
 
     contents["virtualenv"].add(
         "_".join(installs), {"install": list(installs), "link": list(links)}
