@@ -78,6 +78,7 @@ def add_virtualenv_config(filesystem, locator, installs, links, name):
 )
 @click.option(
     "--persist/--no-persist",
+    "-p",
     is_flag=True,
     default=False,
     help="Add to config file when installing."
