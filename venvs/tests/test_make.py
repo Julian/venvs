@@ -142,7 +142,7 @@ class TestMake(CLIMixin, TestCase):
 
     def test_install_edit_config(self):
         """Install will automatically edit the config file."""
-        self.run_cli(["-l", "foo", "-i", "bar"])
+        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
         contents = load_config(filesystem=self.filesystem, locator=self.locator)
         self.assertEqual(
             contents,
@@ -159,7 +159,7 @@ class TestMake(CLIMixin, TestCase):
         ):
             pass
 
-        self.run_cli(["-l", "foo", "-i", "bar"])
+        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
         contents = load_config(filesystem=self.filesystem, locator=self.locator)
         self.assertEqual(
             contents,
