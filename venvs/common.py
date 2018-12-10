@@ -8,7 +8,6 @@ import sysconfig
 import attr
 import click
 import filesystems.native
-import pytoml
 import tomlkit
 import virtualenv as virtualenv_for_path
 
@@ -16,10 +15,7 @@ import virtualenv as virtualenv_for_path
 def _load_config(filesystem, locator):
     with filesystem.open(locator.root.descendant("virtualenvs.toml"), "rt") as venvs:
         text = venvs.read()
-        try:
-            return tomlkit.loads(text)
-        except ValueError:
-            return pytoml.loads(text)
+        return tomlkit.loads(text)
 
 
 def _dump_config(config, filesystem, locator):
