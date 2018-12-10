@@ -166,7 +166,7 @@ class TestMake(CLIMixin, TestCase):
             {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
         )
 
-    def test_install_noconfig(self):
+    def test_install_no_persist(self):
         """Install --no-persist will not edit the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
         with self.assertRaises(filesystems.exceptions.FileNotFound):
