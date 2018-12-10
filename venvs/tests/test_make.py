@@ -149,6 +149,23 @@ class TestMake(CLIMixin, TestCase):
             {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
         )
 
+    def test_handle_empty_config_file(self):
+        """Don't'break with an empty config file."""
+
+        # Empty the config file.
+        with self.filesystem.open(
+                self.locator.root.descendant("virtualenvs.toml"),
+                "w",
+        ):
+            pass
+
+        self.run_cli(["-l", "foo", "-i", "bar"])
+        contents = load_config(filesystem=self.filesystem, locator=self.locator)
+        self.assertEqual(
+            contents,
+            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        )
+
     def test_install_noconfig(self):
         """Install --no-config will not edit the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--no-config"])
