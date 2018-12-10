@@ -137,7 +137,7 @@ def main(
             source=virtualenv.binary(name=link), to=link_dir.descendant(link)
         )
 
-    if installs and persist and not temporary:
+    if persist:
         add_virtualenv_config(
             filesystem=filesystem,
             locator=locator,
