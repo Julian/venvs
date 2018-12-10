@@ -14,7 +14,7 @@ import virtualenv as virtualenv_for_path
 
 
 def load_config(filesystem, locator):
-    with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
+    with filesystem.open(locator.root.descendant("virtualenvs.toml"), "rt") as venvs:
         text = venvs.read()
         try:
             return tomlkit.loads(text)
@@ -23,7 +23,7 @@ def load_config(filesystem, locator):
 
 
 def dump_config(config, filesystem, locator):
-    with filesystem.open(locator.root.descendant("virtualenvs.toml"), "w") as venvs:
+    with filesystem.open(locator.root.descendant("virtualenvs.toml"), "wt") as venvs:
         return venvs.write(tomlkit.dumps(config))
 
 
