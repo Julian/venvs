@@ -77,7 +77,7 @@ def add_virtualenv_config(filesystem, locator, installs, links, name):
     help="create or reuse the global temporary virtualenv",
 )
 @click.option(
-    "--config/--no-config",
+    "--persist/--no-persist",
     is_flag=True,
     default=True,
     help="Add to config file when installing."
@@ -96,7 +96,7 @@ def main(
     requirements,
     recreate,
     virtualenv_args,
-    config,
+    persist,
 ):
     if name:
         if temporary:
@@ -136,7 +136,7 @@ def main(
             source=virtualenv.binary(name=link), to=link_dir.descendant(link)
         )
 
-    if installs and config and not temporary:
+    if installs and persist and not temporary:
         add_virtualenv_config(
             filesystem=filesystem,
             locator=locator,
