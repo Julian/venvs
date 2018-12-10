@@ -5,7 +5,7 @@ from filesystems import Path
 import filesystems.native
 
 from venvs import find, make
-from venvs.common import Locator, load_config
+from venvs.common import Locator, _load_config
 from venvs.tests.utils import CLIMixin
 
 
@@ -143,7 +143,7 @@ class TestMake(CLIMixin, TestCase):
     def test_install_edit_config(self):
         """Install will automatically edit the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
-        contents = load_config(filesystem=self.filesystem, locator=self.locator)
+        contents = _load_config(filesystem=self.filesystem, locator=self.locator)
         self.assertEqual(
             contents,
             {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
@@ -160,7 +160,7 @@ class TestMake(CLIMixin, TestCase):
             pass
 
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
-        contents = load_config(filesystem=self.filesystem, locator=self.locator)
+        contents = _load_config(filesystem=self.filesystem, locator=self.locator)
         self.assertEqual(
             contents,
             {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
@@ -170,7 +170,7 @@ class TestMake(CLIMixin, TestCase):
         """Install --no-persist will not edit the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
         with self.assertRaises(filesystems.exceptions.FileNotFound):
-            load_config(filesystem=self.filesystem, locator=self.locator)
+            _load_config(filesystem=self.filesystem, locator=self.locator)
 
 
 class TestIntegration(TestCase):
