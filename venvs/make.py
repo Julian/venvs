@@ -102,7 +102,7 @@ def main(
     if name:
         if temporary:
             raise click.BadParameter(
-                "specify only one of '-t / --temp / --temporary' or 'name'"
+                "specify only one of '-t / --temp / --temporary' or 'name'",
             )
 
         virtualenv = locator.for_name(name=name)
