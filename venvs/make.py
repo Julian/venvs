@@ -20,7 +20,7 @@ from venvs import __version__
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, dump_config, load_config
 
 
-def add_virtualenv_config(filesystem, locator, installs, links):
+def add_virtualenv_config(filesystem, locator, installs, links, name):
     try:
         contents = load_config(filesystem=filesystem, locator=locator)
     except filesystems.exceptions.FileNotFound:
@@ -30,9 +30,8 @@ def add_virtualenv_config(filesystem, locator, installs, links):
         contents = tomlkit.table()
         contents.add('virtualenv', {})
 
-
     contents["virtualenv"].add(
-        "_".join(installs), {"install": list(installs), "link": list(links)}
+        name, {"install": list(installs), "link": list(links)}
     )
     dump_config(contents, filesystem=filesystem, locator=locator)
 
@@ -137,7 +136,11 @@ def main(
             source=virtualenv.binary(name=link), to=link_dir.descendant(link)
         )
 
-    if installs and config:
+    if installs and config and not temporary:
         add_virtualenv_config(
-            filesystem=filesystem, locator=locator, installs=installs, links=links
+            filesystem=filesystem,
+            locator=locator,
+            installs=installs,
+            links=links,
+            name=name,
         )
