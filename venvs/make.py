@@ -17,7 +17,9 @@ import click
 import tomlkit
 
 from venvs import __version__
-from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, _dump_config, _load_config
+from venvs.common import (
+    _FILESYSTEM, _LINK_DIR, _ROOT, _dump_config, _load_config
+)
 
 
 def add_virtualenv_config(filesystem, locator, installs, links, name):
