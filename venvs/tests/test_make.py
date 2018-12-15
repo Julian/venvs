@@ -153,7 +153,7 @@ class TestMake(CLIMixin, TestCase):
         )
 
     def test_handle_empty_config_file(self):
-        """Don't'break with an empty config file."""
+        """Don't break with an empty config file."""
 
         # Empty the config file.
         with self.filesystem.open(
