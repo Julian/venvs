@@ -1,6 +1,7 @@
 from unittest import TestCase
 import sys
 
+import attr
 from filesystems import Path
 import filesystems.native
 
@@ -143,6 +144,7 @@ class TestMake(CLIMixin, TestCase):
     def test_install_edit_config(self):
         """Install --persist edits the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+
         contents = _load_config(
             filesystem=self.filesystem,
             locator=self.locator,
@@ -158,6 +160,19 @@ class TestMake(CLIMixin, TestCase):
         self.filesystem.touch(self.locator.root.descendant("virtualenvs.toml"))
 
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+        contents = _load_config(
+            filesystem=self.filesystem,
+            locator=self.locator,
+        )
+        self.assertEqual(
+            contents,
+            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        )
+
+    def test_handle_missing_config_directory(self):
+        """Create the config directory if it does not exist."""
+
+        raise NotImplementedError
         contents = _load_config(
             filesystem=self.filesystem,
             locator=self.locator,
