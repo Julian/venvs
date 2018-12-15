@@ -170,6 +170,8 @@ class TestMake(CLIMixin, TestCase):
     def test_install_no_persist(self):
         """Install --no-persist does not edit the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
+
+        # No file has been created.
         with self.assertRaises(filesystems.exceptions.FileNotFound):
             _load_config(filesystem=self.filesystem, locator=self.locator)
 
