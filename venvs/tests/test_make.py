@@ -155,12 +155,7 @@ class TestMake(CLIMixin, TestCase):
     def test_handle_empty_config_file(self):
         """Don't break with an empty config file."""
 
-        # Empty the config file.
-        with self.filesystem.open(
-                self.locator.root.descendant("virtualenvs.toml"),
-                "w",
-        ):
-            pass
+        self.filesystem.touch(self.locator.root.descendant("virtualenvs.toml"))
 
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
         contents = _load_config(
