@@ -141,7 +141,7 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo"], exit_status=2)
 
     def test_install_edit_config(self):
-        """Install will automatically edit the config file."""
+        """Install --persist edits the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
         contents = _load_config(
             filesystem=self.filesystem,
@@ -173,7 +173,7 @@ class TestMake(CLIMixin, TestCase):
         )
 
     def test_install_no_persist(self):
-        """Install --no-persist will not edit the config file."""
+        """Install --no-persist does not edit the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
         with self.assertRaises(filesystems.exceptions.FileNotFound):
             _load_config(filesystem=self.filesystem, locator=self.locator)
