@@ -15,3 +15,5 @@ install:
 script:
   - tox
 sudo: false
+after_success:
+  - tox -e codecov
