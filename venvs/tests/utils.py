@@ -57,6 +57,12 @@ class CLIMixin(object):
         return packages, reqs
 
     def fake_create(self, virtualenv, **kwargs):
+
+        try:
+            self.filesystem.create_directory(path=virtualenv.path.parent())
+        except FileExists:
+            pass
+
         try:
             self.filesystem.create_directory(path=virtualenv.path)
         except FileExists:

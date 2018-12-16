@@ -169,10 +169,13 @@ class TestMake(CLIMixin, TestCase):
             {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
         )
 
-    def test_handle_missing_config_directory(self):
+    def test_persist_handles_missing_config_directory(self):
         """Create the config directory if it does not exist."""
 
-        raise NotImplementedError
+        self.filesystem.remove_empty_directory(self.locator.root)
+
+        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+
         contents = _load_config(
             filesystem=self.filesystem,
             locator=self.locator,
@@ -180,6 +183,22 @@ class TestMake(CLIMixin, TestCase):
         self.assertEqual(
             contents,
             {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        )
+
+    def test_no_persist_handles_missing_virtualenv_directory(self):
+        """Don't break if there is no virtualenv directory."""
+
+        self.filesystem.remove_empty_directory(self.locator.root)
+
+        self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
+
+        self.assertTrue(self.filesystem.exists(self.locator.root))
+
+        # Config file has _not_ been created.
+        self.assertFalse(
+            self.filesystem.exists(
+                self.locator.root.descendant("virtualenvs.toml")
+            )
         )
 
     def test_install_no_persist(self):

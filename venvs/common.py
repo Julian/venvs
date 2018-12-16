@@ -22,6 +22,12 @@ def _load_config(filesystem, locator):
 
 
 def _dump_config(config, filesystem, locator):
+
+    try:
+        filesystem.create_directory(locator.root)
+    except filesystems.exceptions.FileExists:
+        pass
+
     with filesystem.open(
             locator.root.descendant("virtualenvs.toml"),
             "wt",
