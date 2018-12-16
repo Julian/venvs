@@ -2,7 +2,6 @@
 Converge the set of installed virtualenvs.
 
 """
-import collections
 import os
 import subprocess
 import sys

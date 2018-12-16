@@ -1,7 +1,6 @@
 from unittest import TestCase
 import sys
 
-import attr
 from filesystems import Path
 import filesystems.native
 
