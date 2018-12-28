@@ -22,10 +22,10 @@ class TestMake(CLIMixin, TestCase):
         temporary = self.locator.temporary()
         self.assertFalse(temporary.exists_on(self.filesystem))
 
-        stdin, stdout, stderr = self.run_cli(["--temporary"])
+        stdout, stderr = self.run_cli(["--temporary"])
         self.assertEqual(
-            (temporary.exists_on(self.filesystem), stdin, stdout, stderr),
-            (True, "", str(temporary.path.descendant("bin")) + "\n", ""),
+            (temporary.exists_on(self.filesystem), stdout, stderr),
+            (True, str(temporary.path.descendant("bin")) + "\n", ""),
         )
 
     def test_make_t_recreates_the_environment_if_it_exists(self):
@@ -43,9 +43,7 @@ class TestMake(CLIMixin, TestCase):
         self.assertFalse(self.filesystem.exists(path=foo))
 
     def test_cannot_specify_both_name_and_temporary(self):
-        stdin, stdout, stderr = self.run_cli(
-            ["--temporary", "foo"], exit_status=2,
-        )
+        stdout, stderr = self.run_cli(["--temporary", "foo"], exit_status=2)
         self.assertTrue(
             stderr.endswith(
                 "specify only one of '-t / --temp / --temporary' or 'name'\n"

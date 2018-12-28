@@ -95,11 +95,8 @@ class CLIMixin(object):
                 result.exit_code, exit_status, self.stderr.getvalue(),
             ),
         )
-        return (
-            self.stdin.getvalue(),
-            self.stdout.getvalue(),
-            self.stderr.getvalue(),
-        )
+        return self.stdout.getvalue(), self.stderr.getvalue()
+
 
     def _fix_click(self, real_main):
         """
