@@ -97,7 +97,6 @@ class CLIMixin(object):
         )
         return self.stdout.getvalue(), self.stderr.getvalue()
 
-
     def _fix_click(self, real_main):
         """
         Click is really really really annoying.
