@@ -60,7 +60,7 @@ class TestFind(CLIMixin, TestCase):
         self.assertEqual((stdout, stderr), ("", ""))
 
     def test_find_existing_by_name_succeeds_for_existing_virtualenvs(self):
-        self.filesystem.create_directory(self.locator.root.descendant("bla"))
+        self.filesystem.create_directory(self.locator.root / "bla")
 
         stdout, stderr = self.run_cli(
             ["--existing-only", "name", "bla"],
@@ -77,7 +77,7 @@ class TestFind(CLIMixin, TestCase):
         self.assertEqual((stdout, stderr), ("", ""))
 
     def test_find_existing_by_dir_succeeds_for_existing_virtualenvs(self):
-        self.filesystem.create_directory(self.locator.root.descendant("bla"))
+        self.filesystem.create_directory(self.locator.root / "bla")
 
         path = Path("foo", "bla")
         stdout, stderr = self.run_cli(

@@ -43,13 +43,13 @@ class CLIMixin(object):
     def installed(self, virtualenv):
         base = virtualenv.path
         try:
-            with self.filesystem.open(base.descendant("packages")) as f:
+            with self.filesystem.open(base / "packages") as f:
                 packages = set(line.strip() for line in f)
         except FileNotFound:
             packages = set()
 
         try:
-            with self.filesystem.open(base.descendant("reqs")) as f:
+            with self.filesystem.open(base / "reqs") as f:
                 reqs = set(line.strip() for line in f)
         except FileNotFound:
             reqs = set()
@@ -68,11 +68,9 @@ class CLIMixin(object):
             raise ZeroDivisionError("Hey you told me to blow up!")
 
         base = virtualenv.path
-        with self.filesystem.open(base.descendant("packages"), "at") as f:
-            f.writelines(
-                package + u"\n" for package in packages
-            )
-        with self.filesystem.open(base.descendant("reqs"), "at") as f:
+        with self.filesystem.open(base / "packages", "at") as f:
+            f.writelines(package + u"\n" for package in packages)
+        with self.filesystem.open(base / "reqs", "at") as f:
             f.writelines(req + u"\n" for req in requirements)
 
     def run_cli(self, argv=(), exit_status=_EX_OK):
@@ -102,7 +100,6 @@ class CLIMixin(object):
         Click is really really really annoying.
 
         It patches sys.stdout and sys.stderr to the same exact StringIO.
-
         """
 
         class Fixed(object):

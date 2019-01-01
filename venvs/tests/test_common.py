@@ -10,5 +10,5 @@ class TestLocator(TestCase):
         locator = Locator(root=Path.root())
         self.assertEqual(
             locator.for_name("one"),
-            VirtualEnv(path=locator.root.descendant("one")),
+            VirtualEnv(path=locator.root / "one"),
         )

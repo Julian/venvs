@@ -41,7 +41,7 @@ def _do_not_fail(virtualenv):
 )
 @click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
-    with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
+    with filesystem.open(locator.root / "virtualenvs.toml") as venvs:
         contents = pytoml.load(
             venvs,
             object_pairs_hook=collections.OrderedDict,
@@ -60,7 +60,7 @@ def main(filesystem, locator, link_dir, handle_error):
         )
 
         virtualenv = locator.for_name(name=name)
-        existing_config_path = virtualenv.path.descendant("installed.toml")
+        existing_config_path = virtualenv.path / "installed.toml"
 
         try:
             with filesystem.open(existing_config_path) as existing_config:
