@@ -180,6 +180,6 @@ class TestIntegration(TestCase):
         locator = Locator(root=self.root)
         virtualenv = locator.for_name("venvs-unittest-should-be-deleted")
         self.assertEqual(
-            self.fs.contents_of(self.root.descendant("find_stdout")),
+            self.fs.get_contents(self.root.descendant("find_stdout")),
             str(virtualenv.path) + "\n",
         )
