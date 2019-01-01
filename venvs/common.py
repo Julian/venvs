@@ -130,16 +130,6 @@ class Locator(object):
         return self.for_name(".venvs-temporary-env")
 
 
-class _Path(click.ParamType):
-
-    name = "path"
-
-    def convert(self, value, param, context):
-        if not isinstance(value, str):
-            return value
-        return filesystems.Path.from_string(str(value))
-
-
 class _Locator(click.ParamType):
 
     name = "locator"
@@ -150,7 +140,6 @@ class _Locator(click.ParamType):
         return Locator(root=filesystems.Path.from_string(str(value)))
 
 
-PATH = _Path()
 _ROOT = click.option(
     "--root", "locator",
     default=Locator.default,
