@@ -79,9 +79,10 @@ def main(filesystem, locator, link_dir, handle_error):
             continue
 
         for link in config.get("link", []):
+            name, _, to = link.partition(":")
             _link(
-                source=virtualenv.binary(name=link),
-                to=link_dir.descendant(link),
+                source=virtualenv.binary(name=name),
+                to=link_dir.descendant(to or name),
                 filesystem=filesystem,
             )
 

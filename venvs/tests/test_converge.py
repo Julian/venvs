@@ -136,3 +136,18 @@ class TestConverge(CLIMixin, TestCase):
             self.installed(self.locator.for_name("a")),
             (set(), set()),
         )
+
+    def test_specified_link_name(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link = ["foo:fooBar"]
+            """
+        )
+
+        self.run_cli([])
+
+        self.assertEqual(
+            self.linked,
+            {"fooBar": self.locator.for_name("a").binary("foo")},
+        )

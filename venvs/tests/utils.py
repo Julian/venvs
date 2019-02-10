@@ -40,6 +40,13 @@ class CLIMixin(object):
             ),
         )
 
+    @property
+    def linked(self):
+        return {
+            link.basename(): self.filesystem.readlink(link)
+            for link in self.filesystem.children(self.link_dir)
+        }
+
     def installed(self, virtualenv):
         base = virtualenv.path
         try:
