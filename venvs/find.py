@@ -1,11 +1,12 @@
 from functools import partial
 
 from filesystems import Path
+import filesystems.click
 import click
 import sys
 
 from venvs import __version__
-from venvs.common import _FILESYSTEM, _ROOT, PATH
+from venvs.common import _FILESYSTEM, _ROOT
 
 
 def run(
@@ -73,7 +74,7 @@ def main(context, locator, existing_only, filesystem):
 
 
 @main.command()
-@click.argument("directory", required=False, type=PATH)
+@click.argument("directory", required=False, type=filesystems.click.PATH)
 @click.argument("binary", required=False)
 @click.pass_context
 def directory(context, directory, binary):

@@ -22,10 +22,10 @@ class TestMake(CLIMixin, TestCase):
         temporary = self.locator.temporary()
         self.assertFalse(temporary.exists_on(self.filesystem))
 
-        stdin, stdout, stderr = self.run_cli(["--temporary"])
+        stdout, stderr = self.run_cli(["--temporary"])
         self.assertEqual(
-            (temporary.exists_on(self.filesystem), stdin, stdout, stderr),
-            (True, "", str(temporary.path.descendant("bin")) + "\n", ""),
+            (temporary.exists_on(self.filesystem), stdout, stderr),
+            (True, str(temporary.path / "bin") + "\n", ""),
         )
 
     def test_make_t_recreates_the_environment_if_it_exists(self):
@@ -34,7 +34,7 @@ class TestMake(CLIMixin, TestCase):
         self.run_cli(["--temporary"])
         self.assertTrue(temporary.exists_on(self.filesystem))
 
-        foo = temporary.path.descendant("foo")
+        foo = temporary.path / "foo"
         self.filesystem.touch(path=foo)
         self.assertTrue(self.filesystem.exists(path=foo))
 
@@ -43,9 +43,7 @@ class TestMake(CLIMixin, TestCase):
         self.assertFalse(self.filesystem.exists(path=foo))
 
     def test_cannot_specify_both_name_and_temporary(self):
-        stdin, stdout, stderr = self.run_cli(
-            ["--temporary", "foo"], exit_status=2,
-        )
+        stdout, stderr = self.run_cli(["--temporary", "foo"], exit_status=2)
         self.assertTrue(
             stderr.endswith(
                 "specify only one of '-t / --temp / --temporary' or 'name'\n"
@@ -58,7 +56,7 @@ class TestMake(CLIMixin, TestCase):
 
         virtualenv.create()
 
-        thing = virtualenv.path.descendant("thing")
+        thing = virtualenv.path / "thing"
         self.filesystem.touch(path=thing)
         self.assertTrue(self.filesystem.exists(thing))
 
@@ -152,7 +150,7 @@ class TestIntegration(TestCase):
         self.addCleanup(lambda: setattr(sys, "stdout", stdout))
 
     def test_it_works(self):
-        with self.fs.open(self.root.descendant("make_stdout"), "w") as stdout:
+        with self.fs.open(self.root / "make_stdout", "w") as stdout:
             sys.stdout = stdout
 
             try:
@@ -165,7 +163,7 @@ class TestIntegration(TestCase):
             except SystemExit:
                 pass
 
-        with self.fs.open(self.root.descendant("find_stdout"), "w") as stdout:
+        with self.fs.open(self.root / "find_stdout", "w") as stdout:
             sys.stdout = stdout
 
             try:
@@ -182,6 +180,6 @@ class TestIntegration(TestCase):
         locator = Locator(root=self.root)
         virtualenv = locator.for_name("venvs-unittest-should-be-deleted")
         self.assertEqual(
-            self.fs.contents_of(self.root.descendant("find_stdout")),
+            self.fs.get_contents(self.root / "find_stdout"),
             str(virtualenv.path) + "\n",
         )

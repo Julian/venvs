@@ -41,7 +41,7 @@ def _do_not_fail(virtualenv):
 )
 @click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
-    with filesystem.open(locator.root.descendant("virtualenvs.toml")) as venvs:
+    with filesystem.open(locator.root / "virtualenvs.toml") as venvs:
         contents = pytoml.load(
             venvs,
             object_pairs_hook=collections.OrderedDict,
@@ -58,19 +58,18 @@ def main(filesystem, locator, link_dir, handle_error):
                 stderr=subprocess.STDOUT,
             ).decode('ascii'),
         )
-        arguments = ["-p", python]
 
         virtualenv = locator.for_name(name=name)
-        existing_config_path = virtualenv.path.descendant("installed.toml")
+        existing_config_path = virtualenv.path / "installed.toml"
 
         try:
             with filesystem.open(existing_config_path) as existing_config:
                 if pytoml.loads(existing_config.read()) == config:
                     continue
         except FileNotFound:
-            virtualenv.create(arguments=arguments)
+            virtualenv.create(python=python)
         else:
-            virtualenv.recreate_on(filesystem=filesystem, arguments=arguments)
+            virtualenv.recreate_on(filesystem=filesystem, python=python)
 
         packages, requirements = _to_install(config=config)
         try:
@@ -80,9 +79,10 @@ def main(filesystem, locator, link_dir, handle_error):
             continue
 
         for link in config.get("link", []):
+            name, _, to = link.partition(":")
             _link(
-                source=virtualenv.binary(name=link),
-                to=link_dir.descendant(link),
+                source=virtualenv.binary(name=name),
+                to=link_dir.descendant(to or name),
                 filesystem=filesystem,
             )
 
