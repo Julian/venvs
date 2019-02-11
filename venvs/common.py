@@ -8,14 +8,14 @@ import sysconfig
 import attr
 import click
 import filesystems.native
-import virtualenv as virtualenv_for_path
+import virtualenv as _virtualenv_module
 
 
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
             python,
-            virtualenv_for_path.__file__,
+            _virtualenv_module.__file__,
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
