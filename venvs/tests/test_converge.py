@@ -1,6 +1,8 @@
 from unittest import TestCase
 import os
 
+from filesystems.exceptions import FileExists
+
 from venvs import converge
 from venvs.tests.utils import CLIMixin
 
@@ -135,6 +137,39 @@ class TestConverge(CLIMixin, TestCase):
         self.assertEqual(
             self.installed(self.locator.for_name("a")),
             (set(), set()),
+        )
+
+    def test_link_exists(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link = ["foo"]
+            """
+        )
+
+        self.filesystem.touch(self.link_dir.descendant("foo"))
+
+        with self.assertRaises(FileExists):
+            self.run_cli([])
+
+    def test_link_exists_as_broken_symlink(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link = ["foo"]
+            """
+        )
+
+        self.filesystem.link(
+            source=self.link_dir.descendant("broken"),
+            to=self.link_dir.descendant("foo"),
+        )
+
+        self.run_cli([])
+
+        self.assertEqual(
+            self.linked,
+            {"foo": self.locator.for_name("a").binary("foo")},
         )
 
     def test_specified_link_name(self):

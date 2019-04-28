@@ -103,8 +103,16 @@ def _to_install(config):
 
 
 def _link(source, to, filesystem):
+    """
+    Link the given binary, replacing broken symlinks and erroring if existing.
+    """
+
     try:
         filesystem.link(source=source, to=to)
     except FileExists as error:
-        if filesystem.realpath(error.value) != filesystem.realpath(source):
+        if filesystem.realpath(error.value) == filesystem.realpath(source):
+            return
+        if filesystem.exists(to):
             raise
+        filesystem.remove(to)
+        filesystem.link(source=source, to=to)
