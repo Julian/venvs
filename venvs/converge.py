@@ -51,14 +51,14 @@ def main(filesystem, locator, link_dir, handle_error):
             object_pairs_hook=collections.OrderedDict,
         )
 
-    links = collections.Counter(
-        link
-        for each in contents["virtualenv"].values()
-        for link in each.get("link", ())
-    )
-    links.subtract(links.elements())
-    if links:
-        raise DuplicatedLinks(links)
+    seen, duplicated = set(), set()
+    for each in contents["virtualenv"].values():
+        for link in each.get("link", ()):
+            if link in seen:
+                duplicated.add(link)
+            seen.add(link)
+    if duplicated:
+        raise DuplicatedLinks(duplicated)
 
     progress = tqdm(contents["virtualenv"].items())
     for name, config in progress:
