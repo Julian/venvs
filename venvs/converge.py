@@ -51,14 +51,7 @@ def main(filesystem, locator, link_dir, handle_error):
             object_pairs_hook=collections.OrderedDict,
         )
 
-    seen, duplicated = set(), set()
-    for each in contents["virtualenv"].values():
-        for link in each.get("link", ()):
-            if link in seen:
-                duplicated.add(link)
-            seen.add(link)
-    if duplicated:
-        raise DuplicatedLinks(duplicated)
+    _check_for_duplicated_links(contents["virtualenv"].values())
 
     progress = tqdm(contents["virtualenv"].items())
     for name, config in progress:
@@ -101,6 +94,17 @@ def main(filesystem, locator, link_dir, handle_error):
 
         with filesystem.open(existing_config_path, "wt") as existing_config:
             existing_config.write(pytoml.dumps(config))
+
+
+def _check_for_duplicated_links(sections):
+    seen, duplicated = set(), set()
+    for each in sections:
+        for link in each.get("link", ()):
+            if link in seen:
+                duplicated.add(link)
+            seen.add(link)
+    if duplicated:
+        raise DuplicatedLinks(duplicated)
 
 
 def _to_install(config):
