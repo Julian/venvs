@@ -16,6 +16,10 @@ from venvs import __version__
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
+class DuplicatedLinks(Exception):
+    pass
+
+
 def _fail(virtualenv):
     raise
 
@@ -46,6 +50,15 @@ def main(filesystem, locator, link_dir, handle_error):
             venvs,
             object_pairs_hook=collections.OrderedDict,
         )
+
+    links = collections.Counter(
+        link
+        for each in contents["virtualenv"].values()
+        for link in each.get("link", ())
+    )
+    links.subtract(links.elements())
+    if links:
+        raise DuplicatedLinks(links)
 
     progress = tqdm(contents["virtualenv"].items())
     for name, config in progress:

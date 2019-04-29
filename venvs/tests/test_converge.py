@@ -172,6 +172,24 @@ class TestConverge(CLIMixin, TestCase):
             {"foo": self.locator.for_name("a").binary("foo")},
         )
 
+    def test_conflicting_links(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link = ["foo"]
+
+            [virtualenv.b]
+
+            [virtualenv.c]
+            link = ["foo"]
+            """
+        )
+
+        with self.assertRaises(converge.DuplicatedLinks):
+            self.run_cli([])
+
+        self.assertEqual(self.linked, {})
+
     def test_specified_link_name(self):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
