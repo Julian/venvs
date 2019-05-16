@@ -13,26 +13,24 @@ import virtualenv as _virtualenv_module
 
 
 def _load_config(filesystem, locator):
-    with filesystem.open(
-            locator.root.descendant("virtualenvs.toml"),
-            "rt",
-    ) as venvs:
-        text = venvs.read()
-        return tomlkit.loads(text)
+    contents =  filesystem.get_contents(
+        locator.root.descendant("virtualenvs.toml"),
+        mode="t",
+    )
+    return tomlkit.loads(contents)
 
 
 def _dump_config(config, filesystem, locator):
-
     try:
         filesystem.create_directory(locator.root)
     except filesystems.exceptions.FileExists:
         pass
 
-    with filesystem.open(
-            locator.root.descendant("virtualenvs.toml"),
-            "wt",
-    ) as venvs:
-        return venvs.write(tomlkit.dumps(config))
+    filesystem.set_contents(
+        locator.root.descendant("virtualenvs.toml"),
+        tomlkit.dumps(config),
+        mode="t",
+    )
 
 
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):

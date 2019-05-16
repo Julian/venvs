@@ -10,10 +10,10 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 
 from functools import partial
 
-import filesystems
 from filesystems import Path
 from packaging.requirements import Requirement
 import click
+import filesystems.exceptions
 import tomlkit
 
 from venvs import __version__
