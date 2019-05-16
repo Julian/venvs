@@ -8,7 +8,31 @@ import sysconfig
 import attr
 import click
 import filesystems.native
+import tomlkit
 import virtualenv as _virtualenv_module
+
+
+def _load_config(filesystem, locator):
+    with filesystem.open(
+            locator.root.descendant("virtualenvs.toml"),
+            "rt",
+    ) as venvs:
+        text = venvs.read()
+        return tomlkit.loads(text)
+
+
+def _dump_config(config, filesystem, locator):
+
+    try:
+        filesystem.create_directory(locator.root)
+    except filesystems.exceptions.FileExists:
+        pass
+
+    with filesystem.open(
+            locator.root.descendant("virtualenvs.toml"),
+            "wt",
+    ) as venvs:
+        return venvs.write(tomlkit.dumps(config))
 
 
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):

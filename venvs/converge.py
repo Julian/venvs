@@ -2,7 +2,6 @@
 Converge the set of installed virtualenvs.
 
 """
-import collections
 import os
 import subprocess
 import sys
@@ -13,7 +12,7 @@ import click
 import pytoml
 
 from venvs import __version__
-from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
+from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, _load_config
 
 
 class DuplicatedLinks(Exception):
@@ -45,12 +44,7 @@ def _do_not_fail(virtualenv):
 )
 @click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
-    with filesystem.open(locator.root / "virtualenvs.toml") as venvs:
-        contents = pytoml.load(
-            venvs,
-            object_pairs_hook=collections.OrderedDict,
-        )
-
+    contents = _load_config(filesystem=filesystem, locator=locator)
     _check_for_duplicated_links(contents["virtualenv"].values())
 
     progress = tqdm(contents["virtualenv"].items())

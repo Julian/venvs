@@ -5,7 +5,7 @@ from filesystems import Path
 import filesystems.native
 
 from venvs import find, make
-from venvs.common import Locator
+from venvs.common import Locator, _load_config
 from venvs.tests.utils import CLIMixin
 
 
@@ -137,6 +137,74 @@ class TestMake(CLIMixin, TestCase):
 
     def test_multiple_installs_one_link_no_name(self):
         self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo"], exit_status=2)
+
+    def test_install_edit_config(self):
+        """Install --persist edits the config file."""
+        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+
+        contents = _load_config(
+            filesystem=self.filesystem,
+            locator=self.locator,
+        )
+        self.assertEqual(
+            contents,
+            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        )
+
+    def test_handle_empty_config_file(self):
+        """Don't break with an empty config file."""
+
+        self.filesystem.touch(self.locator.root.descendant("virtualenvs.toml"))
+
+        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+        contents = _load_config(
+            filesystem=self.filesystem,
+            locator=self.locator,
+        )
+        self.assertEqual(
+            contents,
+            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        )
+
+    def test_persist_handles_missing_config_directory(self):
+        """Create the config directory if it does not exist."""
+
+        self.filesystem.remove_empty_directory(self.locator.root)
+
+        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+
+        contents = _load_config(
+            filesystem=self.filesystem,
+            locator=self.locator,
+        )
+        self.assertEqual(
+            contents,
+            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        )
+
+    def test_no_persist_handles_missing_virtualenv_directory(self):
+        """Don't break if there is no virtualenv directory."""
+
+        self.filesystem.remove_empty_directory(self.locator.root)
+
+        self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
+
+        self.assertTrue(self.filesystem.exists(self.locator.root))
+
+        # Config file has _not_ been created.
+        self.assertFalse(
+            self.filesystem.exists(
+                self.locator.root.descendant("virtualenvs.toml")
+            )
+        )
+
+    def test_install_no_persist(self):
+        """Install --no-persist does not edit the config file."""
+        self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
+
+        # No file has been created.
+        with self.assertRaises(filesystems.exceptions.FileNotFound):
+            _load_config(filesystem=self.filesystem, locator=self.locator)
 
 
 class TestIntegration(TestCase):

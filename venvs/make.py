@@ -10,12 +10,32 @@ respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 
 from functools import partial
 
+import filesystems
 from filesystems import Path
 from packaging.requirements import Requirement
 import click
+import tomlkit
 
 from venvs import __version__
-from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
+from venvs.common import (
+    _FILESYSTEM, _LINK_DIR, _ROOT, _dump_config, _load_config,
+)
+
+
+def add_virtualenv_config(filesystem, locator, installs, links, name):
+    try:
+        contents = _load_config(filesystem=filesystem, locator=locator)
+    except filesystems.exceptions.FileNotFound:
+        contents = tomlkit.table()
+        contents.add('virtualenv', {})
+    if 'virtualenv' not in contents:
+        contents = tomlkit.table()
+        contents.add('virtualenv', {})
+
+    contents["virtualenv"].add(
+        name, {"install": list(installs), "link": list(links)}
+    )
+    _dump_config(contents, filesystem=filesystem, locator=locator)
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
@@ -58,6 +78,13 @@ from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
     flag_value=True,
     help="create or reuse the global temporary virtualenv",
 )
+@click.option(
+    "--persist/--no-persist",
+    "-p",
+    is_flag=True,
+    default=False,
+    help="Add to config file when installing."
+)
 @click.argument("name", required=False)
 @click.argument("virtualenv_args", nargs=-1, type=click.UNPROCESSED)
 @click.version_option(version=__version__)
@@ -72,6 +99,7 @@ def main(
     requirements,
     recreate,
     virtualenv_args,
+    persist,
 ):
     if name:
         if temporary:
@@ -108,6 +136,14 @@ def main(
 
     for link in links:
         filesystem.link(
-            source=virtualenv.binary(name=link),
-            to=link_dir.descendant(link),
+            source=virtualenv.binary(name=link), to=link_dir.descendant(link)
+        )
+
+    if persist:
+        add_virtualenv_config(
+            filesystem=filesystem,
+            locator=locator,
+            installs=installs,
+            links=links,
+            name=name,
         )
