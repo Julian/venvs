@@ -13,7 +13,7 @@ import virtualenv as _virtualenv_module
 
 
 def _load_config(filesystem, locator):
-    contents =  filesystem.get_contents(
+    contents = filesystem.get_contents(
         locator.root.descendant("virtualenvs.toml"),
         mode="t",
     )
