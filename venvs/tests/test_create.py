@@ -4,21 +4,21 @@ import sys
 from filesystems import Path
 import filesystems.native
 
-from venvs import find, make
+from venvs import create, find
 from venvs.common import Locator, _load_config
 from venvs.tests.utils import CLIMixin
 
 
-class TestMake(CLIMixin, TestCase):
+class TestCreate(CLIMixin, TestCase):
 
-    cli = make
+    cli = create
 
-    def test_make_creates_an_env_with_the_given_name(self):
+    def test_create_creates_an_env_with_the_given_name(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
         self.run_cli(["a"])
         self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
 
-    def test_make_t_creates_a_global_temporary_environment(self):
+    def test_create_t_creates_a_global_temporary_environment(self):
         temporary = self.locator.temporary()
         self.assertFalse(temporary.exists_on(self.filesystem))
 
@@ -28,7 +28,7 @@ class TestMake(CLIMixin, TestCase):
             (True, str(temporary.path / "bin") + "\n", ""),
         )
 
-    def test_make_t_recreates_the_environment_if_it_exists(self):
+    def test_create_t_recreates_the_environment_if_it_exists(self):
         temporary = self.locator.temporary()
         self.assertFalse(temporary.exists_on(self.filesystem))
         self.run_cli(["--temporary"])
@@ -218,11 +218,11 @@ class TestIntegration(TestCase):
         self.addCleanup(lambda: setattr(sys, "stdout", stdout))
 
     def test_it_works(self):
-        with self.fs.open(self.root / "make_stdout", "w") as stdout:
+        with self.fs.open(self.root / "create_stdout", "w") as stdout:
             sys.stdout = stdout
 
             try:
-                make.main(
+                create.main(
                     args=[
                         "--root", str(self.root),
                         "venvs-unittest-should-be-deleted",
