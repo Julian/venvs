@@ -94,9 +94,11 @@ def _check_for_duplicated_links(sections):
     seen, duplicated = set(), set()
     for each in sections:
         for link in each.get("link", ()):
-            if link in seen:
-                duplicated.add(link)
-            seen.add(link)
+            name, _, to = link.partition(":")
+            to = to or name
+            if to in seen:
+                duplicated.add(to)
+            seen.add(to)
     if duplicated:
         raise DuplicatedLinks(duplicated)
 
