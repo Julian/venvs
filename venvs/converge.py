@@ -47,17 +47,20 @@ def main(filesystem, locator, link_dir, handle_error):
     contents = _load_config(filesystem=filesystem, locator=locator)
     _check_for_duplicated_links(contents["virtualenv"].values())
 
+    versions = {}
+
     progress = tqdm(contents["virtualenv"].items())
     for name, config in progress:
         progress.set_description(name)
 
         python = config.pop("python", sys.executable)
-        config.setdefault(
-            "sys.version", subprocess.check_output(
+        if python in versions:
+            config["sys.version"] = versions[python]
+        else:
+            config["sys.version"] = versions[python] = subprocess.check_output(
                 [python, "--version"],
                 stderr=subprocess.STDOUT,
-            ).decode('ascii'),
-        )
+            ).decode('ascii')
 
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path / "installed.toml"
