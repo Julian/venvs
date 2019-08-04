@@ -9,7 +9,7 @@ import sys
 from filesystems.exceptions import FileExists, FileNotFound
 from tqdm import tqdm
 import click
-import pytoml
+import toml
 
 from venvs import __version__
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, _load_config
@@ -67,7 +67,7 @@ def main(filesystem, locator, link_dir, handle_error):
 
         try:
             with filesystem.open(existing_config_path) as existing_config:
-                if pytoml.loads(existing_config.read()) == config:
+                if toml.loads(existing_config.read()) == config:
                     continue
         except FileNotFound:
             virtualenv.create(python=python)
@@ -90,7 +90,7 @@ def main(filesystem, locator, link_dir, handle_error):
             )
 
         with filesystem.open(existing_config_path, "wt") as existing_config:
-            existing_config.write(pytoml.dumps(config))
+            existing_config.write(toml.dumps(config))
 
 
 def _check_for_duplicated_links(sections):
