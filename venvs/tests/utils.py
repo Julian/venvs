@@ -45,6 +45,7 @@ class CLIMixin(object):
         return {
             link.basename(): self.filesystem.readlink(link)
             for link in self.filesystem.children(self.link_dir)
+            if self.filesystem.is_link(link)
         }
 
     def installed(self, virtualenv):

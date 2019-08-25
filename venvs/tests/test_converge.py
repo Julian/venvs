@@ -224,3 +224,61 @@ class TestConverge(CLIMixin, TestCase):
             self.linked,
             {"fooBar": self.locator.for_name("a").binary("foo")},
         )
+
+    def test_link_m_module(self):
+        """
+        It links modules run via -m as wrappers.
+        """
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link-module = ["this"]
+            """
+        )
+
+        self.run_cli([])
+
+        contents = self.filesystem.get_contents(
+            self.link_dir.descendant("this"),
+        )
+        self.assertEqual(
+            contents.splitlines()[0],
+            "#!" + str(self.locator.for_name("a").binary("python")),
+        )
+
+    def test_link_m_module_specified_name(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link-module = ["this:that"]
+            """
+        )
+
+        self.run_cli([])
+
+        contents = self.filesystem.get_contents(
+            self.link_dir.descendant("that"),
+        )
+        self.assertEqual(
+            contents.splitlines()[0],
+            "#!" + str(self.locator.for_name("a").binary("python")),
+        )
+
+    def test_link_m_module_duplicated(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link = ["foo"]
+
+            [virtualenv.b]
+
+            [virtualenv.c]
+            link-module = ["bar:foo"]
+            """
+        )
+
+        with self.assertRaises(converge.DuplicatedLinks) as e:
+            self.run_cli([])
+
+        self.assertIn("foo", str(e.exception))
+        self.assertEqual(self.linked, {})
