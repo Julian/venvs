@@ -26,7 +26,7 @@ _MODULE_WRAPPER = """\
 import os
 import sys
 # No runpy.run_module because of https://bugs.python.org/issue37941 ...
-argv = [sys.executable, "-m", "pep517.build"] + sys.argv[1:]
+argv = [sys.executable, "-m", "{name}"] + sys.argv[1:]
 os.execvp(argv[0], argv)
 """
 
