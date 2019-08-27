@@ -86,7 +86,8 @@ def main(filesystem, locator, link_dir, handle_error):
         else:
             virtualenv.recreate_on(filesystem=filesystem, python=python)
 
-        packages, requirements = _to_install(config=config)
+        packages = _interpolated(config.get("install", []))
+        requirements = _interpolated(config.get("requirements", []))
         try:
             virtualenv.install(packages=packages, requirements=requirements)
         except Exception:
@@ -130,16 +131,8 @@ def _check_for_duplicated_links(sections):
         raise DuplicatedLinks(duplicated)
 
 
-def _to_install(config):
-    packages = [
-        os.path.expandvars(os.path.expanduser(package))
-        for package in config.get("install", [])
-    ]
-    requirements = [
-        os.path.expandvars(os.path.expanduser(requirement))
-        for requirement in config.get("requirements", [])
-    ]
-    return packages, requirements
+def _interpolated(iterable):
+    return [os.path.expandvars(os.path.expanduser(each)) for each in iterable]
 
 
 def _link(source, to, filesystem):
