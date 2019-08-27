@@ -77,7 +77,6 @@ class TestCreate(CLIMixin, TestCase):
         """
         Just saying ``venvs`` creates an environment based on the current
         directory's name.
-
         """
 
         virtualenv = self.locator.for_directory(Path.cwd())
@@ -89,7 +88,6 @@ class TestCreate(CLIMixin, TestCase):
         """
         If you install one single package and don't specify a name, the name of
         the installed package is used.
-
         """
 
         self.run_cli(["-i", "foo"])
@@ -148,7 +146,7 @@ class TestCreate(CLIMixin, TestCase):
         )
         self.assertEqual(
             contents,
-            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+            {"virtualenv": {"bar": {"install": ["bar"], "link": ["foo"]}}}
         )
 
     def test_handle_empty_config_file(self):
@@ -163,7 +161,7 @@ class TestCreate(CLIMixin, TestCase):
         )
         self.assertEqual(
             contents,
-            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+            {"virtualenv": {"bar": {"install": ["bar"], "link": ["foo"]}}}
         )
 
     def test_persist_handles_missing_config_directory(self):
@@ -179,7 +177,7 @@ class TestCreate(CLIMixin, TestCase):
         )
         self.assertEqual(
             contents,
-            {'virtualenv': {"bar": {"install": ["bar"], "link": ["foo"]}}}
+            {"virtualenv": {"bar": {"install": ["bar"], "link": ["foo"]}}}
         )
 
     def test_no_persist_handles_missing_virtualenv_directory(self):

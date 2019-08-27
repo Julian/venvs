@@ -34,10 +34,10 @@ def add_virtualenv(filesystem, locator, installs, links, name):
         contents = load(filesystem=filesystem, locator=locator)
     except filesystems.exceptions.FileNotFound:
         contents = tomlkit.table()
-        contents.add('virtualenv', {})
-    if 'virtualenv' not in contents:
+        contents.add("virtualenv", {})
+    if "virtualenv" not in contents:
         contents = tomlkit.table()
-        contents.add('virtualenv', {})
+        contents.add("virtualenv", {})
 
     contents["virtualenv"].add(
         name, {"install": list(installs), "link": list(links)}

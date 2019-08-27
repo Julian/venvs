@@ -66,7 +66,7 @@ def main(filesystem, locator, link_dir, handle_error):
             config["sys.version"] = versions[python] = subprocess.check_output(
                 [python, "--version"],
                 stderr=subprocess.STDOUT,
-            ).decode('ascii')
+            ).decode("ascii")
 
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path / "installed.toml"
