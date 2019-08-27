@@ -3,7 +3,7 @@ import os
 
 from filesystems.exceptions import FileExists
 
-from venvs import converge
+from venvs import _config, converge
 from venvs.tests.utils import CLIMixin
 
 
@@ -185,7 +185,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        with self.assertRaises(converge.DuplicatedLinks) as e:
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             self.run_cli([])
 
         self.assertIn("foo", str(e.exception))
@@ -204,7 +204,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        with self.assertRaises(converge.DuplicatedLinks) as e:
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             self.run_cli([])
 
         self.assertIn("foo", str(e.exception))
@@ -277,7 +277,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        with self.assertRaises(converge.DuplicatedLinks) as e:
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             self.run_cli([])
 
         self.assertIn("foo", str(e.exception))

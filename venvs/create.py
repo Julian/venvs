@@ -13,29 +13,9 @@ from functools import partial
 from filesystems import Path
 from packaging.requirements import Requirement
 import click
-import filesystems.exceptions
-import tomlkit
 
-from venvs import __version__
-from venvs.common import (
-    _FILESYSTEM, _LINK_DIR, _ROOT, _dump_config, _load_config,
-)
-
-
-def add_virtualenv_config(filesystem, locator, installs, links, name):
-    try:
-        contents = _load_config(filesystem=filesystem, locator=locator)
-    except filesystems.exceptions.FileNotFound:
-        contents = tomlkit.table()
-        contents.add('virtualenv', {})
-    if 'virtualenv' not in contents:
-        contents = tomlkit.table()
-        contents.add('virtualenv', {})
-
-    contents["virtualenv"].add(
-        name, {"install": list(installs), "link": list(links)}
-    )
-    _dump_config(contents, filesystem=filesystem, locator=locator)
+from venvs import __version__, _config
+from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
@@ -140,7 +120,7 @@ def main(
         )
 
     if persist:
-        add_virtualenv_config(
+        _config.add_virtualenv(
             filesystem=filesystem,
             locator=locator,
             installs=installs,

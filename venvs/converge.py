@@ -12,12 +12,8 @@ from tqdm import tqdm
 import click
 import toml
 
-from venvs import __version__
-from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT, _load_config
-
-
-class DuplicatedLinks(Exception):
-    pass
+from venvs import __version__, _config
+from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
 _MODULE_WRAPPER = """\
@@ -56,9 +52,7 @@ def _do_not_fail(virtualenv):
 )
 @click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
-    contents = _load_config(filesystem=filesystem, locator=locator)
-    _check_for_duplicated_links(contents["virtualenv"].values())
-
+    contents = _config.load(filesystem=filesystem, locator=locator)
     versions = {}
 
     progress = tqdm(contents["virtualenv"].items())
@@ -116,19 +110,6 @@ def main(filesystem, locator, link_dir, handle_error):
 
         with filesystem.open(existing_config_path, "wt") as existing_config:
             existing_config.write(toml.dumps(config))
-
-
-def _check_for_duplicated_links(sections):
-    seen, duplicated = set(), set()
-    for each in sections:
-        for link in each.get("link", []) + each.get("link-module", []):
-            name, _, to = link.partition(":")
-            to = to or name
-            if to in seen:
-                duplicated.add(to)
-            seen.add(to)
-    if duplicated:
-        raise DuplicatedLinks(duplicated)
 
 
 def _interpolated(iterable):

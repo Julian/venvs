@@ -4,8 +4,8 @@ import sys
 from filesystems import Path
 import filesystems.native
 
-from venvs import create, find
-from venvs.common import Locator, _load_config
+from venvs import _config, create, find
+from venvs.common import Locator
 from venvs.tests.utils import CLIMixin
 
 
@@ -142,7 +142,7 @@ class TestCreate(CLIMixin, TestCase):
         """Install --persist edits the config file."""
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
 
-        contents = _load_config(
+        contents = _config.load(
             filesystem=self.filesystem,
             locator=self.locator,
         )
@@ -157,7 +157,7 @@ class TestCreate(CLIMixin, TestCase):
         self.filesystem.touch(self.locator.root.descendant("virtualenvs.toml"))
 
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
-        contents = _load_config(
+        contents = _config.load(
             filesystem=self.filesystem,
             locator=self.locator,
         )
@@ -173,7 +173,7 @@ class TestCreate(CLIMixin, TestCase):
 
         self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
 
-        contents = _load_config(
+        contents = _config.load(
             filesystem=self.filesystem,
             locator=self.locator,
         )
@@ -204,7 +204,7 @@ class TestCreate(CLIMixin, TestCase):
 
         # No file has been created.
         with self.assertRaises(filesystems.exceptions.FileNotFound):
-            _load_config(filesystem=self.filesystem, locator=self.locator)
+            _config.load(filesystem=self.filesystem, locator=self.locator)
 
 
 class TestIntegration(TestCase):
