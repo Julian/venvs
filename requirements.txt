@@ -1,6 +1,6 @@
 appdirs==1.4.3
 attrs==18.1.0
-Click==7.0
+git+https://github.com/Julian/click@stderr-really-separate
 enum34==1.1.6; python_version == '2.7'
 filesystems==0.22.1
 functools32==3.2.3.post2; python_version == '2.7'
