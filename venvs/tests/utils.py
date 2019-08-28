@@ -89,7 +89,7 @@ class CLIMixin(object):
     def run_cli(self, argv=(), exit_status=_EX_OK):
         runner = click.testing.CliRunner()
         result = runner.invoke(
-            self.cli.main,
+            self._fix_click(self.cli.main),
             args=argv,
             default_map=dict(
                 link_dir=self.link_dir,
@@ -107,3 +107,22 @@ class CLIMixin(object):
             ),
         )
         return self.stdout.getvalue(), self.stderr.getvalue()
+
+    def _fix_click(self, real_main):
+        """
+        Click is really really really annoying.
+
+        It patches sys.stdout and sys.stderr to the same exact StringIO.
+        """
+
+        class Fixed(object):
+            def __getattr__(self, attr):
+                return getattr(real_main, attr)
+
+            def main(this, *args, **kwargs):
+                stdout, sys.stdout = sys.stdout, self.stdout
+                stderr, sys.stderr = sys.stderr, self.stderr
+                real_main.main(*args, **kwargs)
+                sys.stdout = stdout
+                sys.stderr = stderr
+        return Fixed()
