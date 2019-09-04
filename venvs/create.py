@@ -81,6 +81,9 @@ def main(
     virtualenv_args,
     persist,
 ):
+    """
+    Create a new ad hoc virtualenv.
+    """
     if name:
         if temporary:
             raise click.BadParameter(

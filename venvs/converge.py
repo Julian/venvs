@@ -52,6 +52,9 @@ def _do_not_fail(virtualenv):
 )
 @click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
+    """
+    Converge the configured set of tracked virtualenvs.
+    """
     contents = _config.load(filesystem=filesystem, locator=locator)
     versions = {}
 

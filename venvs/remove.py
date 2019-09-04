@@ -27,4 +27,7 @@ def run(locator, filesystem, names, force):
 @click.pass_context
 @click.version_option(version=__version__)
 def main(context, **kwargs):
+    """
+    Remove an ad hoc virtualenv.
+    """
     context.exit(run(**kwargs) or 0)

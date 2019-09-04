@@ -22,7 +22,6 @@ def run(
 
     If an optional binary is provided, the binary's path within the virtualenv
     is returned.
-
     """
 
     if directory is not None:
@@ -60,6 +59,9 @@ def run(
 @click.pass_context
 @click.version_option(version=__version__)
 def main(context, locator, existing_only, filesystem):
+    """
+    Find a virtualenv in the store.
+    """
     if context.invoked_subcommand is None:
         click.echo(locator.root)
     else:
@@ -80,7 +82,6 @@ def main(context, locator, existing_only, filesystem):
 def directory(context, directory, binary):
     """
     Find the virtualenv given the project's path.
-
     """
 
     locate = context.obj["locate"]
@@ -96,7 +97,6 @@ def directory(context, directory, binary):
 def name(context, name, binary):
     """
     Find the virtualenv given the project's name.
-
     """
 
     locate = context.obj["locate"]
