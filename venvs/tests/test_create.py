@@ -10,19 +10,16 @@ from venvs.tests.utils import CLIMixin
 
 
 class TestCreate(CLIMixin, TestCase):
-
-    cli = create
-
     def test_create_creates_an_env_with_the_given_name(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
-        self.run_cli(["a"])
+        self.run_cli(["create", "a"])
         self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
 
     def test_create_t_creates_a_global_temporary_environment(self):
         temporary = self.locator.temporary()
         self.assertFalse(temporary.exists_on(self.filesystem))
 
-        stdout, stderr = self.run_cli(["--temporary"])
+        stdout, stderr = self.run_cli(["create", "--temporary"])
         self.assertEqual(
             (temporary.exists_on(self.filesystem), stdout, stderr),
             (True, str(temporary.path / "bin") + "\n", ""),
@@ -31,19 +28,22 @@ class TestCreate(CLIMixin, TestCase):
     def test_create_t_recreates_the_environment_if_it_exists(self):
         temporary = self.locator.temporary()
         self.assertFalse(temporary.exists_on(self.filesystem))
-        self.run_cli(["--temporary"])
+        self.run_cli(["create", "--temporary"])
         self.assertTrue(temporary.exists_on(self.filesystem))
 
         foo = temporary.path / "foo"
         self.filesystem.touch(path=foo)
         self.assertTrue(self.filesystem.exists(path=foo))
 
-        self.run_cli(["--temporary"])
+        self.run_cli(["create", "--temporary"])
         self.assertTrue(temporary.exists_on(self.filesystem))
         self.assertFalse(self.filesystem.exists(path=foo))
 
     def test_cannot_specify_both_name_and_temporary(self):
-        stdout, stderr = self.run_cli(["--temporary", "foo"], exit_status=2)
+        stdout, stderr = self.run_cli(
+            ["create", "--temporary", "foo"],
+            exit_status=2,
+        )
         self.assertTrue(
             stderr.endswith(
                 "specify only one of '-t / --temp / --temporary' or 'name'\n"
@@ -60,13 +60,15 @@ class TestCreate(CLIMixin, TestCase):
         self.filesystem.touch(path=thing)
         self.assertTrue(self.filesystem.exists(thing))
 
-        self.run_cli(["--recreate", "something"])
+        self.run_cli(["create", "--recreate", "something"])
         self.assertTrue(virtualenv.exists_on(self.filesystem))
 
         self.assertFalse(self.filesystem.exists(thing))
 
     def test_install_and_requirements(self):
-        self.run_cli(["-i", "foo", "-i", "bar", "-r", "reqs.txt", "bla"])
+        self.run_cli(
+            ["create", "-i", "foo", "-i", "bar", "-r", "reqs.txt", "bla"],
+        )
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("bla")),
@@ -81,7 +83,7 @@ class TestCreate(CLIMixin, TestCase):
 
         virtualenv = self.locator.for_directory(Path.cwd())
         self.assertFalse(virtualenv.exists_on(self.filesystem))
-        self.run_cli([])
+        self.run_cli(["create"])
         self.assertTrue(virtualenv.exists_on(self.filesystem))
 
     def test_install_default_name(self):
@@ -90,14 +92,14 @@ class TestCreate(CLIMixin, TestCase):
         the installed package is used.
         """
 
-        self.run_cli(["-i", "foo"])
+        self.run_cli(["create", "-i", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
         )
 
     def test_install_default_name_with_version_specification(self):
-        self.run_cli(["-i", "thing[foo]>=2,<3"])
+        self.run_cli(["create", "-i", "thing[foo]>=2,<3"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("thing")),
@@ -105,7 +107,7 @@ class TestCreate(CLIMixin, TestCase):
         )
 
     def test_temporary_env_with_single_install(self):
-        self.run_cli(["-t", "-i", "thing"])
+        self.run_cli(["create", "-t", "-i", "thing"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.temporary()), ({"thing"}, set()),
@@ -119,14 +121,14 @@ class TestCreate(CLIMixin, TestCase):
 
         """
 
-        self.run_cli(["-l", "foo"])
+        self.run_cli(["create", "-l", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
         )
 
     def test_multiple_installs_one_link(self):
-        self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo", "baz"])
+        self.run_cli(["create", "-i", "foo", "-i", "bar", "-l", "foo", "baz"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("baz")),
@@ -134,11 +136,14 @@ class TestCreate(CLIMixin, TestCase):
         )
 
     def test_multiple_installs_one_link_no_name(self):
-        self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo"], exit_status=2)
+        self.run_cli(
+            ["create", "-i", "foo", "-i", "bar", "-l", "foo"],
+            exit_status=2,
+        )
 
     def test_install_edit_config(self):
         """Install --persist edits the config file."""
-        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
 
         contents = _config.load(
             filesystem=self.filesystem,
@@ -154,7 +159,7 @@ class TestCreate(CLIMixin, TestCase):
 
         self.filesystem.touch(self.locator.root.descendant("virtualenvs.toml"))
 
-        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
         contents = _config.load(
             filesystem=self.filesystem,
             locator=self.locator,
@@ -169,7 +174,7 @@ class TestCreate(CLIMixin, TestCase):
 
         self.filesystem.remove_empty_directory(self.locator.root)
 
-        self.run_cli(["-l", "foo", "-i", "bar", "--persist"])
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
 
         contents = _config.load(
             filesystem=self.filesystem,
@@ -185,7 +190,7 @@ class TestCreate(CLIMixin, TestCase):
 
         self.filesystem.remove_empty_directory(self.locator.root)
 
-        self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--no-persist"])
 
         self.assertTrue(self.filesystem.exists(self.locator.root))
 
@@ -198,7 +203,7 @@ class TestCreate(CLIMixin, TestCase):
 
     def test_install_no_persist(self):
         """Install --no-persist does not edit the config file."""
-        self.run_cli(["-l", "foo", "-i", "bar", "--no-persist"])
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--no-persist"])
 
         # No file has been created.
         with self.assertRaises(filesystems.exceptions.FileNotFound):

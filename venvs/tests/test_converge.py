@@ -8,9 +8,6 @@ from venvs.tests.utils import CLIMixin
 
 
 class TestConverge(CLIMixin, TestCase):
-
-    cli = converge
-
     def test_it_creates_missing_virtualenvs(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
         self.assertFalse(self.locator.for_name("b").exists_on(self.filesystem))
@@ -28,7 +25,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         self.assertEqual(
             (
@@ -62,7 +59,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
@@ -72,7 +69,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         self.assertEqual(
             self.installed(self.locator.for_name("a")),
@@ -89,7 +86,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         self.assertEqual(
             (
@@ -112,7 +109,7 @@ class TestConverge(CLIMixin, TestCase):
         )
 
         with self.assertRaises(ZeroDivisionError):
-            self.run_cli(["--fail-fast"])
+            self.run_cli(["converge", "--fail-fast"])
 
         self.assertEqual(
             (
@@ -131,7 +128,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         # FIXME: this doesn't properly assert about the python version...
         self.assertEqual(
@@ -150,7 +147,7 @@ class TestConverge(CLIMixin, TestCase):
         self.filesystem.touch(self.link_dir.descendant("foo"))
 
         with self.assertRaises(FileExists):
-            self.run_cli([])
+            self.run_cli(["converge"])
 
     def test_link_exists_as_broken_symlink(self):
         self.filesystem.set_contents(
@@ -165,7 +162,7 @@ class TestConverge(CLIMixin, TestCase):
             to=self.link_dir.descendant("foo"),
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         self.assertEqual(
             self.linked,
@@ -186,7 +183,7 @@ class TestConverge(CLIMixin, TestCase):
         )
 
         with self.assertRaises(_config.DuplicatedLinks) as e:
-            self.run_cli([])
+            self.run_cli(["converge"])
 
         self.assertIn("foo", str(e.exception))
         self.assertEqual(self.linked, {})
@@ -205,7 +202,7 @@ class TestConverge(CLIMixin, TestCase):
         )
 
         with self.assertRaises(_config.DuplicatedLinks) as e:
-            self.run_cli([])
+            self.run_cli(["converge"])
 
         self.assertIn("foo", str(e.exception))
         self.assertEqual(self.linked, {})
@@ -218,7 +215,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         self.assertEqual(
             self.linked,
@@ -236,7 +233,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         contents = self.filesystem.get_contents(
             self.link_dir.descendant("this"),
@@ -254,7 +251,7 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.run_cli([])
+        self.run_cli(["converge"])
 
         contents = self.filesystem.get_contents(
             self.link_dir.descendant("that"),
@@ -278,7 +275,7 @@ class TestConverge(CLIMixin, TestCase):
         )
 
         with self.assertRaises(_config.DuplicatedLinks) as e:
-            self.run_cli([])
+            self.run_cli(["converge"])
 
         self.assertIn("foo", str(e.exception))
         self.assertEqual(self.linked, {})

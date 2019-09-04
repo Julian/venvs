@@ -5,6 +5,7 @@ from filesystems.exceptions import FileExists, FileNotFound
 import click.testing
 import filesystems.memory
 
+from venvs import _cli
 from venvs.common import Locator, VirtualEnv, _EX_OK
 
 
@@ -88,13 +89,19 @@ class CLIMixin(object):
 
     def run_cli(self, argv=(), exit_status=_EX_OK):
         runner = click.testing.CliRunner()
+        default_map = dict(
+            link_dir=self.link_dir,
+            locator=self.locator,
+            filesystem=self.filesystem,
+        )
         result = runner.invoke(
-            self._fix_click(self.cli.main),
+            self._fix_click(_cli.main),
             args=argv,
             default_map=dict(
-                link_dir=self.link_dir,
-                locator=self.locator,
-                filesystem=self.filesystem,
+                converge=default_map,
+                create=default_map,
+                find=default_map,
+                remove=default_map,
             ),
             catch_exceptions=False,
         )

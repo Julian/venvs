@@ -8,19 +8,16 @@ from venvs.tests.utils import CLIMixin
 
 
 class TestFind(CLIMixin, TestCase):
-
-    cli = find
-
     def test_find_directory_finds_envs_by_directory(self):
         this_dir = Path.from_string(__file__).parent()
-        stdout, stderr = self.run_cli(["directory", str(this_dir)])
+        stdout, stderr = self.run_cli(["find", "directory", str(this_dir)])
         self.assertEqual(
             (stdout, stderr),
             (str(self.locator.for_directory(this_dir).path) + "\n", ""),
         )
 
     def test_find_directory_defaults_to_cwd(self):
-        stdout, stderr = self.run_cli(["directory"])
+        stdout, stderr = self.run_cli(["find", "directory"])
         self.assertEqual(
             (stdout, stderr), (
                 str(self.locator.for_directory(Path.cwd()).path) + "\n",
@@ -29,14 +26,14 @@ class TestFind(CLIMixin, TestCase):
         )
 
     def test_find_name_finds_envs_by_name(self):
-        stdout, stderr = self.run_cli(["name", "bla"])
+        stdout, stderr = self.run_cli(["find", "name", "bla"])
         self.assertEqual(
             (stdout, stderr),
             (str(self.locator.for_name("bla").path) + "\n", ""),
         )
 
     def test_find_without_args_finds_the_virtualenv_root(self):
-        stdout, stderr = self.run_cli()
+        stdout, stderr = self.run_cli(["find"])
         self.assertEqual(
             (stdout, stderr),
             (str(self.locator.root) + os.linesep, ""),
@@ -45,7 +42,7 @@ class TestFind(CLIMixin, TestCase):
     def test_find_directory_with_binary(self):
         this_dir = Path.from_string(__file__).parent()
         stdout, stderr = self.run_cli(
-            ["directory", str(this_dir), "python"],
+            ["find", "directory", str(this_dir), "python"],
         )
         this_dir_venv = self.locator.for_directory(this_dir)
         self.assertEqual(
@@ -55,7 +52,7 @@ class TestFind(CLIMixin, TestCase):
 
     def test_find_existing_by_name_fails_for_non_existing_virtualenvs(self):
         stdout, stderr = self.run_cli(
-            ["--existing-only", "name", "bla"], exit_status=1,
+            ["find", "--existing-only", "name", "bla"], exit_status=1,
         )
         self.assertEqual((stdout, stderr), ("", ""))
 
@@ -63,7 +60,7 @@ class TestFind(CLIMixin, TestCase):
         self.filesystem.create_directory(self.locator.root / "bla")
 
         stdout, stderr = self.run_cli(
-            ["--existing-only", "name", "bla"],
+            ["find", "--existing-only", "name", "bla"],
         )
         self.assertEqual(
             (stdout, stderr),
@@ -72,7 +69,7 @@ class TestFind(CLIMixin, TestCase):
 
     def test_find_existing_by_dir_fails_for_non_existing_virtualenvs(self):
         stdout, stderr = self.run_cli(
-            ["--existing-only", "directory", "/foo/bla"], exit_status=1,
+            ["find", "--existing-only", "directory", "/foo/bla"], exit_status=1,
         )
         self.assertEqual((stdout, stderr), ("", ""))
 
@@ -81,7 +78,7 @@ class TestFind(CLIMixin, TestCase):
 
         path = Path("foo", "bla")
         stdout, stderr = self.run_cli(
-            ["--existing-only", "directory", str(path)],
+            ["find", "--existing-only", "directory", str(path)],
         )
         self.assertEqual(
             (stdout, stderr),
@@ -90,7 +87,7 @@ class TestFind(CLIMixin, TestCase):
 
     def test_cannot_specify_random_garbage(self):
         stdout, stderr = self.run_cli(
-            ["--random-garbage"], exit_status=2,
+            ["find", "--random-garbage"], exit_status=2,
         )
         stderr_ends_with = "Error: no such option: --random-garbage\n"
         self.assertEqual(
