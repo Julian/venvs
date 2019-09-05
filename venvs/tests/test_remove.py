@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-from venvs import remove
 from venvs.common import _EX_NOINPUT
 from venvs.tests.utils import CLIMixin
 

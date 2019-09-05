@@ -3,7 +3,7 @@ import os
 
 from filesystems.exceptions import FileExists
 
-from venvs import _config, converge
+from venvs import _config
 from venvs.tests.utils import CLIMixin
 
 

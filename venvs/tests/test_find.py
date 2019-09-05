@@ -3,7 +3,6 @@ from unittest import TestCase
 
 from filesystems import Path
 
-from venvs import find
 from venvs.tests.utils import CLIMixin
 
 
@@ -69,7 +68,8 @@ class TestFind(CLIMixin, TestCase):
 
     def test_find_existing_by_dir_fails_for_non_existing_virtualenvs(self):
         stdout, stderr = self.run_cli(
-            ["find", "--existing-only", "directory", "/foo/bla"], exit_status=1,
+            ["find", "--existing-only", "directory", "/foo/bla"],
+            exit_status=1,
         )
         self.assertEqual((stdout, stderr), ("", ""))
 
