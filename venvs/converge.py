@@ -35,7 +35,6 @@ def _do_not_fail(virtualenv):
     sys.stderr.write("Converging {!r} failed!\n".format(virtualenv))
 
 
-@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @_FILESYSTEM
 @_LINK_DIR
 @_ROOT

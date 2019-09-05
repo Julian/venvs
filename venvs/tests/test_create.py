@@ -4,7 +4,7 @@ import sys
 from filesystems import Path
 import filesystems.native
 
-from venvs import _config, create, find
+from venvs import _cli, _config
 from venvs.common import Locator
 from venvs.tests.utils import CLIMixin
 
@@ -225,8 +225,9 @@ class TestIntegration(TestCase):
             sys.stdout = stdout
 
             try:
-                create.main(
+                _cli.main(
                     args=[
+                        "create",
                         "--root", str(self.root),
                         "venvs-unittest-should-be-deleted",
                     ],
@@ -238,8 +239,9 @@ class TestIntegration(TestCase):
             sys.stdout = stdout
 
             try:
-                find.main(
+                _cli.main(
                     [
+                        "find",
                         "--root", str(self.root),
                         "--existing-only",
                         "name", "venvs-unittest-should-be-deleted",

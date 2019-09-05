@@ -11,7 +11,7 @@ def main():
     """
 
 
-main.add_command(converge.main, name="converge")
-main.add_command(create.main, name="create")
+main.command(name="converge")(converge.main)
+main.command(name="create")(create.main)
 main.add_command(find.main, name="find")
-main.add_command(remove.main, name="remove")
+main.command(name="remove")(remove.main)

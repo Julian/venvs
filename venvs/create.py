@@ -18,7 +18,6 @@ from venvs import __version__, _config
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
-@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @_FILESYSTEM
 @_LINK_DIR
 @_ROOT

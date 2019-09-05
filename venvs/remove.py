@@ -15,7 +15,6 @@ def run(locator, filesystem, names, force):
                 return _EX_NOINPUT
 
 
-@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @_FILESYSTEM
 @_ROOT
 @click.option(
