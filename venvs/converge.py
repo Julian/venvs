@@ -57,7 +57,11 @@ def main(filesystem, locator, link_dir, handle_error):
     contents = _config.load(filesystem=filesystem, locator=locator)
     versions = {}
 
-    progress = tqdm(contents["virtualenv"].items())
+    progress = tqdm(
+        iterable=contents["virtualenv"].items(),
+        total=len(contents["virtualenv"]),
+        unit="venvs",
+    )
     for name, config in progress:
         progress.set_description(name)
 
