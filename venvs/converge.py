@@ -89,6 +89,11 @@ def main(filesystem, locator, link_dir, handle_error):
         packages = _interpolated(config.get("install", []))
         requirements = _interpolated(config.get("requirements", []))
         try:
+            packages.extend(
+                package
+                for bundle in config.get("install-bundle", [])
+                for package in contents.get("bundle", {})[bundle]
+            )
             virtualenv.install(packages=packages, requirements=requirements)
         except Exception:
             handle_error(virtualenv)

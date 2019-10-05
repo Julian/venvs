@@ -76,6 +76,45 @@ class TestConverge(CLIMixin, TestCase):
             ({"baz", "quux"}, {"requirements.txt", "other.txt"}),
         )
 
+    def test_bundles(self):
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [bundle]
+            dev = ["bar", "bla"]
+
+            [virtualenv.a]
+            install = ["foo"]
+            install-bundle = ["dev"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            ({"foo", "bar", "bla"}, set()),
+        )
+
+    def test_no_such_bundle(self):
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            install = ["foo"]
+            install-bundle = ["dev"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            (set(), set()),
+        )
+
     def test_it_does_not_blow_up_by_default_on_install(self):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
