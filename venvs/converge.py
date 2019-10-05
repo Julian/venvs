@@ -60,7 +60,7 @@ def main(filesystem, locator, link_dir, handle_error):
     progress = tqdm(
         iterable=contents["virtualenv"].items(),
         total=len(contents["virtualenv"]),
-        unit="venvs",
+        unit="venv",
     )
     for name, config in progress:
         progress.set_description(name)
