@@ -15,41 +15,6 @@ class TestCreate(CLIMixin, TestCase):
         self.run_cli(["create", "a"])
         self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
 
-    def test_create_t_creates_a_global_temporary_environment(self):
-        temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists_on(self.filesystem))
-
-        stdout, stderr = self.run_cli(["create", "--temporary"])
-        self.assertEqual(
-            (temporary.exists_on(self.filesystem), stdout, stderr),
-            (True, str(temporary.path / "bin") + "\n", ""),
-        )
-
-    def test_create_t_recreates_the_environment_if_it_exists(self):
-        temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists_on(self.filesystem))
-        self.run_cli(["create", "--temporary"])
-        self.assertTrue(temporary.exists_on(self.filesystem))
-
-        foo = temporary.path / "foo"
-        self.filesystem.touch(path=foo)
-        self.assertTrue(self.filesystem.exists(path=foo))
-
-        self.run_cli(["create", "--temporary"])
-        self.assertTrue(temporary.exists_on(self.filesystem))
-        self.assertFalse(self.filesystem.exists(path=foo))
-
-    def test_cannot_specify_both_name_and_temporary(self):
-        stdout, stderr = self.run_cli(
-            ["create", "--temporary", "foo"],
-            exit_status=2,
-        )
-        self.assertTrue(
-            stderr.endswith(
-                "specify only one of '-t / --temp / --temporary' or 'name'\n"
-            ), msg=stderr,
-        )
-
     def test_recreate(self):
         virtualenv = self.locator.for_name("something")
         self.assertFalse(virtualenv.exists_on(self.filesystem))
@@ -104,13 +69,6 @@ class TestCreate(CLIMixin, TestCase):
         self.assertEqual(
             self.installed(self.locator.for_name("thing")),
             ({"thing[foo]>=2,<3"}, set()),
-        )
-
-    def test_temporary_env_with_single_install(self):
-        self.run_cli(["create", "-t", "-i", "thing"])
-        # We've stubbed out our Locator's venvs' install to just store.
-        self.assertEqual(
-            self.installed(self.locator.temporary()), ({"thing"}, set()),
         )
 
     def test_link_default_name(self):

@@ -102,6 +102,7 @@ class CLIMixin(object):
                 create=default_map,
                 find=default_map,
                 remove=default_map,
+                temporary=default_map,
             ),
             catch_exceptions=False,
         )

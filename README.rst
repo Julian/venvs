@@ -90,7 +90,7 @@ virtualenv.
 
 Invoking::
 
-    $ venv=$(venvs create -t)
+    $ venv=$(venvs temporary)
 
 in your shell will create (or re-create) a global temporary virtualenv,
 and print its ``bin/`` subdirectory (which in this case will be then
@@ -106,11 +106,11 @@ et cetera.
 
 You may prefer using::
 
-    $ cd $(venvs -t)
+    $ cd $(venvs temporary)
 
 as your temporary venv workflow if you're into that sort of thing instead.
 
-The global virtualenv is cleared each time you invoke ``venvs -t``.
+The global virtualenv is cleared each time you invoke ``venvs temporary``.
 Unless you care, unlike virtualenvwrapper's ``mktmpenv``, there's no
 need to care about cleaning it up, whenever it matters for the next
 time, it will be cleared and overwritten.
@@ -124,8 +124,8 @@ the current recommendation for this use case would be to simply use the
 The 5 Minute Tutorial
 ---------------------
 
-Besides the ``venvs`` for named-virtualenv creation and ``venvs -t`` for
-temporary-virtualenv creation described above::
+Besides the ``venvs`` for named-virtualenv creation and ``venvs
+temporary`` for temporary-virtualenv creation described above::
 
     $ venvs find name foo
 

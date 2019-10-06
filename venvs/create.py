@@ -18,10 +18,7 @@ from venvs import _config
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
-@_FILESYSTEM
-@_LINK_DIR
-@_ROOT
-@click.option(
+_INSTALL = click.option(
     "-i", "--install", "installs",
     multiple=True,
     help=(
@@ -29,6 +26,21 @@ from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
         "virtualenv with pip after it is created"
     ),
 )
+_REQUIREMENTS = click.option(
+    "-r", "--requirement", "requirements",
+    multiple=True,
+    help=(
+        "install the given requirements file into the "
+        "virtualenv with pip after it is created"
+    ),
+)
+
+
+@_FILESYSTEM
+@_LINK_DIR
+@_ROOT
+@_INSTALL
+@_REQUIREMENTS
 @click.option(
     "-l", "--link", "links",
     multiple=True,
@@ -39,23 +51,9 @@ from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
     ),
 )
 @click.option(
-    "-r", "--requirement", "requirements",
-    multiple=True,
-    help=(
-        "install the given requirements file into the "
-        "virtualenv with pip after it is created"
-    ),
-)
-@click.option(
     "-R", "--recreate",
     flag_value=True,
     help="recreate the virtualenv if it already exists",
-)
-@click.option(
-    "-t", "--temp", "--temporary",
-    "temporary",
-    flag_value=True,
-    help="create or reuse the global temporary virtualenv",
 )
 @click.option(
     "--persist/--no-persist",
@@ -71,7 +69,6 @@ def main(
     link_dir,
     name,
     locator,
-    temporary,
     installs,
     links,
     requirements,
@@ -83,16 +80,7 @@ def main(
     Create a new ad hoc virtualenv.
     """
     if name:
-        if temporary:
-            raise click.BadParameter(
-                "specify only one of '-t / --temp / --temporary' or 'name'",
-            )
-
         virtualenv = locator.for_name(name=name)
-    elif temporary:
-        virtualenv = locator.temporary()
-        click.echo(virtualenv.binary("python").dirname())
-        act = partial(virtualenv.recreate_on, filesystem=filesystem)
     elif len(installs) == 1:
         # When there's just one package to install, default to using that name.
         requirement, = installs
@@ -107,7 +95,7 @@ def main(
     else:
         virtualenv = locator.for_directory(directory=Path.cwd())
 
-    if recreate or temporary:
+    if recreate:
         act = partial(virtualenv.recreate_on, filesystem=filesystem)
     else:
         act = virtualenv.create
