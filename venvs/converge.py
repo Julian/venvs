@@ -49,7 +49,6 @@ def _do_not_fail(virtualenv):
     flag_value=_do_not_fail,
     help="Do not fail if a virtualenv cannot be converged.",
 )
-@click.version_option(version=__version__)
 def main(filesystem, locator, link_dir, handle_error):
     """
     Converge the configured set of tracked virtualenvs.
