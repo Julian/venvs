@@ -176,9 +176,9 @@ virtualenvs for me. So that's what ``venvs`` does.
    :alt: Supported Python versions
    :target: https://pypi.org/project/venvs/
 
-.. |Travis| image:: https://travis-ci.org/Julian/venvs.svg?branch=master
+.. |Travis| image:: https://travis-ci.com/Julian/venvs.svg?branch=master
    :alt: Travis build status
-   :target: https://travis-ci.org/Julian/venvs
+   :target: https://travis-ci.com/Julian/venvs
 
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/9ybhc3jvygurtl90/branch/master?svg=true
    :alt: AppVeyor build status
