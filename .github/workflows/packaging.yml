@@ -25,5 +25,5 @@ jobs:
       run: python setup.py sdist bdist_wheel
     - uses: actions/upload-artifact@master
       with:
-        name: venvs-dist
+        name: dist-${{ matrix.python-version }}
         path: dist
