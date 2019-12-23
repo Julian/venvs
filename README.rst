@@ -2,7 +2,7 @@
 venvs
 =====
 
-|PyPI| |Pythons| |Travis| |AppVeyor|
+|PyPI| |Pythons| |CI| |Codecov|
 
 venvs is a tool for configuring, in a single file, a set of virtualenvs,
 which packages to install into each, and any binaries to make globally
@@ -176,10 +176,10 @@ virtualenvs for me. So that's what ``venvs`` does.
    :alt: Supported Python versions
    :target: https://pypi.org/project/venvs/
 
-.. |Travis| image:: https://travis-ci.com/Julian/venvs.svg?branch=master
-   :alt: Travis build status
-   :target: https://travis-ci.com/Julian/venvs
+.. |CI| image:: https://github.com/Julian/venvs/workflows/CI/badge.svg
+  :alt: Build status
+  :target: https://github.com/Julian/venvs/actions?query=workflow%3ACI
 
-.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/9ybhc3jvygurtl90/branch/master?svg=true
-   :alt: AppVeyor build status
-   :target: https://ci.appveyor.com/project/Julian/venvs
+.. |Codecov| image:: https://codecov.io/gh/Julian/svmlight-loader/branch/master/graph/badge.svg
+  :alt: Codecov Code coverage
+  :target: https://codecov.io/gh/Julian/venvs
