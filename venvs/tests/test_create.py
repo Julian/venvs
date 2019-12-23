@@ -103,13 +103,12 @@ class TestCreate(CLIMixin, TestCase):
         """Install --persist edits the config file."""
         self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
 
-        contents = _config.load(
-            filesystem=self.filesystem,
-            locator=self.locator,
-        )
-        self.assertEqual(
-            contents,
-            {"virtualenv": {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        self.assertConfigEqual(
+            """
+            [virtualenv.bar]
+            install = ["bar"]
+            link = ["foo"]
+            """,
         )
 
     def test_handle_empty_config_file(self):
@@ -118,13 +117,13 @@ class TestCreate(CLIMixin, TestCase):
         self.filesystem.touch(self.locator.root.descendant("virtualenvs.toml"))
 
         self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
-        contents = _config.load(
-            filesystem=self.filesystem,
-            locator=self.locator,
-        )
-        self.assertEqual(
-            contents,
-            {"virtualenv": {"bar": {"install": ["bar"], "link": ["foo"]}}}
+
+        self.assertConfigEqual(
+            """
+            [virtualenv.bar]
+            install = ["bar"]
+            link = ["foo"]
+            """,
         )
 
     def test_persist_handles_missing_config_directory(self):
@@ -134,13 +133,12 @@ class TestCreate(CLIMixin, TestCase):
 
         self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
 
-        contents = _config.load(
-            filesystem=self.filesystem,
-            locator=self.locator,
-        )
-        self.assertEqual(
-            contents,
-            {"virtualenv": {"bar": {"install": ["bar"], "link": ["foo"]}}}
+        self.assertConfigEqual(
+            """
+            [virtualenv.bar]
+            install = ["bar"]
+            link = ["foo"]
+            """,
         )
 
     def test_no_persist_handles_missing_virtualenv_directory(self):
@@ -165,7 +163,10 @@ class TestCreate(CLIMixin, TestCase):
 
         # No file has been created.
         with self.assertRaises(filesystems.exceptions.FileNotFound):
-            _config.load(filesystem=self.filesystem, locator=self.locator)
+            _config.Config.from_locator(
+                filesystem=self.filesystem,
+                locator=self.locator,
+            )
 
 
 class TestIntegration(TestCase):

@@ -318,3 +318,36 @@ class TestConverge(CLIMixin, TestCase):
 
         self.assertIn("foo", str(e.exception))
         self.assertEqual(self.linked, {})
+
+    def test_changing_a_bundle_recreates_the_venv(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [bundle]
+            one = ["foo"]
+
+            [virtualenv.a]
+            install-bundle = ["one"]
+            """
+        )
+        self.run_cli(["converge"])
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            ({"foo"}, set()),
+        )
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [bundle]
+            one = ["foo", "bar"]
+
+            [virtualenv.a]
+            install-bundle = ["one"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            ({"foo", "bar"}, set()),
+        )

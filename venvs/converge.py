@@ -3,7 +3,6 @@ Converge the set of installed virtualenvs.
 
 """
 from datetime import datetime
-import os
 import subprocess
 import sys
 
@@ -12,7 +11,8 @@ from tqdm import tqdm
 import click
 import toml
 
-from venvs import __version__, _config
+from venvs import __version__
+from venvs._config import Config
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 
@@ -54,18 +54,13 @@ def main(filesystem, locator, link_dir, handle_error):
     """
     Converge the configured set of tracked virtualenvs.
     """
-    contents = _config.load(filesystem=filesystem, locator=locator)
     versions = {}
 
-    progress = tqdm(
-        iterable=contents["virtualenv"].items(),
-        total=len(contents["virtualenv"]),
-        unit="venv",
-    )
-    for name, config in progress:
-        progress.set_description(name)
-
-        python = config.pop("python", sys.executable)
+    for name, config in _loop(
+        config=Config.from_locator(filesystem=filesystem, locator=locator),
+        handle_error=handle_error,
+    ):
+        python = config["python"]
         if python in versions:
             config["sys.version"] = versions[python]
         else:
@@ -78,28 +73,24 @@ def main(filesystem, locator, link_dir, handle_error):
         existing_config_path = virtualenv.path / "installed.toml"
 
         try:
-            with filesystem.open(existing_config_path) as existing_config:
-                if toml.loads(existing_config.read()) == config:
-                    continue
+            existing_config = filesystem.get_contents(existing_config_path)
         except FileNotFound:
             virtualenv.create(python=python)
         else:
+            if toml.loads(existing_config) == config:
+                continue
             virtualenv.recreate_on(filesystem=filesystem, python=python)
 
-        packages = _interpolated(config.get("install", []))
-        requirements = _interpolated(config.get("requirements", []))
         try:
-            packages.extend(
-                package
-                for bundle in config.get("install-bundle", [])
-                for package in contents.get("bundle", {})[bundle]
+            virtualenv.install(
+                packages=config["install"],
+                requirements=config["requirements"],
             )
-            virtualenv.install(packages=packages, requirements=requirements)
         except Exception:
             handle_error(virtualenv)
             continue
 
-        for link in config.get("link", []):
+        for link in config["link"]:
             name, _, to = link.partition(":")
             _link(
                 source=virtualenv.binary(name=name),
@@ -107,7 +98,7 @@ def main(filesystem, locator, link_dir, handle_error):
                 filesystem=filesystem,
             )
 
-        for each in config.get("link-module", []):
+        for each in config["link-module"]:
             name, _, to = each.partition(":")
             filesystem.create_with_contents(
                 link_dir.descendant(to or name),
@@ -119,12 +110,26 @@ def main(filesystem, locator, link_dir, handle_error):
                 ),
             )
 
-        with filesystem.open(existing_config_path, "wt") as existing_config:
-            existing_config.write(toml.dumps(config))
+        filesystem.set_contents(
+            existing_config_path,
+            mode="t",
+            contents=toml.dumps(config),
+        )
 
 
-def _interpolated(iterable):
-    return [os.path.expandvars(os.path.expanduser(each)) for each in iterable]
+def _loop(config, handle_error):
+    progress = tqdm(iterable=config, total=len(config), unit="venv")
+    iterable = iter(progress)
+    while True:
+        try:
+            name, config = next(iterable)
+        except StopIteration:
+            return
+        except Exception:
+            handle_error(None)
+        else:
+            progress.set_description(name)
+            yield name, config
 
 
 def _link(source, to, filesystem):

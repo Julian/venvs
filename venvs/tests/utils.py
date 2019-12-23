@@ -5,7 +5,7 @@ from filesystems.exceptions import FileExists, FileNotFound
 import click.testing
 import filesystems.memory
 
-from venvs import _cli
+from venvs import _cli, _config
 from venvs.common import Locator, VirtualEnv, _EX_OK
 
 
@@ -40,6 +40,13 @@ class CLIMixin(object):
                 **kwargs
             ),
         )
+
+    def assertConfigEqual(self, expected):
+        actual = _config.Config.from_locator(
+            filesystem=self.filesystem,
+            locator=self.locator,
+        )
+        self.assertEqual(actual, _config.Config.from_string(expected))
 
     @property
     def linked(self):
