@@ -29,3 +29,9 @@ jobs:
       with:
         name: dist-${{ matrix.python-version }}
         path: dist
+    - name: Publish package
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') && matrix.python-version == 'pypy3' && runner.os == 'Linux'
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
