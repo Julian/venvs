@@ -102,7 +102,7 @@ class TestConfig(TestCase):
                         "install": {
                             os.path.expanduser("~/a"),
                             os.path.expandvars("$HOME"),
-                            os.path.expandvars("$HOME/b"),
+                            os.path.expandvars("${HOME}/b"),
                         },
                         "requirements": {
                             os.path.expandvars("requirements-${HOME}.txt"),
