@@ -103,10 +103,6 @@ def main(
     act(arguments=virtualenv_args)
     virtualenv.install(packages=installs, requirements=requirements)
 
-    create_links(filesystem, link_dir, links, virtualenv)
-
-
-def create_links(filesystem, link_dir, links, virtualenv):
     if not filesystem.exists(link_dir):
         # TODO: add an `exists_ok` parameter
         filesystem.create_directory(link_dir)
