@@ -103,9 +103,11 @@ def main(
     act(arguments=virtualenv_args)
     virtualenv.install(packages=installs, requirements=requirements)
 
-    if not filesystem.exists(link_dir):
-        # TODO: add an `exists_ok` parameter
-        filesystem.create_directory(link_dir)
+    for parent in link_dir.heritage():
+        if not filesystem.exists(parent):
+            # TODO: add an `exists_ok` parameter
+            # TODO: add a `create_parents` parameter
+            filesystem.create_directory(parent)
     for link in links:
         if filesystem.exists(link_dir.descendant(link)):
             continue
