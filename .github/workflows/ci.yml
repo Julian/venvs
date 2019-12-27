@@ -41,7 +41,7 @@ jobs:
             toxenv: py37
           - name: 3.8
             toxenv: py38
-          - name: 3.8
+          - name: 3.7
             toxenv: shiv
         exclude:
           - os: windows-latest
