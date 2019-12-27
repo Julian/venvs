@@ -103,6 +103,19 @@ def main(
     act(arguments=virtualenv_args)
     virtualenv.install(packages=installs, requirements=requirements)
 
+    create_links(filesystem, link_dir, links, virtualenv)
+
+    if persist:
+        _config.add_virtualenv(
+            filesystem=filesystem,
+            locator=locator,
+            installs=installs,
+            links=links,
+            name=name,
+        )
+
+
+def create_links(filesystem, link_dir, links, virtualenv):
     for parent in link_dir.heritage():
         if not filesystem.exists(parent):
             # TODO: add an `exists_ok` parameter
@@ -115,13 +128,4 @@ def main(
         # TODO: add an `overwrite` parameter
         filesystem.link(
             source=virtualenv.binary(name=link), to=link_dir.descendant(link)
-        )
-
-    if persist:
-        _config.add_virtualenv(
-            filesystem=filesystem,
-            locator=locator,
-            installs=installs,
-            links=links,
-            name=name,
         )
