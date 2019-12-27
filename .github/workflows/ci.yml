@@ -41,6 +41,8 @@ jobs:
             toxenv: py37
           - name: 3.8
             toxenv: py38
+          - name: 3.8
+            toxenv: bootstrap
         exclude:
           - os: windows-latest
             python-version:
@@ -66,3 +68,9 @@ jobs:
       if: runner.os == 'Windows'
     - name: Run tox
       run: python -m tox -e "${{ matrix.python-version.toxenv }}"
+    - name: Upload bootstrap artifact
+      uses: actions/upload-artifact@v1
+      if: matrix.python-version.toxenv == 'bootstrap'
+      with:
+        name: bootstrap
+        path: '*.pyz'
