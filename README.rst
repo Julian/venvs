@@ -2,7 +2,7 @@
 venvs
 =====
 
-|PyPI| |Pythons| |Travis| |AppVeyor|
+|PyPI| |Pythons| |CI| |Codecov|
 
 venvs is a tool for configuring, in a single file, a set of virtualenvs,
 which packages to install into each, and any binaries to make globally
@@ -52,20 +52,21 @@ in it:
     [virtualenv.app]
     install = ["$DEVELOPMENT/myapp"]
 
-After creating the above, running ``convergeenvs`` will create 2 virtualenvs,
-one called "development" with pudb and twisted installed into it and trial
-linked from within it onto your ``PATH``, and a second called "app" installing
-the corresponding directory.
+After creating the above, running ``venvs converge`` will create 2
+virtualenvs, one called "development" with pudb and twisted installed
+into it and trial linked from within it onto your ``PATH``, and a second
+called "app" installing the corresponding directory.
 
-That's about all you need to know. If you insist on reading further though,
-venvs has an older, not-very-recommended mutable interface which allows you to
-create virtualenvs in a central location without tracking them in a config file
-(or converging them). For that, usage is similar to ``mkvirtualenv``,
-although ``venvs`` passes arguments directly through to ``virtualenv``:
+That's about all you need to know. If you insist on reading further
+though, venvs has an older, not-very-recommended mutable interface
+which allows you to create virtualenvs in a central location without
+tracking them in a config file (or converging them). For that, usage
+is similar to ``mkvirtualenv``, although ``venvs`` passes arguments
+directly through to ``virtualenv``:
 
 .. code-block:: sh
 
-    $ venvs nameofvenv -- -p pypy
+    $ venvs create nameofvenv -- -p pypy
 
 will create a virtual environment in an appropriate platform-specific
 data directory, or in the directory specified by ``WORKON_HOME`` for
@@ -85,7 +86,7 @@ the ``fab`` binary globally".
 
 .. code-block:: sh
 
-    $ venvs -i fabric --link fab
+    $ venvs create -i fabric --link fab
 
 will create a virtualenv for fabric (in the same normal location), but will
 symlink the ``fab`` binary from within the virtualenv into your
@@ -105,7 +106,7 @@ virtualenv.
 
 Invoking::
 
-    $ venv=$(venvs -t)
+    $ venv=$(venvs temporary)
 
 in your shell will create (or re-create) a global temporary virtualenv,
 and print its ``bin/`` subdirectory (which in this case will be then
@@ -121,11 +122,11 @@ et cetera.
 
 You may prefer using::
 
-    $ cd $(venvs -t)
+    $ cd $(venvs temporary)
 
 as your temporary venv workflow if you're into that sort of thing instead.
 
-The global virtualenv is cleared each time you invoke ``venvs -t``.
+The global virtualenv is cleared each time you invoke ``venvs temporary``.
 Unless you care, unlike virtualenvwrapper's ``mktmpenv``, there's no
 need to care about cleaning it up, whenever it matters for the next
 time, it will be cleared and overwritten.
@@ -139,15 +140,15 @@ the current recommendation for this use case would be to simply use the
 The 5 Minute Tutorial
 ---------------------
 
-Besides the ``venvs`` for named-virtualenv creation and ``venvs -t`` for
-temporary-virtualenv creation described above::
+Besides the ``venvs`` for named-virtualenv creation and ``venvs
+temporary`` for temporary-virtualenv creation described above::
 
-    $ findenv name foo
+    $ venvs find name foo
 
 will output (to standard output) the path to a virtualenv with the given name
 (see also ``--existing-only``), and::
 
-    $ rmenv foo
+    $ venvs remove foo
 
 will remove it.
 
@@ -191,10 +192,10 @@ virtualenvs for me. So that's what ``venvs`` does.
    :alt: Supported Python versions
    :target: https://pypi.org/project/venvs/
 
-.. |Travis| image:: https://travis-ci.org/Julian/venvs.svg?branch=master
-   :alt: Travis build status
-   :target: https://travis-ci.org/Julian/venvs
+.. |CI| image:: https://github.com/Julian/venvs/workflows/CI/badge.svg
+  :alt: Build status
+  :target: https://github.com/Julian/venvs/actions?query=workflow%3ACI
 
-.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/9ybhc3jvygurtl90/branch/master?svg=true
-   :alt: AppVeyor build status
-   :target: https://ci.appveyor.com/project/Julian/venvs
+.. |Codecov| image:: https://codecov.io/gh/Julian/svmlight-loader/branch/master/graph/badge.svg
+  :alt: Codecov Code coverage
+  :target: https://codecov.io/gh/Julian/venvs

@@ -8,7 +8,7 @@ import sysconfig
 import attr
 import click
 import filesystems.native
-import virtualenv as virtualenv_for_path
+import virtualenv as _virtualenv_module
 
 
 workon_home_env_var = "WORKON_HOME"
@@ -18,7 +18,7 @@ def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
             python,
-            virtualenv_for_path.__file__.rstrip('c'),
+            _virtualenv_module.__file__.rstrip("c"),
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
@@ -62,11 +62,11 @@ class VirtualEnv(object):
         return self.path.descendant("bin", name)
 
     def create(
-            self,
-            arguments=(),
-            python=sys.executable,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
+        self,
+        arguments=(),
+        python=sys.executable,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
     ):
         self._create(
             self,
@@ -134,16 +134,6 @@ class Locator(object):
         return self.for_name(".venvs-temporary-env")
 
 
-class _Path(click.ParamType):
-
-    name = "path"
-
-    def convert(self, value, param, context):
-        if not isinstance(value, str):
-            return value
-        return filesystems.Path.from_string(str(value))
-
-
 class _Locator(click.ParamType):
 
     name = "locator"
@@ -154,7 +144,6 @@ class _Locator(click.ParamType):
         return Locator(root=filesystems.Path.from_string(str(value)))
 
 
-PATH = _Path()
 _ROOT = click.option(
     "--root", "locator",
     default=Locator.default,
@@ -175,9 +164,9 @@ _LINK_DIR = click.option(
     help="The directory to link scripts into.",
 )
 
-_EX_OK = getattr(os, 'EX_OK', 0)
-_EX_USAGE = getattr(os, 'EX_USAGE', 64)
-_EX_NOINPUT = getattr(os, 'EX_NOINPUT', 66)
+_EX_OK = getattr(os, "EX_OK", 0)
+_EX_USAGE = getattr(os, "EX_USAGE", 64)
+_EX_NOINPUT = getattr(os, "EX_NOINPUT", 66)
 
 
 class BadParameter(click.BadParameter):

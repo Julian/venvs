@@ -4,53 +4,16 @@ import sys
 from filesystems import Path
 import filesystems.native
 
-from venvs import find, make
+from venvs import _cli, _config
 from venvs.common import Locator
 from venvs.tests.utils import CLIMixin
 
 
-class TestMake(CLIMixin, TestCase):
-
-    cli = make
-
-    def test_make_creates_an_env_with_the_given_name(self):
+class TestCreate(CLIMixin, TestCase):
+    def test_create_creates_an_env_with_the_given_name(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
-        self.run_cli(["a"])
+        self.run_cli(["create", "a"])
         self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
-
-    def test_make_t_creates_a_global_temporary_environment(self):
-        temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists_on(self.filesystem))
-
-        stdin, stdout, stderr = self.run_cli(["--temporary"])
-        self.assertEqual(
-            (temporary.exists_on(self.filesystem), stdin, stdout, stderr),
-            (True, "", str(temporary.path.descendant("bin")) + "\n", ""),
-        )
-
-    def test_make_t_recreates_the_environment_if_it_exists(self):
-        temporary = self.locator.temporary()
-        self.assertFalse(temporary.exists_on(self.filesystem))
-        self.run_cli(["--temporary"])
-        self.assertTrue(temporary.exists_on(self.filesystem))
-
-        foo = temporary.path.descendant("foo")
-        self.filesystem.touch(path=foo)
-        self.assertTrue(self.filesystem.exists(path=foo))
-
-        self.run_cli(["--temporary"])
-        self.assertTrue(temporary.exists_on(self.filesystem))
-        self.assertFalse(self.filesystem.exists(path=foo))
-
-    def test_cannot_specify_both_name_and_temporary(self):
-        stdin, stdout, stderr = self.run_cli(
-            ["--temporary", "foo"], exit_status=2,
-        )
-        self.assertTrue(
-            stderr.endswith(
-                "specify only one of '-t / --temp / --temporary' or 'name'\n"
-            ), msg=stderr,
-        )
 
     def test_recreate(self):
         virtualenv = self.locator.for_name("something")
@@ -58,17 +21,19 @@ class TestMake(CLIMixin, TestCase):
 
         virtualenv.create()
 
-        thing = virtualenv.path.descendant("thing")
+        thing = virtualenv.path / "thing"
         self.filesystem.touch(path=thing)
         self.assertTrue(self.filesystem.exists(thing))
 
-        self.run_cli(["--recreate", "something"])
+        self.run_cli(["create", "--recreate", "something"])
         self.assertTrue(virtualenv.exists_on(self.filesystem))
 
         self.assertFalse(self.filesystem.exists(thing))
 
     def test_install_and_requirements(self):
-        self.run_cli(["-i", "foo", "-i", "bar", "-r", "reqs.txt", "bla"])
+        self.run_cli(
+            ["create", "-i", "foo", "-i", "bar", "-r", "reqs.txt", "bla"],
+        )
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("bla")),
@@ -79,40 +44,31 @@ class TestMake(CLIMixin, TestCase):
         """
         Just saying ``venvs`` creates an environment based on the current
         directory's name.
-
         """
 
         virtualenv = self.locator.for_directory(Path.cwd())
         self.assertFalse(virtualenv.exists_on(self.filesystem))
-        self.run_cli([])
+        self.run_cli(["create"])
         self.assertTrue(virtualenv.exists_on(self.filesystem))
 
     def test_install_default_name(self):
         """
         If you install one single package and don't specify a name, the name of
         the installed package is used.
-
         """
 
-        self.run_cli(["-i", "foo"])
+        self.run_cli(["create", "-i", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
         )
 
     def test_install_default_name_with_version_specification(self):
-        self.run_cli(["-i", "thing[foo]>=2,<3"])
+        self.run_cli(["create", "-i", "thing[foo]>=2,<3"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("thing")),
             ({"thing[foo]>=2,<3"}, set()),
-        )
-
-    def test_temporary_env_with_single_install(self):
-        self.run_cli(["-t", "-i", "thing"])
-        # We've stubbed out our Locator's venvs' install to just store.
-        self.assertEqual(
-            self.installed(self.locator.temporary()), ({"thing"}, set()),
         )
 
     def test_link_default_name(self):
@@ -123,14 +79,14 @@ class TestMake(CLIMixin, TestCase):
 
         """
 
-        self.run_cli(["-l", "foo"])
+        self.run_cli(["create", "-l", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
         )
 
     def test_multiple_installs_one_link(self):
-        self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo", "baz"])
+        self.run_cli(["create", "-i", "foo", "-i", "bar", "-l", "foo", "baz"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
             self.installed(self.locator.for_name("baz")),
@@ -138,7 +94,79 @@ class TestMake(CLIMixin, TestCase):
         )
 
     def test_multiple_installs_one_link_no_name(self):
-        self.run_cli(["-i", "foo", "-i", "bar", "-l", "foo"], exit_status=2)
+        self.run_cli(
+            ["create", "-i", "foo", "-i", "bar", "-l", "foo"],
+            exit_status=2,
+        )
+
+    def test_install_edit_config(self):
+        """Install --persist edits the config file."""
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
+
+        self.assertConfigEqual(
+            """
+            [virtualenv.bar]
+            install = ["bar"]
+            link = ["foo"]
+            """,
+        )
+
+    def test_handle_empty_config_file(self):
+        """Don't break with an empty config file."""
+
+        self.filesystem.touch(self.locator.root.descendant("virtualenvs.toml"))
+
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
+
+        self.assertConfigEqual(
+            """
+            [virtualenv.bar]
+            install = ["bar"]
+            link = ["foo"]
+            """,
+        )
+
+    def test_persist_handles_missing_config_directory(self):
+        """Create the config directory if it does not exist."""
+
+        self.filesystem.remove_empty_directory(self.locator.root)
+
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--persist"])
+
+        self.assertConfigEqual(
+            """
+            [virtualenv.bar]
+            install = ["bar"]
+            link = ["foo"]
+            """,
+        )
+
+    def test_no_persist_handles_missing_virtualenv_directory(self):
+        """Don't break if there is no virtualenv directory."""
+
+        self.filesystem.remove_empty_directory(self.locator.root)
+
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--no-persist"])
+
+        self.assertTrue(self.filesystem.exists(self.locator.root))
+
+        # Config file has _not_ been created.
+        self.assertFalse(
+            self.filesystem.exists(
+                self.locator.root.descendant("virtualenvs.toml")
+            )
+        )
+
+    def test_install_no_persist(self):
+        """Install --no-persist does not edit the config file."""
+        self.run_cli(["create", "-l", "foo", "-i", "bar", "--no-persist"])
+
+        # No file has been created.
+        with self.assertRaises(filesystems.exceptions.FileNotFound):
+            _config.Config.from_locator(
+                filesystem=self.filesystem,
+                locator=self.locator,
+            )
 
 
 class TestIntegration(TestCase):
@@ -152,12 +180,13 @@ class TestIntegration(TestCase):
         self.addCleanup(lambda: setattr(sys, "stdout", stdout))
 
     def test_it_works(self):
-        with self.fs.open(self.root.descendant("make_stdout"), "w") as stdout:
+        with self.fs.open(self.root / "create_stdout", "w") as stdout:
             sys.stdout = stdout
 
             try:
-                make.main(
+                _cli.main(
                     args=[
+                        "create",
                         "--root", str(self.root),
                         "venvs-unittest-should-be-deleted",
                     ],
@@ -165,12 +194,13 @@ class TestIntegration(TestCase):
             except SystemExit:
                 pass
 
-        with self.fs.open(self.root.descendant("find_stdout"), "w") as stdout:
+        with self.fs.open(self.root / "find_stdout", "w") as stdout:
             sys.stdout = stdout
 
             try:
-                find.main(
+                _cli.main(
                     [
+                        "find",
                         "--root", str(self.root),
                         "--existing-only",
                         "name", "venvs-unittest-should-be-deleted",
@@ -182,6 +212,6 @@ class TestIntegration(TestCase):
         locator = Locator(root=self.root)
         virtualenv = locator.for_name("venvs-unittest-should-be-deleted")
         self.assertEqual(
-            self.fs.contents_of(self.root.descendant("find_stdout")),
+            self.fs.get_contents(self.root / "find_stdout"),
             str(virtualenv.path) + "\n",
         )

@@ -1,11 +1,11 @@
 from functools import partial
 
 from filesystems import Path
+import filesystems.click
 import click
 import sys
 
-from venvs import __version__
-from venvs.common import _FILESYSTEM, _ROOT, PATH
+from venvs.common import _FILESYSTEM, _ROOT
 
 
 def run(
@@ -21,7 +21,6 @@ def run(
 
     If an optional binary is provided, the binary's path within the virtualenv
     is returned.
-
     """
 
     if directory is not None:
@@ -57,8 +56,10 @@ def run(
     help="Only consider existing virtualenvs.",
 )
 @click.pass_context
-@click.version_option(version=__version__)
 def main(context, locator, existing_only, filesystem):
+    """
+    Find a virtualenv in the store.
+    """
     if context.invoked_subcommand is None:
         click.echo(locator.root)
     else:
@@ -73,13 +74,12 @@ def main(context, locator, existing_only, filesystem):
 
 
 @main.command()
-@click.argument("directory", required=False, type=PATH)
+@click.argument("directory", required=False, type=filesystems.click.PATH)
 @click.argument("binary", required=False)
 @click.pass_context
 def directory(context, directory, binary):
     """
     Find the virtualenv given the project's path.
-
     """
 
     locate = context.obj["locate"]
@@ -95,7 +95,6 @@ def directory(context, directory, binary):
 def name(context, name, binary):
     """
     Find the virtualenv given the project's name.
-
     """
 
     locate = context.obj["locate"]
