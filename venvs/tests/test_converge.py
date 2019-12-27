@@ -2,6 +2,7 @@ from unittest import TestCase
 import os
 
 from filesystems.exceptions import FileExists
+import toml
 
 from venvs import _config
 from venvs.tests.utils import CLIMixin
@@ -351,3 +352,26 @@ class TestConverge(CLIMixin, TestCase):
             self.installed(self.locator.for_name("a")),
             ({"foo", "bar"}, set()),
         )
+
+    def test_installed_toml(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            install = ["foo"]
+            link = ["bar"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        contents = self.filesystem.get_contents(
+            self.locator.root.descendant('a', 'installed.toml'),
+        )
+        loaded = toml.loads(contents)
+        expected = dict(loaded)
+        expected.update({
+            'install': ['foo'],
+            'link': ['bar'],
+        })
+
+        self.assertEqual(loaded, expected)
