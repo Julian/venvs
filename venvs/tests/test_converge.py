@@ -261,6 +261,28 @@ class TestConverge(CLIMixin, TestCase):
             {"fooBar": self.locator.for_name("a").binary("foo")},
         )
 
+    def test_missing_link_dir(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link = ["foo"]
+            """
+        )
+
+        self.filesystem.remove(self.link_dir)
+        try:
+            self.run_cli(["converge"])
+        finally:
+            try:
+                self.filesystem.create(self.link_dir)
+            except FileExists:
+                pass
+
+        self.assertEqual(
+            self.linked,
+            {"foo": self.locator.for_name("a").binary("foo")},
+        )
+
     def test_link_m_module(self):
         """
         It links modules run via -m as wrappers.
