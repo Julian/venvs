@@ -269,14 +269,10 @@ class TestConverge(CLIMixin, TestCase):
             """
         )
 
-        self.filesystem.remove(self.link_dir)
-        try:
-            self.run_cli(["converge"])
-        finally:
-            try:
-                self.filesystem.create(self.link_dir)
-            except FileExists:
-                pass
+        self.filesystem.remove_empty_directory(self.link_dir)
+        self.assertFalse(self.filesystem.is_dir(path=self.link_dir))
+
+        self.run_cli(["converge"])
 
         self.assertEqual(
             self.linked,
