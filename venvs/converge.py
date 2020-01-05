@@ -92,11 +92,11 @@ def main(filesystem, locator, link_dir, handle_error):
 
         for link in config["link"]:
             name, _, to = link.partition(":")
-            for path in link_dir.heritage():
-                if not filesystem.exists(path):
-                    # TODO: add an `exists_ok` parameter
-                    # TODO: add a `create_parents` parameter
-                    filesystem.create_directory(path)
+            filesystem.create_directory(
+                link_dir,
+                with_parents=True,
+                allow_existing=True,
+            )
             _link(
                 source=virtualenv.binary(name=name),
                 to=link_dir.descendant(to or name),
