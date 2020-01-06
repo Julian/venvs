@@ -354,6 +354,9 @@ class TestConverge(CLIMixin, TestCase):
         )
 
     def test_installed_toml(self):
+        # TODO: This test should be filled out to get strings in all possible
+        #       places to make sure the fix actually covers all of them.
+        #       The present hack presumably doesn't.
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
