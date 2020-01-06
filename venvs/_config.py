@@ -88,8 +88,9 @@ class Config(object):
         # see sdipater/tomlkit#49, but I don't trust them not to be
         # broken in other ways given that they inherit from dict
         effective = {
-            "install": pset(_interpolated(as_strings(config.get("install", [])))),
-            # "install": pset(_interpolated([list(x) for x in config.get("install", [])])),
+            "install": pset(_interpolated(as_strings(
+                config.get("install", []),
+            ))),
             "requirements": pset(
                 _interpolated(config.get("requirements", [])),
             ),
