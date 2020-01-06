@@ -91,18 +91,16 @@ def main(filesystem, locator, link_dir, handle_error):
             handle_error(virtualenv)
             continue
 
-        for link in config["link"]:
-            name, _, to = link.partition(":")
+        for name, to in config["link"].items():
             _link(
                 source=virtualenv.binary(name=name),
-                to=link_dir.descendant(to or name),
+                to=link_dir.descendant(to),
                 filesystem=filesystem,
             )
 
-        for each in config["link-module"]:
-            name, _, to = each.partition(":")
+        for name, to in config["link-module"].items():
             _write_module_wrapper(
-                to=link_dir.descendant(to or name),
+                to=link_dir.descendant(to),
                 python=virtualenv.binary(name="python"),
                 module=name,
                 filesystem=filesystem,

@@ -1,7 +1,7 @@
 import os
 import sys
 
-from pyrsistent import pset
+from pyrsistent import pmap, pset
 import attr
 import filesystems.exceptions
 import tomlkit
@@ -92,10 +92,14 @@ class Config(object):
             "requirements": pset(
                 _interpolated(config.get("requirements", [])),
             ),
-            "link": pset(config.get("link", [])),
-            "link-module": pset(config.get("link-module", [])),
             "python": config.get("python", sys.executable),
         }
+        for section in "link", "link-module":
+            links = (each.partition(":") for each in config.get(section, []))
+            effective[section] = pmap(
+                (name, to or name) for name, _, to in links
+            )
+
         for bundle in config.get("install-bundle", []):
             effective["install"] = effective["install"].update(
                 self._contents["bundle"][bundle],

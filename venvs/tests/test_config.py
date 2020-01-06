@@ -22,8 +22,8 @@ class TestConfig(TestCase):
                     "a", {
                         "install": set(),
                         "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "link": {},
+                        "link-module": {},
                         "python": sys.executable,
                     },
                 ),
@@ -31,8 +31,30 @@ class TestConfig(TestCase):
                     "b", {
                         "install": {"foo", "bar", "bla"},
                         "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "link": {},
+                        "link-module": {},
+                        "python": sys.executable,
+                    },
+                ),
+            ],
+        )
+
+    def test_links(self):
+        config = _config.Config.from_string(
+            """
+            [virtualenv.a]
+            link = ["foo", "bar", "baz:quux"]
+            link-module = ["spam", "eggs:cheese"]
+            """,
+        )
+        self.assertEqual(
+            list(config), [
+                (
+                    "a", {
+                        "install": set(),
+                        "requirements": set(),
+                        "link": {"foo": "foo", "bar": "bar", "baz": "quux"},
+                        "link-module": {"spam": "spam", "eggs": "cheese"},
                         "python": sys.executable,
                     },
                 ),
@@ -59,8 +81,8 @@ class TestConfig(TestCase):
                     "a", {
                         "install": {"foo", "bar"},
                         "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "link": {},
+                        "link-module": {},
                         "python": sys.executable,
                     },
                 ),
@@ -68,8 +90,8 @@ class TestConfig(TestCase):
                     "b", {
                         "install": {"foo", "bar", "baz"},
                         "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "link": {},
+                        "link-module": {},
                         "python": sys.executable,
                     },
                 ),
@@ -107,8 +129,8 @@ class TestConfig(TestCase):
                         "requirements": {
                             os.path.expandvars("requirements-${HOME}.txt"),
                         },
-                        "link": set(),
-                        "link-module": set(),
+                        "link": {},
+                        "link-module": {},
                         "python": sys.executable,
                     },
                 ),
@@ -129,8 +151,8 @@ class TestConfig(TestCase):
                     "a", {
                         "install": {"foo"},
                         "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "link": {},
+                        "link-module": {},
                         "python": "somepython2",
                     },
                 ),
@@ -210,8 +232,8 @@ class TestConfig(TestCase):
                         "a", {
                             "install": {"foo", "bar"},
                             "requirements": set(),
-                            "link": {"baz"},
-                            "link-module": set(),
+                            "link": {"baz": "baz"},
+                            "link-module": {},
                             "python": sys.executable,
                         },
                     ),
@@ -231,8 +253,8 @@ class TestConfig(TestCase):
                         "a", {
                             "install": set(),
                             "requirements": set(),
-                            "link": set(),
-                            "link-module": set(),
+                            "link": {},
+                            "link-module": {},
                             "python": sys.executable,
                         },
                     ),
