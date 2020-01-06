@@ -319,6 +319,39 @@ class TestConverge(CLIMixin, TestCase):
         self.assertIn("foo", str(e.exception))
         self.assertEqual(self.linked, {})
 
+    def test_link_m_module_replaces_generated_files(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link-module = ["this"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        # Just change the config in a way that will re-converge
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link-module = ["this", "that"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+    def test_link_m_module_does_not_replace_non_venvs_wrappers(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link-module = ["this"]
+            """
+        )
+
+        self.filesystem.touch(self.link_dir.descendant("this"))
+
+        with self.assertRaises(FileExists):
+            self.run_cli(["converge"])
+
     def test_changing_a_bundle_recreates_the_venv(self):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
