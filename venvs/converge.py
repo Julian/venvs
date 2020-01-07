@@ -6,6 +6,11 @@ from datetime import datetime
 import subprocess
 import sys
 
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
+
 from filesystems.exceptions import FileExists, FileNotFound
 from pyrsistent import thaw
 from tqdm import tqdm
@@ -38,6 +43,14 @@ def _do_not_fail(virtualenv):
     sys.stderr.write("Converging {!r} failed!\n".format(virtualenv))
 
 
+@lru_cache()
+def _version_of(python):
+    return subprocess.check_output(
+        [python, "--version"],
+        stderr=subprocess.STDOUT,
+    ).decode("ascii")
+
+
 @_FILESYSTEM
 @_LINK_DIR
 @_ROOT
@@ -56,19 +69,12 @@ def main(filesystem, locator, link_dir, handle_error):
     """
     Converge the configured set of tracked virtualenvs.
     """
-    versions = {}
-
     for name, config in _loop(
         config=Config.from_locator(filesystem=filesystem, locator=locator),
         handle_error=handle_error,
     ):
         python = config["python"]
-        if python not in versions:
-            versions[python] = subprocess.check_output(
-                [python, "--version"],
-                stderr=subprocess.STDOUT,
-            ).decode("ascii")
-        config = config.set("sys.version", versions[python])
+        config = config.set("sys.version", _version_of(python))
 
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path / "installed.toml"
