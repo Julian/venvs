@@ -87,7 +87,7 @@ def main(filesystem, locator, link_dir, handle_error):
         except FileNotFound:
             virtualenv.create(python=python)
         else:
-            if existing_config == config:
+            if existing_config == json.loads(json_config):
                 continue
             virtualenv.recreate_on(filesystem=filesystem, python=python)
 
