@@ -3,6 +3,7 @@ Converge the set of installed virtualenvs.
 
 """
 from datetime import datetime
+import json
 import subprocess
 import sys
 
@@ -15,7 +16,6 @@ from filesystems.exceptions import FileExists, FileNotFound
 from pyrsistent import thaw
 from tqdm import tqdm
 import click
-import toml
 
 from venvs import __version__
 from venvs._config import Config
@@ -75,16 +75,19 @@ def main(filesystem, locator, link_dir, handle_error):
     ):
         python = config["python"]
         config = config.set("sys.version", _version_of(python))
+        json_config = json.dumps(thaw(config), ensure_ascii=False, indent=2)
 
         virtualenv = locator.for_name(name=name)
-        existing_config_path = virtualenv.path / "installed.toml"
+        existing_config_path = virtualenv.path / "installed.json"
 
         try:
-            existing_config = filesystem.get_contents(existing_config_path)
+            existing_config = json.loads(
+                filesystem.get_contents(existing_config_path),
+            )
         except FileNotFound:
             virtualenv.create(python=python)
         else:
-            if toml.loads(existing_config) == config:
+            if existing_config == config:
                 continue
             virtualenv.recreate_on(filesystem=filesystem, python=python)
 
@@ -115,7 +118,7 @@ def main(filesystem, locator, link_dir, handle_error):
         filesystem.set_contents(
             existing_config_path,
             mode="t",
-            contents=toml.dumps(thaw(config)),
+            contents=json_config,
         )
 
 
