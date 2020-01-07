@@ -87,25 +87,26 @@ class Config(object):
         # tomlkit's data structures are broken in at least one way,
         # see sdipater/tomlkit#49, but I don't trust them not to be
         # broken in other ways given that they inherit from dict
-        effective = {
-            "install": pvector(_interpolated(config.get("install", []))),
-            "requirements": pvector(
-                _interpolated(config.get("requirements", [])),
-            ),
-            "python": config.get("python", sys.executable),
-        }
+        requirements = _interpolated(config.get("requirements", []))
+        install = list(_interpolated(config.get("install", [])))
+
+        for bundle_name in config.get("install-bundle", []):
+            bundle = self._contents["bundle"][bundle_name]
+            for each in bundle:
+                if each not in install:
+                    install.append(each)
+
+        effective = [
+            ("install", pvector(install)),
+            ("requirements", pvector(requirements)),
+            ("python", config.get("python", sys.executable)),
+        ]
         for section in "link", "link-module":
             links = (each.partition(":") for each in config.get(section, []))
-            effective[section] = pmap(
-                (name, to or name) for name, _, to in links
+            effective.append(
+                (section, pmap((name, to or name) for name, _, to in links)),
             )
-
-        for bundle in config.get("install-bundle", []):
-            effective["install"] = effective["install"].extend(
-                each for each in self._contents["bundle"][bundle]
-                if each not in effective["install"]
-            )
-        return effective
+        return pmap(effective)
 
 
 def _interpolated(iterable):

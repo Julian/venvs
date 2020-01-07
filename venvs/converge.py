@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from filesystems.exceptions import FileExists, FileNotFound
+from pyrsistent import thaw
 from tqdm import tqdm
 import click
 import toml
@@ -62,13 +63,12 @@ def main(filesystem, locator, link_dir, handle_error):
         handle_error=handle_error,
     ):
         python = config["python"]
-        if python in versions:
-            config["sys.version"] = versions[python]
-        else:
-            config["sys.version"] = versions[python] = subprocess.check_output(
+        if python not in versions:
+            versions[python] = subprocess.check_output(
                 [python, "--version"],
                 stderr=subprocess.STDOUT,
             ).decode("ascii")
+        config = config.set("sys.version", versions[python])
 
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path / "installed.toml"
@@ -109,7 +109,7 @@ def main(filesystem, locator, link_dir, handle_error):
         filesystem.set_contents(
             existing_config_path,
             mode="t",
-            contents=toml.dumps(config),
+            contents=toml.dumps(thaw(config)),
         )
 
 
