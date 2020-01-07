@@ -1,7 +1,7 @@
 import os
 import sys
 
-from pyrsistent import pmap, pset
+from pyrsistent import pmap, pvector
 import attr
 import filesystems.exceptions
 import tomlkit
@@ -75,8 +75,8 @@ class Config(object):
         contents["virtualenv"].add(name, tomlkit.table())
         contents["virtualenv"][name].update(
             {
-                "install": sorted(set(install)),
-                "requirements": sorted(set(requirements)),
+                "install": list(install),
+                "requirements": list(requirements),
                 "link": sorted(set(link)),
                 "link-module": sorted(set(link_module)),
             },
@@ -88,8 +88,8 @@ class Config(object):
         # see sdipater/tomlkit#49, but I don't trust them not to be
         # broken in other ways given that they inherit from dict
         effective = {
-            "install": pset(_interpolated(config.get("install", []))),
-            "requirements": pset(
+            "install": pvector(_interpolated(config.get("install", []))),
+            "requirements": pvector(
                 _interpolated(config.get("requirements", [])),
             ),
             "python": config.get("python", sys.executable),
@@ -101,8 +101,9 @@ class Config(object):
             )
 
         for bundle in config.get("install-bundle", []):
-            effective["install"] = effective["install"].update(
-                self._contents["bundle"][bundle],
+            effective["install"] = effective["install"].extend(
+                each for each in self._contents["bundle"][bundle]
+                if each not in effective["install"]
             )
         return effective
 
