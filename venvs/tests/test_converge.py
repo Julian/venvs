@@ -97,6 +97,40 @@ class TestConverge(CLIMixin, TestCase):
             ({"foo", "bar", "bla"}, set()),
         )
 
+    def test_modifying_a_bundle_recreates_envs_using_it(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [bundle]
+            dev = ["bar"]
+
+            [virtualenv.a]
+            install-bundle = ["dev"]
+            """
+        )
+
+        self.run_cli(["converge"])
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            ({"bar"}, set()),
+        )
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [bundle]
+            dev = ["bar", "baz"]
+
+            [virtualenv.a]
+            install-bundle = ["dev"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            ({"bar", "baz"}, set()),
+        )
+
     def test_no_such_bundle(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
 
