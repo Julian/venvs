@@ -13,8 +13,9 @@ except ImportError:
     from functools32 import lru_cache
 
 from filesystems.exceptions import FileExists, FileNotFound
-from pyrsistent import thaw
+from pyrsistent import pmap, thaw
 from tqdm import tqdm
+import attr
 import click
 
 from venvs import __version__
@@ -69,14 +70,16 @@ def main(filesystem, locator, link_dir, handle_error):
     """
     Converge the configured set of tracked virtualenvs.
     """
-    for name, config in _loop(
+    for config in _loop(
         config=Config.from_locator(filesystem=filesystem, locator=locator),
         handle_error=handle_error,
     ):
-        python = config["python"]
-        config = config.set("sys.version", _version_of(python))
+        with_version = {
+            "virtualenv": thaw(pmap(attr.asdict(config))),
+            "sys.version": _version_of(config.python),
+        }
 
-        virtualenv = locator.for_name(name=name)
+        virtualenv = locator.for_name(name=config.name)
         existing_config_path = virtualenv.path / "installed.json"
 
         try:
@@ -86,27 +89,27 @@ def main(filesystem, locator, link_dir, handle_error):
         except FileNotFound:
             pass
         else:
-            if existing_config == config:
+            if existing_config == with_version:
                 continue
-        virtualenv.recreate_on(filesystem=filesystem, python=python)
+        virtualenv.recreate_on(filesystem=filesystem, python=config.python)
 
         try:
             virtualenv.install(
-                packages=config["install"],
-                requirements=config["requirements"],
+                packages=config.install,
+                requirements=config.requirements,
             )
         except Exception:
             handle_error(virtualenv)
             continue
 
-        for name, to in config["link"].items():
+        for name, to in config.link.items():
             _link(
                 source=virtualenv.binary(name=name),
                 to=link_dir.descendant(to),
                 filesystem=filesystem,
             )
 
-        for name, to in config["link-module"].items():
+        for name, to in config.link_module.items():
             _write_module_wrapper(
                 to=link_dir.descendant(to),
                 python=virtualenv.binary(name="python"),
@@ -117,7 +120,7 @@ def main(filesystem, locator, link_dir, handle_error):
         filesystem.set_contents(
             existing_config_path,
             mode="t",
-            contents=json.dumps(thaw(config), ensure_ascii=False, indent=2),
+            contents=json.dumps(with_version, ensure_ascii=False, indent=2),
         )
 
 
@@ -126,14 +129,14 @@ def _loop(config, handle_error):
     iterable = iter(progress)
     while True:
         try:
-            name, config = next(iterable)
+            configured_venv = next(iterable)
         except StopIteration:
             return
         except Exception:
             handle_error(None)
         else:
-            progress.set_description(name)
-            yield name, config
+            progress.set_description(configured_venv.name)
+            yield configured_venv
 
 
 def _link(source, to, filesystem):

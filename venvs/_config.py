@@ -18,6 +18,48 @@ def _empty():
     return table
 
 
+@attr.s(frozen=True)
+class ConfiguredVirtualEnv(object):
+    """
+    A virtual environment defined within a config file section.
+    """
+
+    name = attr.ib()
+    python = attr.ib(default=sys.executable)
+    install = attr.ib(default=pvector())
+    requirements = attr.ib(default=pvector())
+    link = attr.ib(default=pmap())
+    link_module = attr.ib(default=pmap())
+
+    @classmethod
+    def from_dict(cls, name, config_dict, bundles):
+        # tomlkit's data structures are broken in at least one way,
+        # see sdipater/tomlkit#49, but I don't trust them not to be
+        # broken in other ways given that they inherit from dict
+        requirements = _interpolated(config_dict.get("requirements", []))
+        install = list(_interpolated(config_dict.get("install", [])))
+
+        for bundle_name in config_dict.get("install-bundle", []):
+            bundle = bundles[bundle_name]
+            for each in bundle:
+                if each not in install:
+                    install.append(each)
+
+        kwargs = dict(
+            install=pvector(install),
+            requirements=pvector(requirements),
+            python=config_dict.get("python", sys.executable),
+        )
+        for section in "link", "link-module":
+            links = (
+                each.partition(":") for each in config_dict.get(section, [])
+            )
+            kwargs[section.replace("-", "_")] = pmap(
+                (name, to or name) for name, _, to in links
+            )
+        return cls(name=name, **kwargs)
+
+
 @attr.s(eq=False, frozen=True)
 class Config(object):
     """
@@ -45,8 +87,13 @@ class Config(object):
         return cls.from_string(contents)
 
     def __iter__(self):
-        for name, config in self._contents["virtualenv"].items():
-            yield name, self._effective_config(config)
+        return (
+            ConfiguredVirtualEnv.from_dict(
+                name=name,
+                config_dict=config,
+                bundles=self._contents["bundle"]
+            ) for name, config in self._contents["virtualenv"].items()
+        )
 
     def __eq__(self, other):
         """
@@ -82,31 +129,6 @@ class Config(object):
             },
         )
         return attr.evolve(self, contents=contents)
-
-    def _effective_config(self, config):
-        # tomlkit's data structures are broken in at least one way,
-        # see sdipater/tomlkit#49, but I don't trust them not to be
-        # broken in other ways given that they inherit from dict
-        requirements = _interpolated(config.get("requirements", []))
-        install = list(_interpolated(config.get("install", [])))
-
-        for bundle_name in config.get("install-bundle", []):
-            bundle = self._contents["bundle"][bundle_name]
-            for each in bundle:
-                if each not in install:
-                    install.append(each)
-
-        effective = [
-            ("install", pvector(install)),
-            ("requirements", pvector(requirements)),
-            ("python", config.get("python", sys.executable)),
-        ]
-        for section in "link", "link-module":
-            links = (each.partition(":") for each in config.get(section, []))
-            effective.append(
-                (section, pmap((name, to or name) for name, _, to in links)),
-            )
-        return pmap(effective)
 
 
 def _interpolated(iterable):
