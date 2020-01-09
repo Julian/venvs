@@ -418,3 +418,22 @@ class TestConverge(CLIMixin, TestCase):
             self.installed(self.locator.for_name("a")),
             ({"foo", "bar"}, set()),
         )
+
+    def test_missing_config_recreates_the_venv(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            """
+        )
+        self.run_cli(["converge"])
+
+        venv = self.locator.for_name("a")
+        self.filesystem.remove_file(venv.path / "installed.json")
+
+        some_random_file = venv.path / "some-random-file"
+        self.filesystem.touch(some_random_file)
+        self.assertTrue(self.filesystem.is_file(some_random_file))
+
+        # Now the file should disappear as the venv gets recreated
+        self.run_cli(["converge"])
+        self.assertFalse(self.filesystem.is_file(some_random_file))

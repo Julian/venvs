@@ -85,11 +85,11 @@ def main(filesystem, locator, link_dir, handle_error):
                 filesystem.get_contents(existing_config_path),
             )
         except FileNotFound:
-            virtualenv.create(python=python)
+            pass
         else:
             if existing_config == json.loads(json_config):
                 continue
-            virtualenv.recreate_on(filesystem=filesystem, python=python)
+        virtualenv.recreate_on(filesystem=filesystem, python=python)
 
         try:
             virtualenv.install(
