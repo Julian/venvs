@@ -75,7 +75,6 @@ def main(filesystem, locator, link_dir, handle_error):
     ):
         python = config["python"]
         config = config.set("sys.version", _version_of(python))
-        json_config = json.dumps(thaw(config), ensure_ascii=False, indent=2)
 
         virtualenv = locator.for_name(name=name)
         existing_config_path = virtualenv.path / "installed.json"
@@ -87,7 +86,7 @@ def main(filesystem, locator, link_dir, handle_error):
         except FileNotFound:
             pass
         else:
-            if existing_config == json.loads(json_config):
+            if existing_config == config:
                 continue
         virtualenv.recreate_on(filesystem=filesystem, python=python)
 
@@ -118,7 +117,7 @@ def main(filesystem, locator, link_dir, handle_error):
         filesystem.set_contents(
             existing_config_path,
             mode="t",
-            contents=json_config,
+            contents=json.dumps(thaw(config), ensure_ascii=False, indent=2),
         )
 
 
