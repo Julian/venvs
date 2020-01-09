@@ -39,10 +39,10 @@ jobs:
             toxenv: py36
           - name: 3.7
             toxenv: py37
-          - name: 3.8
-            toxenv: py38
           - name: 3.7
             toxenv: shiv
+          - name: 3.8
+            toxenv: py38
         exclude:
           - os: windows-latest
             python-version:

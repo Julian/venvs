@@ -1,7 +1,7 @@
 import os
 import sys
 
-from pyrsistent import pset
+from pyrsistent import pmap, pvector
 import attr
 import filesystems.exceptions
 import tomlkit
@@ -75,8 +75,8 @@ class Config(object):
         contents["virtualenv"].add(name, tomlkit.table())
         contents["virtualenv"][name].update(
             {
-                "install": sorted(set(install)),
-                "requirements": sorted(set(requirements)),
+                "install": list(install),
+                "requirements": list(requirements),
                 "link": sorted(set(link)),
                 "link-module": sorted(set(link_module)),
             },
@@ -87,20 +87,26 @@ class Config(object):
         # tomlkit's data structures are broken in at least one way,
         # see sdipater/tomlkit#49, but I don't trust them not to be
         # broken in other ways given that they inherit from dict
-        effective = {
-            "install": pset(_interpolated(config.get("install", []))),
-            "requirements": pset(
-                _interpolated(config.get("requirements", [])),
-            ),
-            "link": pset(config.get("link", [])),
-            "link-module": pset(config.get("link-module", [])),
-            "python": config.get("python", sys.executable),
-        }
-        for bundle in config.get("install-bundle", []):
-            effective["install"] = effective["install"].update(
-                self._contents["bundle"][bundle],
+        requirements = _interpolated(config.get("requirements", []))
+        install = list(_interpolated(config.get("install", [])))
+
+        for bundle_name in config.get("install-bundle", []):
+            bundle = self._contents["bundle"][bundle_name]
+            for each in bundle:
+                if each not in install:
+                    install.append(each)
+
+        effective = [
+            ("install", pvector(install)),
+            ("requirements", pvector(requirements)),
+            ("python", config.get("python", sys.executable)),
+        ]
+        for section in "link", "link-module":
+            links = (each.partition(":") for each in config.get(section, []))
+            effective.append(
+                (section, pmap((name, to or name) for name, _, to in links)),
             )
-        return effective
+        return pmap(effective)
 
 
 def _interpolated(iterable):

@@ -20,19 +20,41 @@ class TestConfig(TestCase):
             list(config), [
                 (
                     "a", {
-                        "install": set(),
-                        "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "install": [],
+                        "requirements": [],
+                        "link": {},
+                        "link-module": {},
                         "python": sys.executable,
                     },
                 ),
                 (
                     "b", {
-                        "install": {"foo", "bar", "bla"},
-                        "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "install": ["foo", "bar", "bla"],
+                        "requirements": [],
+                        "link": {},
+                        "link-module": {},
+                        "python": sys.executable,
+                    },
+                ),
+            ],
+        )
+
+    def test_links(self):
+        config = _config.Config.from_string(
+            """
+            [virtualenv.a]
+            link = ["foo", "bar", "baz:quux"]
+            link-module = ["spam", "eggs:cheese"]
+            """,
+        )
+        self.assertEqual(
+            list(config), [
+                (
+                    "a", {
+                        "install": [],
+                        "requirements": [],
+                        "link": {"foo": "foo", "bar": "bar", "baz": "quux"},
+                        "link-module": {"spam": "spam", "eggs": "cheese"},
                         "python": sys.executable,
                     },
                 ),
@@ -57,19 +79,19 @@ class TestConfig(TestCase):
             list(config), [
                 (
                     "a", {
-                        "install": {"foo", "bar"},
-                        "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "install": ["foo", "bar"],
+                        "requirements": [],
+                        "link": {},
+                        "link-module": {},
                         "python": sys.executable,
                     },
                 ),
                 (
                     "b", {
-                        "install": {"foo", "bar", "baz"},
-                        "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "install": ["bar", "baz", "foo"],
+                        "requirements": [],
+                        "link": {},
+                        "link-module": {},
                         "python": sys.executable,
                     },
                 ),
@@ -99,16 +121,16 @@ class TestConfig(TestCase):
             list(config), [
                 (
                     "a", {
-                        "install": {
+                        "install": [
                             os.path.expanduser("~/a"),
                             os.path.expandvars("$HOME"),
                             os.path.expandvars("${HOME}/b"),
-                        },
-                        "requirements": {
+                        ],
+                        "requirements": [
                             os.path.expandvars("requirements-${HOME}.txt"),
-                        },
-                        "link": set(),
-                        "link-module": set(),
+                        ],
+                        "link": {},
+                        "link-module": {},
                         "python": sys.executable,
                     },
                 ),
@@ -127,10 +149,10 @@ class TestConfig(TestCase):
             list(config), [
                 (
                     "a", {
-                        "install": {"foo"},
-                        "requirements": set(),
-                        "link": set(),
-                        "link-module": set(),
+                        "install": ["foo"],
+                        "requirements": [],
+                        "link": {},
+                        "link-module": {},
                         "python": "somepython2",
                     },
                 ),
@@ -208,10 +230,10 @@ class TestConfig(TestCase):
                 [
                     (
                         "a", {
-                            "install": {"foo", "bar"},
-                            "requirements": set(),
-                            "link": {"baz"},
-                            "link-module": set(),
+                            "install": ["foo", "bar"],
+                            "requirements": [],
+                            "link": {"baz": "baz"},
+                            "link-module": {},
                             "python": sys.executable,
                         },
                     ),
@@ -229,10 +251,10 @@ class TestConfig(TestCase):
                 [
                     (
                         "a", {
-                            "install": set(),
-                            "requirements": set(),
-                            "link": set(),
-                            "link-module": set(),
+                            "install": [],
+                            "requirements": [],
+                            "link": {},
+                            "link-module": {},
                             "python": sys.executable,
                         },
                     ),

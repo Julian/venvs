@@ -97,6 +97,40 @@ class TestConverge(CLIMixin, TestCase):
             ({"foo", "bar", "bla"}, set()),
         )
 
+    def test_modifying_a_bundle_recreates_envs_using_it(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [bundle]
+            dev = ["bar"]
+
+            [virtualenv.a]
+            install-bundle = ["dev"]
+            """
+        )
+
+        self.run_cli(["converge"])
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            ({"bar"}, set()),
+        )
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [bundle]
+            dev = ["bar", "baz"]
+
+            [virtualenv.a]
+            install-bundle = ["dev"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        self.assertEqual(
+            self.installed(self.locator.for_name("a")),
+            ({"bar", "baz"}, set()),
+        )
+
     def test_no_such_bundle(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
 
@@ -337,6 +371,39 @@ class TestConverge(CLIMixin, TestCase):
         self.assertIn("foo", str(e.exception))
         self.assertEqual(self.linked, {})
 
+    def test_link_m_module_replaces_generated_files(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link-module = ["this"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        # Just change the config in a way that will re-converge
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link-module = ["this", "that"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+    def test_link_m_module_does_not_replace_non_venvs_wrappers(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link-module = ["this"]
+            """
+        )
+
+        self.filesystem.touch(self.link_dir.descendant("this"))
+
+        with self.assertRaises(FileExists):
+            self.run_cli(["converge"])
+
     def test_changing_a_bundle_recreates_the_venv(self):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
@@ -369,3 +436,22 @@ class TestConverge(CLIMixin, TestCase):
             self.installed(self.locator.for_name("a")),
             ({"foo", "bar"}, set()),
         )
+
+    def test_missing_config_recreates_the_venv(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            """
+        )
+        self.run_cli(["converge"])
+
+        venv = self.locator.for_name("a")
+        self.filesystem.remove_file(venv.path / "installed.json")
+
+        some_random_file = venv.path / "some-random-file"
+        self.filesystem.touch(some_random_file)
+        self.assertTrue(self.filesystem.is_file(some_random_file))
+
+        # Now the file should disappear as the venv gets recreated
+        self.run_cli(["converge"])
+        self.assertFalse(self.filesystem.is_file(some_random_file))
