@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -70,6 +71,17 @@ class ConfiguredVirtualEnv(object):
             "virtualenv": thaw(pmap(attr.asdict(self))),
             "sys.version": _version_of(self.python),
         }
+
+    def save(self, filesystem, virtualenv):
+        filesystem.set_contents(
+            virtualenv.path / "installed.json",
+            mode="t",
+            contents=json.dumps(
+                self.serializable(),
+                ensure_ascii=False,
+                indent=2,
+            ),
+        )
 
 
 @attr.s(eq=False, frozen=True)

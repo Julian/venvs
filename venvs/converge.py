@@ -3,7 +3,6 @@ Converge the set of installed virtualenvs.
 
 """
 from datetime import datetime
-import json
 import sys
 
 from filesystems.exceptions import FileExists, FileNotFound
@@ -58,10 +57,8 @@ def main(filesystem, locator, link_dir, handle_error):
         config=Config.from_locator(filesystem=filesystem, locator=locator),
         handle_error=handle_error,
     ):
-        with_version = config.serializable()
-
         virtualenv = locator.for_name(name=config.name)
-        if virtualenv.existing_config_on(filesystem) == with_version:
+        if virtualenv.existing_config_on(filesystem) == config.serializable():
             continue
         virtualenv.recreate_on(filesystem=filesystem, python=config.python)
 
@@ -89,11 +86,7 @@ def main(filesystem, locator, link_dir, handle_error):
                 filesystem=filesystem,
             )
 
-        filesystem.set_contents(
-            virtualenv.path / "installed.json",
-            mode="t",
-            contents=json.dumps(with_version, ensure_ascii=False, indent=2),
-        )
+        config.save(filesystem=filesystem, virtualenv=virtualenv)
 
 
 def _loop(config, handle_error):
