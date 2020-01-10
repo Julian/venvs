@@ -66,22 +66,25 @@ class ConfiguredVirtualEnv(object):
             )
         return cls(name=name, **kwargs)
 
-    def serializable(self):
-        return {
-            "virtualenv": thaw(pmap(attr.asdict(self))),
-            "sys.version": _version_of(self.python),
-        }
+    def matches(self, existing_config):
+        return existing_config == self._serializable()
 
     def save(self, filesystem, virtualenv):
         filesystem.set_contents(
             virtualenv.path / "installed.json",
             mode="t",
             contents=json.dumps(
-                self.serializable(),
+                self._serializable(),
                 ensure_ascii=False,
                 indent=2,
             ),
         )
+
+    def _serializable(self):
+        return {
+            "virtualenv": thaw(pmap(attr.asdict(self))),
+            "sys.version": _version_of(self.python),
+        }
 
 
 @attr.s(eq=False, frozen=True)

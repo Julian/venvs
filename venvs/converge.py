@@ -58,7 +58,7 @@ def main(filesystem, locator, link_dir, handle_error):
         handle_error=handle_error,
     ):
         virtualenv = locator.for_name(name=config.name)
-        if virtualenv.existing_config_on(filesystem) == config.serializable():
+        if config.matches(virtualenv.existing_config_on(filesystem)):
             continue
         virtualenv.recreate_on(filesystem=filesystem, python=config.python)
 
