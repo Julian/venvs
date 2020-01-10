@@ -53,13 +53,11 @@ def main(filesystem, locator, link_dir, handle_error):
     """
     Converge the configured set of tracked virtualenvs.
     """
-    for config in _loop(
-        config=Config.from_locator(filesystem=filesystem, locator=locator),
+    for config, virtualenv in _loop(
+        filesystem=filesystem,
+        locator=locator,
         handle_error=handle_error,
     ):
-        virtualenv = locator.for_name(name=config.name)
-        if config.matches(virtualenv.existing_config_on(filesystem)):
-            continue
         virtualenv.recreate_on(filesystem=filesystem, python=config.python)
 
         try:
@@ -89,19 +87,24 @@ def main(filesystem, locator, link_dir, handle_error):
         config.save(filesystem=filesystem, virtualenv=virtualenv)
 
 
-def _loop(config, handle_error):
+def _loop(filesystem, locator, handle_error):
+    config = Config.from_locator(filesystem=filesystem, locator=locator)
     progress = tqdm(iterable=config, total=len(config), unit="venv")
     iterable = iter(progress)
     while True:
         try:
-            configured_venv = next(iterable)
+            virtualenv_config = next(iterable)
         except StopIteration:
             return
         except Exception:
             handle_error(None)
         else:
-            progress.set_description(configured_venv.name)
-            yield configured_venv
+            progress.set_description(virtualenv_config.name)
+            virtualenv = locator.for_name(name=virtualenv_config.name)
+            existing_config = virtualenv.existing_config_on(filesystem)
+            if virtualenv_config.matches(existing_config):
+                continue
+            yield virtualenv_config, virtualenv
 
 
 def _link(source, to, filesystem):
