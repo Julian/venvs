@@ -1,4 +1,5 @@
 from itertools import chain
+import json
 import os
 import platform
 import subprocess
@@ -9,6 +10,8 @@ import attr
 import click
 import filesystems.native
 import virtualenv as _virtualenv_module
+
+from venvs._config import ConfiguredVirtualEnv
 
 
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
@@ -84,6 +87,14 @@ class VirtualEnv(object):
 
     def install(self, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
         self._install(virtualenv=self, stdout=stdout, stderr=stderr, **kwargs)
+
+    def existing_config_on(self, filesystem):
+        try:
+            contents = filesystem.get_contents(self.path / "installed.json")
+        except filesystems.exceptions.FileNotFound:
+            return
+        config_dict = json.loads(contents)
+        return ConfiguredVirtualEnv(**config_dict["virtualenv"])
 
 
 @attr.s

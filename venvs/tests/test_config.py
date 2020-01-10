@@ -1,6 +1,5 @@
 from unittest import TestCase
 import os
-import sys
 
 import tomlkit.exceptions
 

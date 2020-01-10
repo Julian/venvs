@@ -4,18 +4,10 @@ Converge the set of installed virtualenvs.
 """
 from datetime import datetime
 import json
-import subprocess
 import sys
 
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
-
 from filesystems.exceptions import FileExists, FileNotFound
-from pyrsistent import pmap, thaw
 from tqdm import tqdm
-import attr
 import click
 
 from venvs import __version__
@@ -44,14 +36,6 @@ def _do_not_fail(virtualenv):
     sys.stderr.write("Converging {!r} failed!\n".format(virtualenv))
 
 
-@lru_cache()
-def _version_of(python):
-    return subprocess.check_output(
-        [python, "--version"],
-        stderr=subprocess.STDOUT,
-    ).decode("ascii")
-
-
 @_FILESYSTEM
 @_LINK_DIR
 @_ROOT
@@ -74,23 +58,11 @@ def main(filesystem, locator, link_dir, handle_error):
         config=Config.from_locator(filesystem=filesystem, locator=locator),
         handle_error=handle_error,
     ):
-        with_version = {
-            "virtualenv": thaw(pmap(attr.asdict(config))),
-            "sys.version": _version_of(config.python),
-        }
+        with_version = config.serializable()
 
         virtualenv = locator.for_name(name=config.name)
-        existing_config_path = virtualenv.path / "installed.json"
-
-        try:
-            existing_config = json.loads(
-                filesystem.get_contents(existing_config_path),
-            )
-        except FileNotFound:
-            pass
-        else:
-            if existing_config == with_version:
-                continue
+        if virtualenv.existing_config_on(filesystem) == with_version:
+            continue
         virtualenv.recreate_on(filesystem=filesystem, python=config.python)
 
         try:
@@ -118,7 +90,7 @@ def main(filesystem, locator, link_dir, handle_error):
             )
 
         filesystem.set_contents(
-            existing_config_path,
+            virtualenv.path / "installed.json",
             mode="t",
             contents=json.dumps(with_version, ensure_ascii=False, indent=2),
         )

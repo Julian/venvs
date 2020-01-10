@@ -1,7 +1,13 @@
 import os
+import subprocess
 import sys
 
-from pyrsistent import pmap, pvector
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
+
+from pyrsistent import pmap, pvector, thaw
 import attr
 import filesystems.exceptions
 import tomlkit
@@ -58,6 +64,12 @@ class ConfiguredVirtualEnv(object):
                 (name, to or name) for name, _, to in links
             )
         return cls(name=name, **kwargs)
+
+    def serializable(self):
+        return {
+            "virtualenv": thaw(pmap(attr.asdict(self))),
+            "sys.version": _version_of(self.python),
+        }
 
 
 @attr.s(eq=False, frozen=True)
@@ -159,3 +171,11 @@ def _check_for_duplicated_links(sections):
             seen.add(to)
     if duplicated:
         raise DuplicatedLinks(duplicated)
+
+
+@lru_cache()
+def _version_of(python):
+    return subprocess.check_output(
+        [python, "--version"],
+        stderr=subprocess.STDOUT,
+    ).decode("ascii")
