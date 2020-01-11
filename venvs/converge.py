@@ -101,9 +101,13 @@ def _loop(filesystem, locator, handle_error):
         else:
             progress.set_description(virtualenv_config.name)
             virtualenv = locator.for_name(name=virtualenv_config.name)
-            existing_config = virtualenv.existing_config_on(filesystem)
-            if virtualenv_config.matches(existing_config):
-                continue
+            try:
+                existing_config = virtualenv.existing_config_on(filesystem)
+            except (LookupError, ValueError):
+                pass
+            else:
+                if virtualenv_config.matches(existing_config):
+                    continue
             yield virtualenv_config, virtualenv
 
 
