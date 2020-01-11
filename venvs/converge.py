@@ -49,7 +49,8 @@ def _do_not_fail(virtualenv):
     flag_value=_do_not_fail,
     help="Do not fail if a virtualenv cannot be converged.",
 )
-def main(filesystem, locator, link_dir, handle_error):
+@click.argument("venvs", nargs=-1)
+def main(filesystem, locator, link_dir, handle_error, venvs):
     """
     Converge the configured set of tracked virtualenvs.
     """
@@ -58,6 +59,9 @@ def main(filesystem, locator, link_dir, handle_error):
         locator=locator,
         handle_error=handle_error,
     ):
+        if venvs and config.name not in venvs:
+            continue
+
         virtualenv.recreate_on(filesystem=filesystem, python=config.python)
 
         try:

@@ -76,6 +76,41 @@ class TestConverge(CLIMixin, TestCase):
             ({"baz", "quux"}, {"requirements.txt", "other.txt"}),
         )
 
+    def test_it_converges_specified_virtualenvs(self):
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("b").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("c").exists_on(self.filesystem))
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            [virtualenv.b]
+            install = ["foo", "bar", "bla"]
+            requirements = ["requirements.txt"]
+            [virtualenv.c]
+            install = ["foo"]
+            link = ["bar", "baz"]
+            """
+        )
+
+        self.run_cli(["converge", "a", "c"])
+
+        self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("b").exists_on(self.filesystem))
+        self.assertTrue(self.locator.for_name("c").exists_on(self.filesystem))
+
+        self.assertEqual(
+            (
+                self.installed(self.locator.for_name("a")),
+                self.installed(self.locator.for_name("b")),
+                self.installed(self.locator.for_name("c")),
+            ), (
+                (set(), set()),
+                (set(), set()),
+                ({"foo"}, set()),
+            ),
+        )
+
     def test_bundles(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
 
