@@ -66,9 +66,6 @@ class ConfiguredVirtualEnv(object):
             )
         return cls(name=name, **kwargs)
 
-    def matches(self, existing_config):
-        return existing_config == self._serializable()
-
     def save(self, filesystem, virtualenv):
         filesystem.set_contents(
             virtualenv.path / "installed.json",
@@ -79,6 +76,15 @@ class ConfiguredVirtualEnv(object):
                 indent=2,
             ),
         )
+
+    def matches_existing(self, virtualenv, filesystem):
+        try:
+            existing = json.loads(
+                filesystem.get_contents(virtualenv.path / "installed.json")
+            )
+        except (ValueError, filesystems.exceptions.FileNotFound):
+            return False
+        return existing == self._serializable()
 
     def _serializable(self):
         return {

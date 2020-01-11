@@ -93,22 +93,17 @@ def _loop(filesystem, locator, handle_error):
     iterable = iter(progress)
     while True:
         try:
-            virtualenv_config = next(iterable)
+            venv_config = next(iterable)
         except StopIteration:
             return
         except Exception:
             handle_error(None)
         else:
-            progress.set_description(virtualenv_config.name)
-            virtualenv = locator.for_name(name=virtualenv_config.name)
-            try:
-                existing_config = virtualenv.existing_config_on(filesystem)
-            except (LookupError, ValueError):
-                pass
-            else:
-                if virtualenv_config.matches(existing_config):
-                    continue
-            yield virtualenv_config, virtualenv
+            progress.set_description(venv_config.name)
+            venv = locator.for_name(name=venv_config.name)
+            if venv_config.matches_existing(venv, filesystem=filesystem):
+                continue
+            yield venv_config, venv
 
 
 def _link(source, to, filesystem):
