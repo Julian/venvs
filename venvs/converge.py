@@ -3,17 +3,9 @@ Converge the set of installed virtualenvs.
 
 """
 from datetime import datetime
-import json
-import subprocess
 import sys
 
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
-
 from filesystems.exceptions import FileExists, FileNotFound
-from pyrsistent import thaw
 from tqdm import tqdm
 import click
 
@@ -43,14 +35,6 @@ def _do_not_fail(virtualenv):
     sys.stderr.write("Converging {!r} failed!\n".format(virtualenv))
 
 
-@lru_cache()
-def _version_of(python):
-    return subprocess.check_output(
-        [python, "--version"],
-        stderr=subprocess.STDOUT,
-    ).decode("ascii")
-
-
 @_FILESYSTEM
 @_LINK_DIR
 @_ROOT
@@ -65,41 +49,31 @@ def _version_of(python):
     flag_value=_do_not_fail,
     help="Do not fail if a virtualenv cannot be converged.",
 )
-def main(filesystem, locator, link_dir, handle_error):
+@click.argument("venvs", nargs=-1)
+def main(filesystem, locator, link_dir, handle_error, venvs):
     """
     Converge the configured set of tracked virtualenvs.
     """
-    for name, config in _loop(
-        config=Config.from_locator(filesystem=filesystem, locator=locator),
+    for config, virtualenv in _loop(
+        filesystem=filesystem,
+        locator=locator,
         handle_error=handle_error,
     ):
-        python = config["python"]
-        config = config.set("sys.version", _version_of(python))
+        if venvs and config.name not in venvs:
+            continue
 
-        virtualenv = locator.for_name(name=name)
-        existing_config_path = virtualenv.path / "installed.json"
-
-        try:
-            existing_config = json.loads(
-                filesystem.get_contents(existing_config_path),
-            )
-        except FileNotFound:
-            pass
-        else:
-            if existing_config == config:
-                continue
-        virtualenv.recreate_on(filesystem=filesystem, python=python)
+        virtualenv.recreate_on(filesystem=filesystem, python=config.python)
 
         try:
             virtualenv.install(
-                packages=config["install"],
-                requirements=config["requirements"],
+                packages=config.install,
+                requirements=config.requirements,
             )
         except Exception:
             handle_error(virtualenv)
             continue
 
-        for name, to in config["link"].items():
+        for name, to in config.link.items():
             filesystem.create_directory(
                 link_dir,
                 with_parents=True,
@@ -111,7 +85,7 @@ def main(filesystem, locator, link_dir, handle_error):
                 filesystem=filesystem,
             )
 
-        for name, to in config["link-module"].items():
+        for name, to in config.link_module.items():
             _write_module_wrapper(
                 to=link_dir.descendant(to),
                 python=virtualenv.binary(name="python"),
@@ -119,26 +93,26 @@ def main(filesystem, locator, link_dir, handle_error):
                 filesystem=filesystem,
             )
 
-        filesystem.set_contents(
-            existing_config_path,
-            mode="t",
-            contents=json.dumps(thaw(config), ensure_ascii=False, indent=2),
-        )
+        config.save(filesystem=filesystem, virtualenv=virtualenv)
 
 
-def _loop(config, handle_error):
+def _loop(filesystem, locator, handle_error):
+    config = Config.from_locator(filesystem=filesystem, locator=locator)
     progress = tqdm(iterable=config, total=len(config), unit="venv")
     iterable = iter(progress)
     while True:
         try:
-            name, config = next(iterable)
+            venv_config = next(iterable)
         except StopIteration:
             return
         except Exception:
             handle_error(None)
         else:
-            progress.set_description(name)
-            yield name, config
+            progress.set_description(venv_config.name)
+            venv = locator.for_name(name=venv_config.name)
+            if venv_config.matches_existing(venv, filesystem=filesystem):
+                continue
+            yield venv_config, venv
 
 
 def _link(source, to, filesystem):

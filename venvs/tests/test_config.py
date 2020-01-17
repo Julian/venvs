@@ -1,6 +1,5 @@
 from unittest import TestCase
 import os
-import sys
 
 import tomlkit.exceptions
 
@@ -18,23 +17,10 @@ class TestConfig(TestCase):
         )
         self.assertEqual(
             list(config), [
-                (
-                    "a", {
-                        "install": [],
-                        "requirements": [],
-                        "link": {},
-                        "link-module": {},
-                        "python": sys.executable,
-                    },
-                ),
-                (
-                    "b", {
-                        "install": ["foo", "bar", "bla"],
-                        "requirements": [],
-                        "link": {},
-                        "link-module": {},
-                        "python": sys.executable,
-                    },
+                _config.ConfiguredVirtualEnv(name="a"),
+                _config.ConfiguredVirtualEnv(
+                    name="b",
+                    install=["foo", "bar", "bla"],
                 ),
             ],
         )
@@ -49,14 +35,10 @@ class TestConfig(TestCase):
         )
         self.assertEqual(
             list(config), [
-                (
-                    "a", {
-                        "install": [],
-                        "requirements": [],
-                        "link": {"foo": "foo", "bar": "bar", "baz": "quux"},
-                        "link-module": {"spam": "spam", "eggs": "cheese"},
-                        "python": sys.executable,
-                    },
+                _config.ConfiguredVirtualEnv(
+                    name="a",
+                    link={"foo": "foo", "bar": "bar", "baz": "quux"},
+                    link_module={"spam": "spam", "eggs": "cheese"},
                 ),
             ],
         )
@@ -77,23 +59,10 @@ class TestConfig(TestCase):
         )
         self.assertEqual(
             list(config), [
-                (
-                    "a", {
-                        "install": ["foo", "bar"],
-                        "requirements": [],
-                        "link": {},
-                        "link-module": {},
-                        "python": sys.executable,
-                    },
-                ),
-                (
-                    "b", {
-                        "install": ["bar", "baz", "foo"],
-                        "requirements": [],
-                        "link": {},
-                        "link-module": {},
-                        "python": sys.executable,
-                    },
+                _config.ConfiguredVirtualEnv(name="a", install=["foo", "bar"]),
+                _config.ConfiguredVirtualEnv(
+                    name="b",
+                    install=["bar", "baz", "foo"],
                 ),
             ],
         )
@@ -119,20 +88,16 @@ class TestConfig(TestCase):
         )
         self.assertEqual(
             list(config), [
-                (
-                    "a", {
-                        "install": [
-                            os.path.expanduser("~/a"),
-                            os.path.expandvars("$HOME"),
-                            os.path.expandvars("${HOME}/b"),
-                        ],
-                        "requirements": [
-                            os.path.expandvars("requirements-${HOME}.txt"),
-                        ],
-                        "link": {},
-                        "link-module": {},
-                        "python": sys.executable,
-                    },
+                _config.ConfiguredVirtualEnv(
+                    name="a",
+                    install=[
+                        os.path.expanduser("~/a"),
+                        os.path.expandvars("$HOME"),
+                        os.path.expandvars("${HOME}/b"),
+                    ],
+                    requirements=[
+                        os.path.expandvars("requirements-${HOME}.txt"),
+                    ],
                 ),
             ],
         )
@@ -147,14 +112,10 @@ class TestConfig(TestCase):
         )
         self.assertEqual(
             list(config), [
-                (
-                    "a", {
-                        "install": ["foo"],
-                        "requirements": [],
-                        "link": {},
-                        "link-module": {},
-                        "python": "somepython2",
-                    },
+                _config.ConfiguredVirtualEnv(
+                    name="a",
+                    install=["foo"],
+                    python="somepython2",
                 ),
             ],
         )
@@ -226,16 +187,11 @@ class TestConfig(TestCase):
         self.assertEqual(
             (list(config), list(added)),
             (
-                [],
-                [
-                    (
-                        "a", {
-                            "install": ["foo", "bar"],
-                            "requirements": [],
-                            "link": {"baz": "baz"},
-                            "link-module": {},
-                            "python": sys.executable,
-                        },
+                [], [
+                    _config.ConfiguredVirtualEnv(
+                        name="a",
+                        install=["foo", "bar"],
+                        link={"baz": "baz"},
                     ),
                 ],
             )
@@ -246,20 +202,7 @@ class TestConfig(TestCase):
         added = config.add("a")
         self.assertEqual(
             (list(config), list(added)),
-            (
-                [],
-                [
-                    (
-                        "a", {
-                            "install": [],
-                            "requirements": [],
-                            "link": {},
-                            "link-module": {},
-                            "python": sys.executable,
-                        },
-                    ),
-                ],
-            )
+            ([], [_config.ConfiguredVirtualEnv(name="a")]),
         )
 
     def test_empty(self):

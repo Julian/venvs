@@ -1,7 +1,14 @@
+import json
 import os
+import subprocess
 import sys
 
-from pyrsistent import pmap, pvector
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
+
+from pyrsistent import pmap, pvector, thaw
 import attr
 import filesystems.exceptions
 import tomlkit
@@ -16,6 +23,74 @@ def _empty():
     table["bundle"] = tomlkit.table()
     table["virtualenv"] = tomlkit.table()
     return table
+
+
+@attr.s(frozen=True)
+class ConfiguredVirtualEnv(object):
+    """
+    A virtual environment defined within a config file section.
+    """
+
+    name = attr.ib()
+    python = attr.ib(default=sys.executable)
+    install = attr.ib(default=pvector())
+    requirements = attr.ib(default=pvector())
+    link = attr.ib(default=pmap())
+    link_module = attr.ib(default=pmap())
+
+    @classmethod
+    def from_dict(cls, name, config_dict, bundles):
+        # tomlkit's data structures are broken in at least one way,
+        # see sdipater/tomlkit#49, but I don't trust them not to be
+        # broken in other ways given that they inherit from dict
+        requirements = _interpolated(config_dict.get("requirements", []))
+        install = list(_interpolated(config_dict.get("install", [])))
+
+        for bundle_name in config_dict.get("install-bundle", []):
+            bundle = bundles[bundle_name]
+            for each in bundle:
+                if each not in install:
+                    install.append(each)
+
+        kwargs = dict(
+            install=pvector(install),
+            requirements=pvector(requirements),
+            python=config_dict.get("python", sys.executable),
+        )
+        for section in "link", "link-module":
+            links = (
+                each.partition(":") for each in config_dict.get(section, [])
+            )
+            kwargs[section.replace("-", "_")] = pmap(
+                (name, to or name) for name, _, to in links
+            )
+        return cls(name=name, **kwargs)
+
+    def save(self, filesystem, virtualenv):
+        filesystem.set_contents(
+            virtualenv.path / "installed.json",
+            mode="t",
+            contents=json.dumps(
+                self._serializable(),
+                ensure_ascii=False,
+                indent=2,
+            ),
+        )
+
+    def matches_existing(self, virtualenv, filesystem):
+        try:
+            existing = json.loads(
+                filesystem.get_contents(virtualenv.path / "installed.json")
+            )
+        except (ValueError, filesystems.exceptions.FileNotFound):
+            return False
+        return existing == self._serializable()
+
+    def _serializable(self):
+        return {
+            "virtualenv": thaw(pmap(attr.asdict(self))),
+            "sys.version": _version_of(self.python),
+        }
 
 
 @attr.s(eq=False, frozen=True)
@@ -45,8 +120,13 @@ class Config(object):
         return cls.from_string(contents)
 
     def __iter__(self):
-        for name, config in self._contents["virtualenv"].items():
-            yield name, self._effective_config(config)
+        return (
+            ConfiguredVirtualEnv.from_dict(
+                name=name,
+                config_dict=config,
+                bundles=self._contents["bundle"]
+            ) for name, config in self._contents["virtualenv"].items()
+        )
 
     def __eq__(self, other):
         """
@@ -83,31 +163,6 @@ class Config(object):
         )
         return attr.evolve(self, contents=contents)
 
-    def _effective_config(self, config):
-        # tomlkit's data structures are broken in at least one way,
-        # see sdipater/tomlkit#49, but I don't trust them not to be
-        # broken in other ways given that they inherit from dict
-        requirements = _interpolated(config.get("requirements", []))
-        install = list(_interpolated(config.get("install", [])))
-
-        for bundle_name in config.get("install-bundle", []):
-            bundle = self._contents["bundle"][bundle_name]
-            for each in bundle:
-                if each not in install:
-                    install.append(each)
-
-        effective = [
-            ("install", pvector(install)),
-            ("requirements", pvector(requirements)),
-            ("python", config.get("python", sys.executable)),
-        ]
-        for section in "link", "link-module":
-            links = (each.partition(":") for each in config.get(section, []))
-            effective.append(
-                (section, pmap((name, to or name) for name, _, to in links)),
-            )
-        return pmap(effective)
-
 
 def _interpolated(iterable):
     return (os.path.expandvars(os.path.expanduser(each)) for each in iterable)
@@ -137,3 +192,11 @@ def _check_for_duplicated_links(sections):
             seen.add(to)
     if duplicated:
         raise DuplicatedLinks(duplicated)
+
+
+@lru_cache()
+def _version_of(python):
+    return subprocess.check_output(
+        [python, "--version"],
+        stderr=subprocess.STDOUT,
+    ).decode("ascii")

@@ -76,6 +76,41 @@ class TestConverge(CLIMixin, TestCase):
             ({"baz", "quux"}, {"requirements.txt", "other.txt"}),
         )
 
+    def test_it_converges_specified_virtualenvs(self):
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("b").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("c").exists_on(self.filesystem))
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            [virtualenv.b]
+            install = ["foo", "bar", "bla"]
+            requirements = ["requirements.txt"]
+            [virtualenv.c]
+            install = ["foo"]
+            link = ["bar", "baz"]
+            """
+        )
+
+        self.run_cli(["converge", "a", "c"])
+
+        self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
+        self.assertFalse(self.locator.for_name("b").exists_on(self.filesystem))
+        self.assertTrue(self.locator.for_name("c").exists_on(self.filesystem))
+
+        self.assertEqual(
+            (
+                self.installed(self.locator.for_name("a")),
+                self.installed(self.locator.for_name("b")),
+                self.installed(self.locator.for_name("c")),
+            ), (
+                (set(), set()),
+                (set(), set()),
+                ({"foo"}, set()),
+            ),
+        )
+
     def test_bundles(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
 
@@ -447,6 +482,47 @@ class TestConverge(CLIMixin, TestCase):
 
         venv = self.locator.for_name("a")
         self.filesystem.remove_file(venv.path / "installed.json")
+
+        some_random_file = venv.path / "some-random-file"
+        self.filesystem.touch(some_random_file)
+        self.assertTrue(self.filesystem.is_file(some_random_file))
+
+        # Now the file should disappear as the venv gets recreated
+        self.run_cli(["converge"])
+        self.assertFalse(self.filesystem.is_file(some_random_file))
+
+    def test_invalid_config_recreates_the_venv(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            """
+        )
+        self.run_cli(["converge"])
+
+        venv = self.locator.for_name("a")
+        self.filesystem.set_contents(
+            venv.path / "installed.json",
+            "not even json",
+        )
+
+        some_random_file = venv.path / "some-random-file"
+        self.filesystem.touch(some_random_file)
+        self.assertTrue(self.filesystem.is_file(some_random_file))
+
+        # Now the file should disappear as the venv gets recreated
+        self.run_cli(["converge"])
+        self.assertFalse(self.filesystem.is_file(some_random_file))
+
+    def test_valid_json_invalid_config_recreates_the_venv(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            """
+        )
+        self.run_cli(["converge"])
+
+        venv = self.locator.for_name("a")
+        self.filesystem.set_contents(venv.path / "installed.json", "{}")
 
         some_random_file = venv.path / "some-random-file"
         self.filesystem.touch(some_random_file)
