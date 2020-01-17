@@ -10,7 +10,7 @@ click==7.0
 enum34==1.1.6; python_version == '2.7'  # via tomlkit
 # TODO: release filesystems and reference that version
 #filesystems==0.23.0
-git+https://github.com/altendky/filesystems@23bee3334b63c0a4f7e88875e1ac4832d6ba6a43#egg=filesystems
+git+https://github.com/Julian/filesystems@f9a348a109c501a8707301f1bebd08470def2c03#egg=filesystems
 functools32==3.2.3.post2; python_version == '2.7'  # via tomlkit
 packaging==19.1
 pyparsing==2.4.2          # via packaging
