@@ -8,7 +8,7 @@ appdirs==1.4.3
 attrs==19.3.0
 click==7.0
 enum34==1.1.6; python_version == '2.7'  # via tomlkit
-filesystems==0.23.0
+filesystems==0.25.0
 functools32==3.2.3.post2; python_version == '2.7'  # via tomlkit
 packaging==19.1
 pyparsing==2.4.2          # via packaging
