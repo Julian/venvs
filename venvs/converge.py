@@ -73,12 +73,13 @@ def main(filesystem, locator, link_dir, handle_error, venvs):
             handle_error(virtualenv)
             continue
 
+        filesystem.create_directory(
+            link_dir,
+            with_parents=True,
+            allow_existing=True,
+        )
+
         for name, to in config.link.items():
-            filesystem.create_directory(
-                link_dir,
-                with_parents=True,
-                allow_existing=True,
-            )
             _link(
                 source=virtualenv.binary(name=name),
                 to=link_dir.descendant(to),
