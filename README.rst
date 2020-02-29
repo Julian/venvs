@@ -41,6 +41,9 @@ virtualenvs, one called "development" with pudb and twisted installed
 into it and trial linked from within it onto your ``PATH``, and a second
 called "app" installing the corresponding directory.
 
+For a more intricate example, have a look at `my own virtualenvs.toml
+<https://github.com/Julian/dotfiles/blob/master/.local/share/virtualenvs/virtualenvs.toml>`_.
+
 That's about all you need to know. If you insist on reading further
 though, venvs has an older, not-very-recommended mutable interface
 which allows you to create virtualenvs in a central location without
