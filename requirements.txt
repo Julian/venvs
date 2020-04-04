@@ -6,20 +6,31 @@
 #
 appdirs==1.4.3
 attrs==19.3.0
-click==7.0
-enum34==1.1.6; python_version == '2.7'  # via tomlkit
+click==7.1.1
+configparser==4.0.2; python_version == '2.7'       # via importlib-metadata
+contextlib2==0.6.0.post1; python_version == '2.7'  # via importlib-metadata, importlib-resources, virtualenv, zipp
+distlib==0.3.0                                     # via virtualenv
+enum34==1.1.10; python_version == '2.7'            # via tomlkit
+filelock==3.0.12          # via virtualenv
 filesystems==0.25.0
 functools32==3.2.3.post2; python_version == '2.7'  # via tomlkit
-packaging==19.1
-pyparsing==2.4.2          # via packaging
-pyrsistent==0.15.4
-six==1.12.0               # via packaging, pyrsistent
+importlib-metadata==1.6.0  # via importlib-resources, virtualenv
+importlib-resources==1.4.0  # via virtualenv
+packaging==20.3
+pathlib2==2.3.5; python_version == '2.7'           # via importlib-metadata, importlib-resources, virtualenv
+pyparsing==2.4.6          # via packaging
+pyrsistent==0.16.0
+scandir==1.10.0; python_version == '2.7'           # via pathlib2
+singledispatch==3.4.0.3; python_version == '2.7'   # via importlib-resources
+six==1.14.0                                        # via packaging, pathlib2, pyrsistent, virtualenv
 toml==0.10.0
-tomlkit==0.5.5
-tqdm==4.35.0
-typing==3.7.4.1           # via tomlkit
-virtualenv==16.7.4
-zope.interface==4.6.0     # via filesystems
+tomlkit==0.5.11
+tqdm==4.45.0
+typing==3.7.4.1                                    # via importlib-resources, tomlkit
+virtualenv==20.0.16
+zipp==1.2.0; python_version == '2.7'               # via importlib-metadata, importlib-resources
+zipp==3.1.0; python_version != '2.7'               # via importlib-metadata, importlib-resources
+zope.interface==5.0.2                              # via importlib-metadata, filesystems
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==42.0.2        # via zope.interface
+# setuptools
