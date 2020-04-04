@@ -14,8 +14,7 @@ import virtualenv as _virtualenv_module
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
-            python,
-            _virtualenv_module.__file__.rstrip("c"),
+            python, "-m", "virtualenv",
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
