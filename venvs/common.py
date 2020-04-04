@@ -8,7 +8,6 @@ import sysconfig
 import attr
 import click
 import filesystems.native
-import virtualenv as _virtualenv_module
 
 
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
