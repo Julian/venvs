@@ -41,6 +41,16 @@ jobs:
             toxenv: py37
           - name: 3.7
             toxenv: shiv
+          - name: 3.7
+            toxenv: docs-dirhtml
+          - name: 3.7
+            toxenv: docs-doctest
+          - name: 3.7
+            toxenv: docs-linkcheck
+          - name: 3.7
+            toxenv: docs-spelling
+          - name: 3.7
+            toxenv: docs-style
           - name: 3.8
             toxenv: py38
         exclude:
