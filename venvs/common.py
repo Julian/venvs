@@ -13,7 +13,8 @@ import filesystems.native
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
-            python, "-m", "virtualenv",
+            sys.executable, "-m", "virtualenv",
+            "--python", python,
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
