@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'venvs'
-copyright = '2020, Julian Berman'
+copyright = '2015, Julian Berman'
 author = 'Julian Berman'
 
 
