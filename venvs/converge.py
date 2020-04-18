@@ -27,12 +27,12 @@ os.execvp(argv[0], argv)
 """
 
 
-def _fail(virtualenv):
+def _fail(virtualenv, name):
     raise
 
 
-def _do_not_fail(virtualenv):
-    sys.stderr.write("Converging {.path!r} failed!\n".format(virtualenv))
+def _do_not_fail(virtualenv, name):
+    sys.stderr.write("Converging {!r} failed!\n".format(name))
 
 
 @_FILESYSTEM
@@ -70,7 +70,7 @@ def main(filesystem, locator, link_dir, handle_error, venvs):
                 requirements=config.requirements,
             )
         except Exception:
-            handle_error(virtualenv)
+            handle_error(virtualenv=virtualenv, name=config.name)
             continue
 
         filesystem.create_directory(
@@ -107,7 +107,7 @@ def _loop(filesystem, locator, handle_error):
         except StopIteration:
             return
         except Exception:
-            handle_error(None)
+            handle_error(virtualenv=None, name=None)
         else:
             progress.set_description(venv_config.name)
             venv = locator.for_name(name=venv_config.name)
