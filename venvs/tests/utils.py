@@ -1,3 +1,4 @@
+from io import StringIO
 import sys
 
 from filesystems import Path
@@ -9,20 +10,13 @@ from venvs import _cli, _config
 from venvs.common import Locator, VirtualEnv, _EX_OK
 
 
-_PY3 = sys.version_info[0] >= 3
-if _PY3:
-    from io import StringIO as NativeStringIO
-else:
-    from io import BytesIO as NativeStringIO
-
-
 class CLIMixin(object):
     def setUp(self):
         super(CLIMixin, self).setUp()
 
-        self.stdin = NativeStringIO()
-        self.stdout = NativeStringIO()
-        self.stderr = NativeStringIO()
+        self.stdin = StringIO()
+        self.stdout = StringIO()
+        self.stderr = StringIO()
 
         self.filesystem = filesystems.memory.FS()
 
