@@ -4,9 +4,9 @@ venvs
 
 |PyPI| |Pythons| |CI| |Codecov|
 
-venvs is a tool for configuring, in a single file, a set of virtualenvs,
-which packages to install into each, and any binaries to make globally
-available from within.
+``venvs`` is a tool for configuring, in a single file, a set of
+virtualenvs, which packages to install into each, and any binaries to
+make globally available from within.
 
 
 Installation
@@ -37,7 +37,7 @@ in it:
     install = ["$DEVELOPMENT/myapp"]
 
 After creating the above, running ``venvs converge`` will create 2
-virtualenvs, one called "development" with pudb and twisted installed
+virtualenvs, one called "development" with ``pudb`` and twisted installed
 into it and trial linked from within it onto your ``PATH``, and a second
 called "app" installing the corresponding directory.
 
@@ -57,7 +57,7 @@ directly through to ``virtualenv``:
 
 will create a virtual environment in an appropriate platform-specific
 data directory, or in the directory specified by ``WORKON_HOME`` for
-compatibility with virtualenvwrapper.
+compatibility with ``virtualenvwrapper``.
 
 
 Single-Purpose Virtualenvs
@@ -114,7 +114,7 @@ You may prefer using::
 as your temporary venv workflow if you're into that sort of thing instead.
 
 The global virtualenv is cleared each time you invoke ``venvs temporary``.
-Unless you care, unlike virtualenvwrapper's ``mktmpenv``, there's no
+Unless you care, unlike ``virtualenvwrapper``'s ``mktmpenv``, there's no
 need to care about cleaning it up, whenever it matters for the next
 time, it will be cleared and overwritten.
 
@@ -145,8 +145,8 @@ each of the three binaries.
 *Real documentation to come (I hope)*
 
 
-Why don't I use virtualenvwrapper?
-----------------------------------
+Why don't I use ``virtualenvwrapper``?
+--------------------------------------
 
 ``virtualenvwrapper`` is great! I've used it for a few years. But I've
 slowly settled on a much smaller subset of its functionality that I like
@@ -163,7 +163,7 @@ to use. Specifically:
 
       I've never attached a project to a virtualenv. I just use a naming
       convention, naming the virtualenv with the name of the repo (with simple
-      coersion), and then using `dynamic directory expansion in my shell
+      coercion), and then using `dynamic directory expansion in my shell
       <https://github.com/Julian/dotfiles/blob/4376b05de0f7af9e7ecb2e3596b8830c806c5d71/.config/zsh/.zshrc#L59-L92>`_
       to handle association.
 

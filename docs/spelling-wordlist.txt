@@ -1,0 +1,9 @@
+cetera
+config
+et
+hacky
+repo
+subdirectory
+symlink
+virtualenv
+virtualenvs
