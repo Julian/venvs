@@ -4,33 +4,21 @@
 #
 #    pip-compile
 #
-appdirs==1.4.3
-attrs==19.3.0
-click==7.1.1
-configparser==4.0.2; python_version == '2.7'       # via importlib-metadata
-contextlib2==0.6.0.post1; python_version == '2.7'  # via importlib-metadata, importlib-resources, virtualenv, zipp
-distlib==0.3.0                                     # via virtualenv
-enum34==1.1.10; python_version == '2.7'            # via tomlkit
+appdirs==1.4.3            # via setup.cfg, virtualenv
+attrs==19.3.0             # via setup.cfg, filesystems
+click==7.1.1              # via setup.cfg
+distlib==0.3.0            # via virtualenv
 filelock==3.0.12          # via virtualenv
-filesystems==0.25.0
-functools32==3.2.3.post2; python_version == '2.7'  # via tomlkit
-importlib-metadata==1.6.0  # via importlib-resources, virtualenv
-importlib-resources==1.4.0  # via virtualenv
-packaging==20.3
-pathlib2==2.3.5; python_version == '2.7'           # via importlib-metadata, importlib-resources, virtualenv
-pyparsing==2.4.6          # via packaging
-pyrsistent==0.16.0
-scandir==1.10.0; python_version == '2.7'           # via pathlib2
-singledispatch==3.4.0.3; python_version == '2.7'   # via importlib-resources
-six==1.14.0                                        # via packaging, pathlib2, pyrsistent, virtualenv
-toml==0.10.0
-tomlkit==0.5.11
-tqdm==4.45.0
-typing==3.7.4.1                                    # via importlib-resources, tomlkit
-virtualenv==20.0.16
-zipp==1.2.0; python_version == '2.7'               # via importlib-metadata, importlib-resources
-zipp==3.1.0; python_version != '2.7'               # via importlib-metadata, importlib-resources
-zope.interface==5.0.2                              # via importlib-metadata, filesystems
+filesystems==0.25.0       # via setup.cfg
+packaging==20.3           # via setup.cfg
+pyparsing==2.4.7          # via packaging
+pyrsistent==0.16.0        # via setup.cfg, filesystems
+six==1.14.0               # via packaging, pyrsistent, virtualenv
+toml==0.10.0              # via setup.cfg
+tomlkit==0.6.0            # via setup.cfg
+tqdm==4.45.0              # via setup.cfg
+virtualenv==20.0.18       # via setup.cfg
+zope.interface==5.1.0     # via filesystems
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
