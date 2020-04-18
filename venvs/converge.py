@@ -32,7 +32,7 @@ def _fail(virtualenv):
 
 
 def _do_not_fail(virtualenv):
-    sys.stderr.write("Converging {!r} failed!\n".format(virtualenv))
+    sys.stderr.write("Converging {.path!r} failed!\n".format(virtualenv))
 
 
 @_FILESYSTEM
