@@ -76,6 +76,8 @@ linkcheck_ignore = [
     "https://github.com/Julian/venvs/workflows/CI/badge.svg",
 ]
 
+linkcheck_anchors = False
+
 # -- Options for sphinxcontrib-spelling -----------------------------------
 
 spelling_word_list_filename = "spelling-wordlist.txt"
