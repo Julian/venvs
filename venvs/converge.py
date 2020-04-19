@@ -62,9 +62,8 @@ def main(filesystem, locator, link_dir, handle_error, venvs):
         if venvs and config.name not in venvs:
             continue
 
-        virtualenv.recreate_on(filesystem=filesystem, python=config.python)
-
         try:
+            virtualenv.recreate_on(filesystem=filesystem, python=config.python)
             virtualenv.install(
                 packages=config.install,
                 requirements=config.requirements,

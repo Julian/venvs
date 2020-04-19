@@ -189,7 +189,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             [virtualenv.b]
-            [virtualenv.magicExplodingVirtualenv]
+            [virtualenv.magicExplodingVirtualenvOnInstall]
             [virtualenv.c]
             """
         )
@@ -211,7 +211,51 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             [virtualenv.b]
-            [virtualenv.magicExplodingVirtualenv]
+            [virtualenv.magicExplodingVirtualenvOnInstall]
+            [virtualenv.c]
+            """
+        )
+
+        with self.assertRaises(ZeroDivisionError):
+            self.run_cli(["converge", "--fail-fast"])
+
+        self.assertEqual(
+            (
+                self.installed(self.locator.for_name("a")),
+                self.installed(self.locator.for_name("b")),
+                self.locator.for_name("c").exists_on(self.filesystem),
+            ),
+            ((set(), set()), (set(), set()), False),
+        )
+
+    def test_it_does_not_blow_up_by_default_on_create(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            [virtualenv.b]
+            [virtualenv.magicExplodingVirtualenvOnCreate]
+            [virtualenv.c]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        self.assertEqual(
+            (
+                self.installed(self.locator.for_name("a")),
+                self.installed(self.locator.for_name("b")),
+                self.installed(self.locator.for_name("c")),
+                self.locator.for_name("c").exists_on(self.filesystem),
+            ),
+            tuple((set(), set()) for _ in "abc") + (True,),
+        )
+
+    def test_it_can_be_asked_to_blow_up_immediately_on_create(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            [virtualenv.b]
+            [virtualenv.magicExplodingVirtualenvOnCreate]
             [virtualenv.c]
             """
         )

@@ -67,6 +67,10 @@ class CLIMixin(object):
         return packages, reqs
 
     def _fake_create(self, virtualenv, **kwargs):
+        # FIXME: ...
+        if virtualenv.path.basename() == "magicexplodingvirtualenvoncreate":
+            raise ZeroDivisionError("Hey you told me to blow up on create!")
+
         try:
             self.filesystem.create_directory(path=virtualenv.path.parent())
         except FileExists:
@@ -79,8 +83,8 @@ class CLIMixin(object):
 
     def _fake_install(self, virtualenv, packages, requirements, **kwargs):
         # FIXME: ...
-        if virtualenv.path.basename() == "magicexplodingvirtualenv":
-            raise ZeroDivisionError("Hey you told me to blow up!")
+        if virtualenv.path.basename() == "magicexplodingvirtualenvoninstall":
+            raise ZeroDivisionError("Hey you told me to blow up on install!")
 
         base = virtualenv.path
         with self.filesystem.open(base / "packages", "at") as f:
