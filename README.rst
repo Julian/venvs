@@ -183,6 +183,6 @@ virtualenvs for me. So that's what ``venvs`` does.
   :alt: Build status
   :target: https://github.com/Julian/venvs/actions?query=workflow%3ACI
 
-.. |Codecov| image:: https://codecov.io/gh/Julian/svmlight-loader/branch/master/graph/badge.svg
+.. |Codecov| image:: https://codecov.io/gh/Julian/venvs/branch/master/graph/badge.svg
   :alt: Codecov Code coverage
   :target: https://codecov.io/gh/Julian/venvs
