@@ -288,6 +288,22 @@ class TestConverge(CLIMixin, TestCase):
             (set(), set()),
         )
 
+    def test_custom_link_dir(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link = ["foo"]
+            """
+        )
+
+        link_dir = self.link_dir.descendant("some", "child", "bin")
+        self.run_cli(["converge", "--link-dir", str(link_dir)])
+
+        self.assertEqual(
+            self.filesystem.readlink(link_dir / "foo"),
+            self.locator.for_name("a").binary("foo"),
+        )
+
     def test_link_exists(self):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """

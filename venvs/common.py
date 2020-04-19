@@ -156,6 +156,7 @@ _LINK_DIR = click.option(
     default=filesystems.Path.from_string(
         sysconfig.get_path("scripts", "posix_user"),
     ),
+    type=filesystems.Path.from_string,
     help="The directory to link scripts into.",
 )
 
