@@ -5,6 +5,7 @@ import subprocess
 import sys
 import sysconfig
 
+from filesystems.click import PATH
 import attr
 import click
 import filesystems.native
@@ -136,7 +137,7 @@ class _Locator(click.ParamType):
     def convert(self, value, param, context):
         if not isinstance(value, str):
             return value
-        return Locator(root=filesystems.Path.from_string(str(value)))
+        return Locator(root=PATH.convert(value, param, context))
 
 
 _ROOT = click.option(
@@ -156,7 +157,7 @@ _LINK_DIR = click.option(
     default=filesystems.Path.from_string(
         sysconfig.get_path("scripts", "posix_user"),
     ),
-    type=filesystems.Path.from_string,
+    type=PATH,
     help="The directory to link scripts into.",
 )
 

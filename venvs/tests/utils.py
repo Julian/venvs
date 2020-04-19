@@ -95,7 +95,7 @@ class CLIMixin(object):
     def run_cli(self, argv=(), exit_status=_EX_OK):
         runner = click.testing.CliRunner()
         default_map = dict(
-            link_dir=self.link_dir,
+            link_dir=str(self.link_dir),
             locator=self.locator,
             filesystem=self.filesystem,
         )
