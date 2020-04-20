@@ -1,4 +1,5 @@
 from itertools import chain
+from shutil import which
 import os
 import platform
 import subprocess
@@ -15,7 +16,7 @@ def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
             sys.executable, "-m", "virtualenv",
-            "--python", python,
+            "--python", which(python),
             "--quiet",
         ] + list(arguments) + [str(virtualenv.path)],
         stderr=stderr,
