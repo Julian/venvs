@@ -1,5 +1,5 @@
-from pkg_resources import DistributionNotFound, get_distribution
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    pass
+    from importlib import metadata
+except ImportError: # for Python<3.8
+    import importlib_metadata as metadata
+__version__ = metadata.version("venvs")
