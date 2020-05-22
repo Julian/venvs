@@ -205,6 +205,10 @@ class TestConverge(CLIMixin, TestCase):
             ),
             tuple((set(), set()) for _ in "abc") + (True,),
         )
+        self.assertIn(
+            "'magicExplodingVirtualenvOnInstall' failed",
+            self.stderr.getvalue(),
+        )
 
     def test_it_can_be_asked_to_blow_up_immediately_on_install(self):
         self.filesystem.set_contents(
@@ -248,6 +252,10 @@ class TestConverge(CLIMixin, TestCase):
                 self.locator.for_name("c").exists_on(self.filesystem),
             ),
             tuple((set(), set()) for _ in "abc") + (True,),
+        )
+        self.assertIn(
+            "'magicExplodingVirtualenvOnCreate' failed",
+            self.stderr.getvalue(),
         )
 
     def test_it_can_be_asked_to_blow_up_immediately_on_create(self):

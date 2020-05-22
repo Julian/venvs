@@ -121,16 +121,17 @@ class TestConfig(TestCase):
         )
 
     def test_duplicate_links(self):
-        with self.assertRaises(_config.DuplicatedLinks):
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             _config.Config.from_string(
                 """
                 [virtualenv.a]
                 link = ["python:foo", "pip:foo"]
                 """,
             )
+        self.assertIn("'foo'", str(e.exception))
 
     def test_duplicate_links_across_venvs(self):
-        with self.assertRaises(_config.DuplicatedLinks):
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             _config.Config.from_string(
                 """
                 [virtualenv.a]
@@ -139,18 +140,20 @@ class TestConfig(TestCase):
                 link = ["pip:foo"]
                 """,
             )
+        self.assertIn("'foo'", str(e.exception))
 
     def test_duplicate_link_modules(self):
-        with self.assertRaises(_config.DuplicatedLinks):
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             _config.Config.from_string(
                 """
                 [virtualenv.a]
                 link-module = ["pydoc:foo", "pip:foo"]
                 """,
             )
+        self.assertIn("'foo'", str(e.exception))
 
     def test_duplicate_link_modules_across_venvs(self):
-        with self.assertRaises(_config.DuplicatedLinks):
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             _config.Config.from_string(
                 """
                 [virtualenv.a]
@@ -159,9 +162,10 @@ class TestConfig(TestCase):
                 link-module = ["pip:foo"]
                 """,
             )
+        self.assertIn("'foo'", str(e.exception))
 
     def test_duplicate_mixed_links(self):
-        with self.assertRaises(_config.DuplicatedLinks):
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             _config.Config.from_string(
                 """
                 [virtualenv.a]
@@ -169,9 +173,10 @@ class TestConfig(TestCase):
                 link-module = ["pip:foo"]
                 """,
             )
+        self.assertIn("'foo'", str(e.exception))
 
     def test_duplicate_mixed_links_across_venvs(self):
-        with self.assertRaises(_config.DuplicatedLinks):
+        with self.assertRaises(_config.DuplicatedLinks) as e:
             _config.Config.from_string(
                 """
                 [virtualenv.a]
@@ -180,6 +185,7 @@ class TestConfig(TestCase):
                 link = ["pip:foo"]
                 """,
             )
+        self.assertIn("'foo'", str(e.exception))
 
     def test_add_with_contents(self):
         config = _config.Config()
