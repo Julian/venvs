@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 import os
@@ -118,13 +119,14 @@ class TestConverge(CLIMixin, TestCase):
         file = NamedTemporaryFile(delete=False)
         self.addCleanup(os.remove, file.name)
         mtime = os.path.getmtime(file.name)
+        new_mtime = datetime.fromtimestamp(mtime) + timedelta(minutes=10)
 
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), f"""
             [virtualenv.a]
             post-commands = [
                 ["true"],
-                ["touch", "{file.name}"],
+                ["touch", "-t", "{new_mtime:%Y%m%d%H%M}", "{file.name}"],
             ]
             """
         )
