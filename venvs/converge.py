@@ -3,6 +3,7 @@ Converge the set of installed virtualenvs.
 
 """
 from datetime import datetime
+import subprocess
 import sys
 
 from filesystems.exceptions import FileExists, FileNotFound
@@ -94,6 +95,13 @@ def main(filesystem, locator, link_dir, handle_error, venvs):
             )
 
         config.save(filesystem=filesystem, virtualenv=virtualenv)
+
+        try:
+            for command in config.post_commands:
+                subprocess.run(command, check=True)
+        except Exception:
+            handle_error(virtualenv=virtualenv, name=config.name)
+            continue
 
 
 def _loop(filesystem, locator, handle_error):

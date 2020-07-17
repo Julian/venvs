@@ -1,3 +1,4 @@
+from tempfile import NamedTemporaryFile
 from unittest import TestCase
 import os
 
@@ -110,6 +111,71 @@ class TestConverge(CLIMixin, TestCase):
                 ({"foo"}, set()),
             ),
         )
+
+    def test_it_runs_post_commands(self):
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+
+        file = NamedTemporaryFile(delete=False)
+        self.addCleanup(os.remove, file.name)
+        mtime = os.path.getmtime(file.name)
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), f"""
+            [virtualenv.a]
+            post-commands = [
+                ["true"],
+                ["touch", "{file.name}"],
+            ]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        self.assertTrue(self.locator.for_name("a").exists_on(self.filesystem))
+        self.assertGreater(os.path.getmtime(file.name), mtime)
+
+    def test_it_does_not_run_post_commands_for_already_converged_envs(self):
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+
+        file = NamedTemporaryFile(delete=False)
+        self.addCleanup(os.remove, file.name)
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), f"""
+            [virtualenv.a]
+            post-commands = [
+                ["true"],
+                ["touch", "{file.name}"],
+            ]
+            """
+        )
+
+        self.run_cli(["converge"])
+        mtime = os.path.getmtime(file.name)
+
+        self.run_cli(["converge"])
+        self.assertEqual(os.path.getmtime(file.name), mtime)
+
+    def test_it_stops_post_commands_on_error(self):
+        self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
+
+        file = NamedTemporaryFile(delete=False)
+        self.addCleanup(os.remove, file.name)
+        mtime = os.path.getmtime(file.name)
+
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), f"""
+            [virtualenv.a]
+            post-commands = [
+                ["false"],
+                ["touch", "{file.name}"],
+            ]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        self.assertEqual(os.path.getmtime(file.name), mtime)
 
     def test_bundles(self):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))

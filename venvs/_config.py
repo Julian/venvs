@@ -8,7 +8,7 @@ try:
 except ImportError:
     from functools32 import lru_cache
 
-from pyrsistent import pmap, pvector, thaw
+from pyrsistent import freeze, pmap, pvector, thaw
 import attr
 import filesystems.exceptions
 import tomlkit
@@ -37,6 +37,7 @@ class ConfiguredVirtualEnv(object):
     requirements = attr.ib(default=pvector())
     link = attr.ib(default=pmap())
     link_module = attr.ib(default=pmap())
+    post_commands = attr.ib(default=pvector())
 
     @classmethod
     def from_dict(cls, name, config_dict, bundles):
@@ -56,6 +57,7 @@ class ConfiguredVirtualEnv(object):
             install=pvector(install),
             requirements=pvector(requirements),
             python=config_dict.get("python", sys.executable),
+            post_commands=freeze(config_dict.get("post-commands", [])),
         )
         for section in "link", "link-module":
             links = (
