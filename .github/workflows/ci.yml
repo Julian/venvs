@@ -19,34 +19,34 @@ jobs:
         python-version:
           - name: pypy3
             toxenv: pypy3
-          - name: pypy3
-            toxenv: build
-          - name: pypy3
-            toxenv: readme
-          - name: pypy3
-            toxenv: safety
-          - name: pypy3
-            toxenv: secrets
-          - name: pypy3
-            toxenv: style
           - name: 3.6
             toxenv: py36
           - name: 3.7
             toxenv: py37
-          - name: 3.7
-            toxenv: shiv
-          - name: 3.7
-            toxenv: docs-dirhtml
-          - name: 3.7
-            toxenv: docs-doctest
-          - name: 3.7
-            toxenv: docs-linkcheck
-          - name: 3.7
-            toxenv: docs-spelling
-          - name: 3.7
-            toxenv: docs-style
           - name: 3.8
             toxenv: py38
+          - name: 3.8
+            toxenv: build
+          - name: 3.8
+            toxenv: readme
+          - name: 3.8
+            toxenv: safety
+          - name: 3.8
+            toxenv: secrets
+          - name: 3.8
+            toxenv: style
+          - name: 3.8
+            toxenv: shiv
+          - name: 3.8
+            toxenv: docs-dirhtml
+          - name: 3.8
+            toxenv: docs-doctest
+          - name: 3.8
+            toxenv: docs-linkcheck
+          - name: 3.8
+            toxenv: docs-spelling
+          - name: 3.8
+            toxenv: docs-style
         exclude:
           - os: windows-latest
             python-version:
