@@ -1,7 +1,7 @@
 from filesystems.exceptions import FileNotFound
 import click
 
-from venvs.common import _FILESYSTEM, _ROOT, _EX_NOINPUT
+from venvs.common import _EX_NOINPUT, _FILESYSTEM, _ROOT
 
 
 def run(locator, filesystem, names, force):

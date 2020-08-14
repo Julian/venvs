@@ -7,7 +7,7 @@ import click.testing
 import filesystems.memory
 
 from venvs import _cli, _config
-from venvs.common import Locator, VirtualEnv, _EX_OK
+from venvs.common import _EX_OK, Locator, VirtualEnv
 
 
 class CLIMixin(object):

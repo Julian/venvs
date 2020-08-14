@@ -8,7 +8,6 @@ import re
 
 import venvs
 
-
 # -- Project information -----------------------------------------------------
 
 project = "venvs"

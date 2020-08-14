@@ -17,7 +17,6 @@ import click
 from venvs import _config
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
-
 _INSTALL = click.option(
     "-i", "--install", "installs",
     multiple=True,

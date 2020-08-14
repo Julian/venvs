@@ -153,7 +153,7 @@ slowly settled on a much smaller subset of its functionality that I like
 to use. Specifically:
 
     * I don't like activating virtualenvs.
-      
+
       virtualenvs are magical and hacky enough on their own, and piling
       activation on top just makes things even more messy for me, especially
       when moving around between different projects in a shell.  Some people
