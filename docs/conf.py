@@ -4,6 +4,7 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+from importlib import metadata
 import re
 
 import venvs
@@ -14,7 +15,7 @@ project = "venvs"
 author = "Julian Berman"
 copyright = "2015, " + author
 
-release = venvs.__version__
+release = metadata.version("venvs")
 version = release.partition("-")[0]
 
 
