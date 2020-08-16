@@ -1,10 +1,10 @@
 import click
 
-from venvs import __version__, converge, create, find, remove, temporary
+from venvs import converge, create, find, remove, temporary
 
 
 @click.group(context_settings=dict(help_option_names=["--help", "-h"]))
-@click.version_option(prog_name="venvs", version=__version__)
+@click.version_option(prog_name="venvs")
 def main():
     """
     Centralized virtual environments.
