@@ -83,14 +83,14 @@ def main(filesystem, locator, link_dir, handle_error, venvs):
             allow_existing=True,
         )
 
-        for name, to in config.link.items():
+        for to, name in config.link.items():
             _link(
                 source=virtualenv.binary(name=name),
                 to=link_dir.descendant(to),
                 filesystem=filesystem,
             )
 
-        for name, to in config.link_module.items():
+        for to, name in config.link_module.items():
             _write_module_wrapper(
                 to=link_dir.descendant(to),
                 python=virtualenv.binary(name="python"),

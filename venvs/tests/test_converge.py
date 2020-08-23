@@ -575,6 +575,19 @@ class TestConverge(CLIMixin, TestCase):
         with self.assertRaises(FileExists):
             self.run_cli(["converge"])
 
+    def test_linking_the_same_binary_twice(self):
+        self.filesystem.set_contents(
+            self.locator.root.descendant("virtualenvs.toml"), """
+            [virtualenv.a]
+            link = ["this:that", "this"]
+            """
+        )
+
+        self.run_cli(["converge"])
+
+        this = self.locator.for_name("a").binary("this")
+        self.assertEqual(self.linked, dict(this=this, that=this))
+
     def test_changing_a_bundle_recreates_the_venv(self):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """

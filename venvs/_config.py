@@ -63,8 +63,9 @@ class ConfiguredVirtualEnv(object):
             links = (
                 each.partition(":") for each in config_dict.get(section, [])
             )
+            # target -> source, since it's target names that must be unique
             kwargs[section.replace("-", "_")] = pmap(
-                (name, to or name) for name, _, to in links
+                (to or name, name) for name, _, to in links
             )
         return cls(name=name, **kwargs)
 

@@ -37,8 +37,26 @@ class TestConfig(TestCase):
             list(config), [
                 _config.ConfiguredVirtualEnv(
                     name="a",
-                    link={"foo": "foo", "bar": "bar", "baz": "quux"},
-                    link_module={"spam": "spam", "eggs": "cheese"},
+                    link={"foo": "foo", "bar": "bar", "quux": "baz"},
+                    link_module={"spam": "spam", "cheese": "eggs"},
+                ),
+            ],
+        )
+
+    def test_links_to_same_binary(self):
+        config = _config.Config.from_string(
+            """
+            [virtualenv.a]
+            link = ["foo", "foo:bar"]
+            link-module = ["spam", "spam:cheese"]
+            """,
+        )
+        self.assertEqual(
+            list(config), [
+                _config.ConfiguredVirtualEnv(
+                    name="a",
+                    link={"foo": "foo", "bar": "foo"},
+                    link_module={"spam": "spam", "cheese": "spam"},
                 ),
             ],
         )
