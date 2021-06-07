@@ -46,12 +46,14 @@ def _do_not_fail(virtualenv, name):
 @click.option(
     "--fail-fast", "handle_error",
     flag_value=_fail,
+    type=lambda value: value,
     help="Fail if any virtualenv cannot be converged.",
 )
 @click.option(
     "--no-fail-fast", "handle_error",
     default=True,
     flag_value=_do_not_fail,
+    type=lambda value: value,
     help="Do not fail if a virtualenv cannot be converged.",
 )
 @click.argument("venvs", nargs=-1)

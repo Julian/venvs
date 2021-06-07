@@ -89,7 +89,7 @@ class TestFind(CLIMixin, TestCase):
         stdout, stderr = self.run_cli(
             ["find", "--random-garbage"], exit_status=2,
         )
-        stderr_ends_with = "Error: no such option: --random-garbage\n"
+        stderr_ends_with = "Error: No such option: --random-garbage\n"
         self.assertEqual(
             (stdout, stderr[-len(stderr_ends_with):]),
             (stdout, stderr_ends_with),
