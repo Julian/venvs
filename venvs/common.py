@@ -152,6 +152,7 @@ _ROOT = click.option(
 _FILESYSTEM = click.option(
     "--filesystem",
     default=filesystems.native.FS(),
+    type=lambda value: value,
 )
 _LINK_DIR = click.option(
     "--link-dir",
