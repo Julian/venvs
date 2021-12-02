@@ -24,40 +24,50 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
         python-version:
-          - name: pypy3
-            toxenv: pypy3
-          - name: 3.6
-            toxenv: py36
+          - name: pypy-3.7
+            toxenv: pypy3-build
+          - name: pypy-3.7
+            toxenv: pypy3-tests
           - name: 3.7
-            toxenv: py37
+            toxenv: py37-build
+          - name: 3.7
+            toxenv: py37-tests
           - name: 3.8
-            toxenv: py38
+            toxenv: py38-build
           - name: 3.8
-            toxenv: build
-          - name: 3.8
+            toxenv: py38-tests
+          - name: 3.9
+            toxenv: py39-build
+          - name: 3.9
+            toxenv: py39-tests
+          - name: 3.10
+            toxenv: py310-build
+          - name: 3.10
+            toxenv: py310-tests
+          - name: 3.10
             toxenv: readme
-          - name: 3.8
+          - name: 3.10
             toxenv: safety
-          - name: 3.8
+          - name: 3.10
             toxenv: secrets
-          - name: 3.8
+          - name: 3.10
             toxenv: style
-          - name: 3.8
+          - name: 3.10
             toxenv: shiv
-          - name: 3.8
+          - name: 3.10
             toxenv: docs-dirhtml
-          - name: 3.8
+          - name: 3.10
             toxenv: docs-doctest
-          - name: 3.8
+          - name: 3.10
             toxenv: docs-linkcheck
-          - name: 3.8
+          - name: 3.10
             toxenv: docs-spelling
-          - name: 3.8
+          - name: 3.10
             toxenv: docs-style
         exclude:
           - os: windows-latest
             python-version:
-              name: pypy3
+              name: pypy-3.7
               toxenv: build
 
     steps:
@@ -79,7 +89,7 @@ jobs:
     - name: Run tox
       run: python -m tox -e "${{ matrix.python-version.toxenv }}"
     - name: Upload shiv artifact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       if: matrix.python-version.toxenv == 'shiv'
       with:
         name: venvs
