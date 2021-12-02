@@ -1,7 +1,6 @@
 from importlib import metadata
 import re
 
-
 # -- Project information -----------------------------------------------------
 
 project = "venvs"
