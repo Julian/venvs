@@ -1,3 +1,5 @@
+file:.#egg=venvs
+furo
 pygments-github-lexers
 sphinx
 sphinxcontrib-spelling
