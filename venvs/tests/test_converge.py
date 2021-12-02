@@ -24,7 +24,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.c]
             install = ["foo", "$HOME", "~/a"]
             link = ["bar", "baz"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -58,7 +58,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.a]
             install = ["foo", "bar"]
             requirements = ["requirements.txt"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -68,7 +68,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.a]
             install = ["baz", "quux"]
             requirements = ["requirements.txt", "other.txt"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -92,7 +92,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.c]
             install = ["foo"]
             link = ["bar", "baz"]
-            """
+            """,
         )
 
         self.run_cli(["converge", "a", "c"])
@@ -128,7 +128,7 @@ class TestConverge(CLIMixin, TestCase):
                 ["true"],
                 ["touch", "-t", "{new_mtime:%Y%m%d%H%M}", "{file.name}"],
             ]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -149,7 +149,7 @@ class TestConverge(CLIMixin, TestCase):
                 ["true"],
                 ["touch", "{file.name}"],
             ]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -172,7 +172,7 @@ class TestConverge(CLIMixin, TestCase):
                 ["false"],
                 ["touch", "{file.name}"],
             ]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -190,7 +190,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.a]
             install = ["foo"]
             install-bundle = ["dev"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -208,7 +208,7 @@ class TestConverge(CLIMixin, TestCase):
 
             [virtualenv.a]
             install-bundle = ["dev"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -224,7 +224,7 @@ class TestConverge(CLIMixin, TestCase):
 
             [virtualenv.a]
             install-bundle = ["dev"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -242,7 +242,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.a]
             install = ["foo"]
             install-bundle = ["dev"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -259,7 +259,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.b]
             [virtualenv.magicExplodingVirtualenvOnInstall]
             [virtualenv.c]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -285,7 +285,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.b]
             [virtualenv.magicExplodingVirtualenvOnInstall]
             [virtualenv.c]
-            """
+            """,
         )
 
         with self.assertRaises(ZeroDivisionError):
@@ -307,7 +307,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.b]
             [virtualenv.magicExplodingVirtualenvOnCreate]
             [virtualenv.c]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -333,7 +333,7 @@ class TestConverge(CLIMixin, TestCase):
             [virtualenv.b]
             [virtualenv.magicExplodingVirtualenvOnCreate]
             [virtualenv.c]
-            """
+            """,
         )
 
         with self.assertRaises(ZeroDivisionError):
@@ -353,7 +353,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             python = "python3"
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -369,7 +369,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link = ["foo"]
-            """
+            """,
         )
 
         link_dir = self.link_dir.descendant("some", "child", "bin")
@@ -385,7 +385,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link = ["foo"]
-            """
+            """,
         )
 
         self.filesystem.touch(self.link_dir.descendant("foo"))
@@ -398,7 +398,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link = ["foo"]
-            """
+            """,
         )
 
         self.filesystem.link(
@@ -423,7 +423,7 @@ class TestConverge(CLIMixin, TestCase):
 
             [virtualenv.c]
             link = ["foo"]
-            """
+            """,
         )
 
         with self.assertRaises(_config.DuplicatedLinks) as e:
@@ -442,7 +442,7 @@ class TestConverge(CLIMixin, TestCase):
 
             [virtualenv.c]
             link = ["bar:foo"]
-            """
+            """,
         )
 
         with self.assertRaises(_config.DuplicatedLinks) as e:
@@ -456,7 +456,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link = ["foo:fooBar"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -471,7 +471,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link = ["foo"]
-            """
+            """,
         )
 
         self.filesystem.remove_empty_directory(self.link_dir)
@@ -492,7 +492,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link-module = ["this"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -510,7 +510,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link-module = ["this:that"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -533,7 +533,7 @@ class TestConverge(CLIMixin, TestCase):
 
             [virtualenv.c]
             link-module = ["bar:foo"]
-            """
+            """,
         )
 
         with self.assertRaises(_config.DuplicatedLinks) as e:
@@ -547,7 +547,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link-module = ["this"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -557,7 +557,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link-module = ["this", "that"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -567,7 +567,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link-module = ["this"]
-            """
+            """,
         )
 
         self.filesystem.touch(self.link_dir.descendant("this"))
@@ -580,7 +580,7 @@ class TestConverge(CLIMixin, TestCase):
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
             link = ["this:that", "this"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -596,7 +596,7 @@ class TestConverge(CLIMixin, TestCase):
 
             [virtualenv.a]
             install-bundle = ["one"]
-            """
+            """,
         )
         self.run_cli(["converge"])
         self.assertEqual(
@@ -611,7 +611,7 @@ class TestConverge(CLIMixin, TestCase):
 
             [virtualenv.a]
             install-bundle = ["one"]
-            """
+            """,
         )
 
         self.run_cli(["converge"])
@@ -625,7 +625,7 @@ class TestConverge(CLIMixin, TestCase):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
-            """
+            """,
         )
         self.run_cli(["converge"])
 
@@ -644,7 +644,7 @@ class TestConverge(CLIMixin, TestCase):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
-            """
+            """,
         )
         self.run_cli(["converge"])
 
@@ -666,7 +666,7 @@ class TestConverge(CLIMixin, TestCase):
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"), """
             [virtualenv.a]
-            """
+            """,
         )
         self.run_cli(["converge"])
 

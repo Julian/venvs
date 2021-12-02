@@ -153,8 +153,8 @@ class TestCreate(CLIMixin, TestCase):
         # Config file has _not_ been created.
         self.assertFalse(
             self.filesystem.exists(
-                self.locator.root.descendant("virtualenvs.toml")
-            )
+                self.locator.root.descendant("virtualenvs.toml"),
+            ),
         )
 
     def test_install_no_persist(self):

@@ -83,7 +83,7 @@ class ConfiguredVirtualEnv(object):
     def matches_existing(self, virtualenv, filesystem):
         try:
             existing = json.loads(
-                filesystem.get_contents(virtualenv.path / "installed.json")
+                filesystem.get_contents(virtualenv.path / "installed.json"),
             )
         except (ValueError, filesystems.exceptions.FileNotFound):
             return False
@@ -127,7 +127,7 @@ class Config(object):
             ConfiguredVirtualEnv.from_dict(
                 name=name,
                 config_dict=config,
-                bundles=self._contents["bundle"]
+                bundles=self._contents["bundle"],
             ) for name, config in self._contents["virtualenv"].items()
         )
 

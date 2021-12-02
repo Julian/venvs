@@ -5,7 +5,6 @@ By default it places them in the appropriate data directory for your platform
 (See `appdirs <https://pypi.python.org/pypi/appdirs>`_), but it will also
 respect the :envvar:`WORKON_HOME` environment variable for compatibility with
 :command:`mkvirtualenv`.
-
 """
 
 from functools import partial
@@ -59,7 +58,7 @@ _REQUIREMENTS = click.option(
     "-p",
     is_flag=True,
     default=False,
-    help="Add to config file when installing."
+    help="Add to config file when installing.",
 )
 @click.argument("name", required=False)
 @click.argument("virtualenv_args", nargs=-1, type=click.UNPROCESSED)
@@ -104,7 +103,7 @@ def main(
 
     for link in links:
         filesystem.link(
-            source=virtualenv.binary(name=link), to=link_dir.descendant(link)
+            source=virtualenv.binary(name=link), to=link_dir.descendant(link),
         )
 
     if persist:

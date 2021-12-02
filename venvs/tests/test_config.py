@@ -209,8 +209,7 @@ class TestConfig(TestCase):
         config = _config.Config()
         added = config.add("a", install=["foo", "bar"], link=["baz"])
         self.assertEqual(
-            (list(config), list(added)),
-            (
+            (list(config), list(added)), (
                 [], [
                     _config.ConfiguredVirtualEnv(
                         name="a",
@@ -218,7 +217,7 @@ class TestConfig(TestCase):
                         link={"baz": "baz"},
                     ),
                 ],
-            )
+            ),
         )
 
     def test_add_empty(self):

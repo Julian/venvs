@@ -31,7 +31,7 @@ class CLIMixin(object):
             make_virtualenv=lambda **kwargs: VirtualEnv(
                 create=self._fake_create,
                 install=self._fake_install,
-                **kwargs
+                **kwargs,
             ),
         )
 
