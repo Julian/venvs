@@ -24,14 +24,10 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
         python-version:
-          - name: pypy-3.7
+          - name: pypy-3.8
             toxenv: pypy3-build
-          - name: pypy-3.7
+          - name: pypy-3.8
             toxenv: pypy3-tests
-          - name: 3.7
-            toxenv: py37-build
-          - name: 3.7
-            toxenv: py37-tests
           - name: 3.8
             toxenv: py38-build
           - name: 3.8
@@ -64,11 +60,6 @@ jobs:
             toxenv: docs-spelling
           - name: "3.10"
             toxenv: docs-style
-        exclude:
-          - os: windows-latest
-            python-version:
-              name: pypy-3.7
-              toxenv: build
 
     steps:
     - uses: actions/checkout@v2
