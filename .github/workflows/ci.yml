@@ -6,16 +6,23 @@ on:
   release:
     types: [published]
   schedule:
-    # Daily at 3:21
-    - cron: "21 3 * * *"
+    # Daily at 5:55
+    - cron: "55 5 * * *"
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_PYTHON_VERSION_WARNING: "1"
+  PYTHON_LATEST: "3.11"
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-      - uses: pre-commit/action@v2.0.0
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_LATEST }}
+      - uses: pre-commit/action@v3.0.0
 
   ci:
     runs-on: ${{ matrix.os }}
@@ -24,51 +31,57 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
         python-version:
-          - name: pypy-3.8
-            toxenv: pypy3-build
-          - name: pypy-3.8
+          - name: pypy-3.9
             toxenv: pypy3-tests
           - name: 3.8
             toxenv: py38-build
+          - name: 3.8
+            toxenv: py38-audit
           - name: 3.8
             toxenv: py38-tests
           - name: 3.9
             toxenv: py39-build
           - name: 3.9
+            toxenv: py39-audit
+          - name: 3.9
             toxenv: py39-tests
           - name: "3.10"
             toxenv: py310-build
           - name: "3.10"
+            toxenv: py310-audit
+          - name: "3.10"
             toxenv: py310-tests
-          - name: "3.10"
-            toxenv: readme
-          - name: "3.10"
-            toxenv: safety
-          - name: "3.10"
-            toxenv: secrets
-          - name: "3.10"
-            toxenv: style
-          - name: "3.10"
-            toxenv: shiv
-          - name: "3.10"
+          - name: "3.11"
+            toxenv: py311-build
+          - name: "3.11"
+            toxenv: py311-audit
+          - name: "3.11"
+            toxenv: py311-tests
+          - name: "3.11"
             toxenv: docs-dirhtml
-          - name: "3.10"
+          - name: "3.11"
             toxenv: docs-doctest
-          - name: "3.10"
+          - name: "3.11"
             toxenv: docs-linkcheck
-          - name: "3.10"
+          - name: "3.11"
             toxenv: docs-spelling
-          - name: "3.10"
+          - name: "3.11"
             toxenv: docs-style
+          - name: "3.11"
+            toxenv: readme
+          - name: "3.11"
+            toxenv: secrets
+          - name: "3.11"
+            toxenv: style
+          - name: "3.11"
+            toxenv: shiv
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version.name }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version.name }}
-      - name: Ensure we have new enough versions to respect python_version
-        run: python -m pip install -U pip setuptools
       - name: Install dependencies
         run: sudo apt-get install -y libenchant-2-dev
         if: runner.os == 'Linux' && startsWith(matrix.python-version.toxenv, 'docs-')
@@ -87,31 +100,31 @@ jobs:
           path: "dist/venvs"
 
   packaging:
+    needs: ci
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: ${{ env.PYTHON_LATEST }}
       - name: Install dependencies
         run: python -m pip install build
       - name: Create packages
         run: python -m build .
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: dist
           path: dist
       - name: Publish package
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
           password: ${{ secrets.pypi_password }}
       - name: Create Release Notes
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-        uses: actions/github-script@v5.1.0
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
