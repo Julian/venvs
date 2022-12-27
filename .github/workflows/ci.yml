@@ -93,7 +93,7 @@ jobs:
       - name: Run tox
         run: python -m tox -e "${{ matrix.python-version.toxenv }}"
       - name: Upload shiv artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: matrix.python-version.toxenv == 'shiv'
         with:
           name: venvs
