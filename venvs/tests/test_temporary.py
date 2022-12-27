@@ -32,5 +32,6 @@ class TestTemporary(CLIMixin, TestCase):
         self.run_cli(["temporary", "-i", "thing"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed(self.locator.temporary()), ({"thing"}, set()),
+            self.installed(self.locator.temporary()),
+            ({"thing"}, set()),
         )

@@ -17,7 +17,9 @@ from venvs import _config
 from venvs.common import _FILESYSTEM, _LINK_DIR, _ROOT
 
 _INSTALL = click.option(
-    "-i", "--install", "installs",
+    "-i",
+    "--install",
+    "installs",
     multiple=True,
     help=(
         "install the given specifier (package) into the "
@@ -25,7 +27,9 @@ _INSTALL = click.option(
     ),
 )
 _REQUIREMENTS = click.option(
-    "-r", "--requirement", "requirements",
+    "-r",
+    "--requirement",
+    "requirements",
     multiple=True,
     help=(
         "install the given requirements file into the "
@@ -40,7 +44,9 @@ _REQUIREMENTS = click.option(
 @_INSTALL
 @_REQUIREMENTS
 @click.option(
-    "-l", "--link", "links",
+    "-l",
+    "--link",
+    "links",
     multiple=True,
     help=(
         "After installing any specified packages, link the specified "
@@ -49,7 +55,8 @@ _REQUIREMENTS = click.option(
     ),
 )
 @click.option(
-    "-R", "--recreate",
+    "-R",
+    "--recreate",
     flag_value=True,
     help="recreate the virtualenv if it already exists",
 )
@@ -81,14 +88,14 @@ def main(
         virtualenv = locator.for_name(name=name)
     elif len(installs) == 1:
         # When there's just one package to install, default to using that name.
-        requirement, = installs
+        (requirement,) = installs
         name = Requirement(requirement).name
         virtualenv = locator.for_name(name=name)
     elif installs:
         raise click.BadParameter("A name is required.")
     elif len(links) == 1:
         # When there's just one binary to link, go for the gold.
-        name, = installs = links
+        (name,) = installs = links
         virtualenv = locator.for_name(name=name)
     else:
         virtualenv = locator.for_directory(directory=Path.cwd())
@@ -103,7 +110,8 @@ def main(
 
     for link in links:
         filesystem.link(
-            source=virtualenv.binary(name=link), to=link_dir.descendant(link),
+            source=virtualenv.binary(name=link),
+            to=link_dir.descendant(link),
         )
 
     if persist:

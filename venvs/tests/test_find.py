@@ -18,7 +18,8 @@ class TestFind(CLIMixin, TestCase):
     def test_find_directory_defaults_to_cwd(self):
         stdout, stderr = self.run_cli(["find", "directory"])
         self.assertEqual(
-            (stdout, stderr), (
+            (stdout, stderr),
+            (
                 str(self.locator.for_directory(Path.cwd()).path) + "\n",
                 "",
             ),
@@ -51,7 +52,8 @@ class TestFind(CLIMixin, TestCase):
 
     def test_find_existing_by_name_fails_for_non_existing_virtualenvs(self):
         stdout, stderr = self.run_cli(
-            ["find", "--existing-only", "name", "bla"], exit_status=1,
+            ["find", "--existing-only", "name", "bla"],
+            exit_status=1,
         )
         self.assertEqual((stdout, stderr), ("", ""))
 
@@ -87,10 +89,11 @@ class TestFind(CLIMixin, TestCase):
 
     def test_cannot_specify_random_garbage(self):
         stdout, stderr = self.run_cli(
-            ["find", "--random-garbage"], exit_status=2,
+            ["find", "--random-garbage"],
+            exit_status=2,
         )
         stderr_ends_with = "Error: No such option: --random-garbage\n"
         self.assertEqual(
-            (stdout, stderr[-len(stderr_ends_with):]),
+            (stdout, stderr[-len(stderr_ends_with) :]),
             (stdout, stderr_ends_with),
         )

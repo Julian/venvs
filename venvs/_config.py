@@ -128,7 +128,8 @@ class Config:
                 name=name,
                 config_dict=config,
                 bundles=self._contents["bundle"],
-            ) for name, config in self._contents["virtualenv"].items()
+            )
+            for name, config in self._contents["virtualenv"].items()
         )
 
     def __eq__(self, other):

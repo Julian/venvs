@@ -15,16 +15,25 @@ import filesystems.native
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
-            sys.executable, "-m", "virtualenv",
-            "--python", which(python),
+            sys.executable,
+            "-m",
+            "virtualenv",
+            "--python",
+            which(python),
             "--quiet",
-        ] + list(arguments) + [str(virtualenv.path)],
+        ]
+        + list(arguments)
+        + [str(virtualenv.path)],
         stderr=stderr,
     )
 
 
 def _install_into_virtualenv(
-    virtualenv, packages, requirements, stdout, stderr,
+    virtualenv,
+    packages,
+    requirements,
+    stdout,
+    stderr,
 ):
     if not packages and not requirements:
         return
@@ -36,9 +45,13 @@ def _install_into_virtualenv(
     )
     subprocess.check_call(
         [
-            str(virtualenv.binary("python")), "-m", "pip", "--quiet",
+            str(virtualenv.binary("python")),
+            "-m",
+            "pip",
+            "--quiet",
             "install",
-        ] + things,
+        ]
+        + things,
         stdout=stdout,
         stderr=stderr,
     )
@@ -115,6 +128,7 @@ class Locator:
                 root = os.path.expanduser("~/.local/share/virtualenvs")
             else:
                 from appdirs import user_data_dir
+
                 root = user_data_dir(appname="virtualenvs")
         return cls(root=filesystems.Path.from_string(root), **kwargs)
 
@@ -145,7 +159,8 @@ class _Locator(click.ParamType):
 
 
 _ROOT = click.option(
-    "--root", "locator",
+    "--root",
+    "locator",
     default=Locator.default,
     type=_Locator(),
     help="Specify a different root directory for virtualenvs.",

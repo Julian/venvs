@@ -51,7 +51,8 @@ def run(
 @_FILESYSTEM
 @_ROOT
 @click.option(
-    "-E", "--existing-only",
+    "-E",
+    "--existing-only",
     flag_value=True,
     help="Only consider existing virtualenvs.",
 )

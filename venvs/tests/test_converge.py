@@ -16,7 +16,8 @@ class TestConverge(CLIMixin, TestCase):
         self.assertFalse(self.locator.for_name("c").exists_on(self.filesystem))
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             [virtualenv.b]
             install = ["foo", "bar", "bla"]
@@ -34,7 +35,8 @@ class TestConverge(CLIMixin, TestCase):
                 self.installed(self.locator.for_name("a")),
                 self.installed(self.locator.for_name("b")),
                 self.installed(self.locator.for_name("c")),
-            ), (
+            ),
+            (
                 (set(), set()),
                 ({"foo", "bar", "bla"}, {"requirements.txt"}),
                 (
@@ -54,7 +56,8 @@ class TestConverge(CLIMixin, TestCase):
         self.assertFalse(self.locator.for_name("c").exists_on(self.filesystem))
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             install = ["foo", "bar"]
             requirements = ["requirements.txt"]
@@ -64,7 +67,8 @@ class TestConverge(CLIMixin, TestCase):
         self.run_cli(["converge"])
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             install = ["baz", "quux"]
             requirements = ["requirements.txt", "other.txt"]
@@ -84,7 +88,8 @@ class TestConverge(CLIMixin, TestCase):
         self.assertFalse(self.locator.for_name("c").exists_on(self.filesystem))
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             [virtualenv.b]
             install = ["foo", "bar", "bla"]
@@ -106,7 +111,8 @@ class TestConverge(CLIMixin, TestCase):
                 self.installed(self.locator.for_name("a")),
                 self.installed(self.locator.for_name("b")),
                 self.installed(self.locator.for_name("c")),
-            ), (
+            ),
+            (
                 (set(), set()),
                 (set(), set()),
                 ({"foo"}, set()),
@@ -122,7 +128,8 @@ class TestConverge(CLIMixin, TestCase):
         new_mtime = datetime.fromtimestamp(mtime) + timedelta(minutes=10)
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), f"""
+            self.locator.root.descendant("virtualenvs.toml"),
+            f"""
             [virtualenv.a]
             post-commands = [
                 ["true"],
@@ -143,7 +150,8 @@ class TestConverge(CLIMixin, TestCase):
         self.addCleanup(os.remove, file.name)
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), f"""
+            self.locator.root.descendant("virtualenvs.toml"),
+            f"""
             [virtualenv.a]
             post-commands = [
                 ["true"],
@@ -166,7 +174,8 @@ class TestConverge(CLIMixin, TestCase):
         mtime = os.path.getmtime(file.name)
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), f"""
+            self.locator.root.descendant("virtualenvs.toml"),
+            f"""
             [virtualenv.a]
             post-commands = [
                 ["false"],
@@ -183,7 +192,8 @@ class TestConverge(CLIMixin, TestCase):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [bundle]
             dev = ["bar", "bla"]
 
@@ -202,7 +212,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_modifying_a_bundle_recreates_envs_using_it(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [bundle]
             dev = ["bar"]
 
@@ -218,7 +229,8 @@ class TestConverge(CLIMixin, TestCase):
         )
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [bundle]
             dev = ["bar", "baz"]
 
@@ -238,7 +250,8 @@ class TestConverge(CLIMixin, TestCase):
         self.assertFalse(self.locator.for_name("a").exists_on(self.filesystem))
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             install = ["foo"]
             install-bundle = ["dev"]
@@ -254,7 +267,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_it_does_not_blow_up_by_default_on_install(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             [virtualenv.b]
             [virtualenv.magicExplodingVirtualenvOnInstall]
@@ -280,7 +294,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_it_can_be_asked_to_blow_up_immediately_on_install(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             [virtualenv.b]
             [virtualenv.magicExplodingVirtualenvOnInstall]
@@ -302,7 +317,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_it_does_not_blow_up_by_default_on_create(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             [virtualenv.b]
             [virtualenv.magicExplodingVirtualenvOnCreate]
@@ -328,7 +344,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_it_can_be_asked_to_blow_up_immediately_on_create(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             [virtualenv.b]
             [virtualenv.magicExplodingVirtualenvOnCreate]
@@ -350,7 +367,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_specified_python(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             python = "python3"
             """,
@@ -366,7 +384,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_custom_link_dir(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["foo"]
             """,
@@ -382,7 +401,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_link_exists(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["foo"]
             """,
@@ -395,7 +415,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_link_exists_as_broken_symlink(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["foo"]
             """,
@@ -415,7 +436,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_conflicting_links(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["foo"]
 
@@ -434,7 +456,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_conflicting_links_via_rename(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["foo"]
 
@@ -453,7 +476,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_specified_link_name(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["foo:fooBar"]
             """,
@@ -468,7 +492,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_missing_link_dir(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["foo"]
             """,
@@ -489,7 +514,8 @@ class TestConverge(CLIMixin, TestCase):
         It links modules run via -m as wrappers.
         """
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link-module = ["this"]
             """,
@@ -507,7 +533,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_link_m_module_specified_name(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link-module = ["this:that"]
             """,
@@ -525,7 +552,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_link_m_module_duplicated(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["foo"]
 
@@ -544,7 +572,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_link_m_module_replaces_generated_files(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link-module = ["this"]
             """,
@@ -554,7 +583,8 @@ class TestConverge(CLIMixin, TestCase):
 
         # Just change the config in a way that will re-converge
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link-module = ["this", "that"]
             """,
@@ -564,7 +594,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_link_m_module_does_not_replace_non_venvs_wrappers(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link-module = ["this"]
             """,
@@ -577,7 +608,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_linking_the_same_binary_twice(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             link = ["this:that", "this"]
             """,
@@ -590,7 +622,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_changing_a_bundle_recreates_the_venv(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [bundle]
             one = ["foo"]
 
@@ -605,7 +638,8 @@ class TestConverge(CLIMixin, TestCase):
         )
 
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [bundle]
             one = ["foo", "bar"]
 
@@ -623,7 +657,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_missing_config_recreates_the_venv(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             """,
         )
@@ -642,7 +677,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_invalid_config_recreates_the_venv(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             """,
         )
@@ -664,7 +700,8 @@ class TestConverge(CLIMixin, TestCase):
 
     def test_valid_json_invalid_config_recreates_the_venv(self):
         self.filesystem.set_contents(
-            self.locator.root.descendant("virtualenvs.toml"), """
+            self.locator.root.descendant("virtualenvs.toml"),
+            """
             [virtualenv.a]
             """,
         )

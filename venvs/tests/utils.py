@@ -116,7 +116,9 @@ class CLIMixin:
             result.exit_code,
             exit_status,
             msg="Different exit code, {} != {}\n\nstderr:\n\n{!r}".format(
-                result.exit_code, exit_status, self.stderr.getvalue(),
+                result.exit_code,
+                exit_status,
+                self.stderr.getvalue(),
             ),
         )
         return self.stdout.getvalue(), self.stderr.getvalue()
@@ -138,4 +140,5 @@ class CLIMixin:
                 real_main.main(*args, **kwargs)
                 sys.stdout = stdout
                 sys.stderr = stderr
+
         return Fixed()

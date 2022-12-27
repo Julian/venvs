@@ -16,7 +16,8 @@ class TestConfig(TestCase):
             """,
         )
         self.assertEqual(
-            list(config), [
+            list(config),
+            [
                 _config.ConfiguredVirtualEnv(name="a"),
                 _config.ConfiguredVirtualEnv(
                     name="b",
@@ -34,7 +35,8 @@ class TestConfig(TestCase):
             """,
         )
         self.assertEqual(
-            list(config), [
+            list(config),
+            [
                 _config.ConfiguredVirtualEnv(
                     name="a",
                     link={"foo": "foo", "bar": "bar", "quux": "baz"},
@@ -52,7 +54,8 @@ class TestConfig(TestCase):
             """,
         )
         self.assertEqual(
-            list(config), [
+            list(config),
+            [
                 _config.ConfiguredVirtualEnv(
                     name="a",
                     link={"foo": "foo", "bar": "foo"},
@@ -76,7 +79,8 @@ class TestConfig(TestCase):
             """,
         )
         self.assertEqual(
-            list(config), [
+            list(config),
+            [
                 _config.ConfiguredVirtualEnv(name="a", install=["foo", "bar"]),
                 _config.ConfiguredVirtualEnv(
                     name="b",
@@ -105,7 +109,8 @@ class TestConfig(TestCase):
             """,
         )
         self.assertEqual(
-            list(config), [
+            list(config),
+            [
                 _config.ConfiguredVirtualEnv(
                     name="a",
                     install=[
@@ -129,7 +134,8 @@ class TestConfig(TestCase):
             """,
         )
         self.assertEqual(
-            list(config), [
+            list(config),
+            [
                 _config.ConfiguredVirtualEnv(
                     name="a",
                     install=["foo"],
@@ -209,8 +215,10 @@ class TestConfig(TestCase):
         config = _config.Config()
         added = config.add("a", install=["foo", "bar"], link=["baz"])
         self.assertEqual(
-            (list(config), list(added)), (
-                [], [
+            (list(config), list(added)),
+            (
+                [],
+                [
                     _config.ConfiguredVirtualEnv(
                         name="a",
                         install=["foo", "bar"],

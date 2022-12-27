@@ -60,7 +60,8 @@ class TestCreate(CLIMixin, TestCase):
         self.run_cli(["create", "-i", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
+            self.installed(self.locator.for_name("foo")),
+            ({"foo"}, set()),
         )
 
     def test_install_default_name_with_version_specification(self):
@@ -82,7 +83,8 @@ class TestCreate(CLIMixin, TestCase):
         self.run_cli(["create", "-l", "foo"])
         # We've stubbed out our Locator's venvs' install to just store.
         self.assertEqual(
-            self.installed(self.locator.for_name("foo")), ({"foo"}, set()),
+            self.installed(self.locator.for_name("foo")),
+            ({"foo"}, set()),
         )
 
     def test_multiple_installs_one_link(self):
@@ -187,7 +189,8 @@ class TestIntegration(TestCase):
                 _cli.main(
                     args=[
                         "create",
-                        "--root", str(self.root),
+                        "--root",
+                        str(self.root),
                         "venvs-unittest-should-be-deleted",
                     ],
                 )
@@ -201,9 +204,11 @@ class TestIntegration(TestCase):
                 _cli.main(
                     [
                         "find",
-                        "--root", str(self.root),
+                        "--root",
+                        str(self.root),
                         "--existing-only",
-                        "name", "venvs-unittest-should-be-deleted",
+                        "name",
+                        "venvs-unittest-should-be-deleted",
                     ],
                 )
             except SystemExit:

@@ -17,7 +17,8 @@ def run(locator, filesystem, names, force):
 @_FILESYSTEM
 @_ROOT
 @click.option(
-    "-f", "--force",
+    "-f",
+    "--force",
     flag_value=True,
     help="Ignore errors if the virtualenv does not exist.",
 )
