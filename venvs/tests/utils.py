@@ -10,9 +10,9 @@ from venvs import _cli, _config
 from venvs.common import _EX_OK, Locator, VirtualEnv
 
 
-class CLIMixin(object):
+class CLIMixin:
     def setUp(self):
-        super(CLIMixin, self).setUp()
+        super().setUp()
 
         self.stdin = StringIO()
         self.stdout = StringIO()
@@ -54,13 +54,13 @@ class CLIMixin(object):
         base = virtualenv.path
         try:
             with self.filesystem.open(base / "packages") as f:
-                packages = set(line.strip() for line in f)
+                packages = {line.strip() for line in f}
         except FileNotFound:
             packages = set()
 
         try:
             with self.filesystem.open(base / "reqs") as f:
-                reqs = set(line.strip() for line in f)
+                reqs = {line.strip() for line in f}
         except FileNotFound:
             reqs = set()
 
@@ -88,9 +88,9 @@ class CLIMixin(object):
 
         base = virtualenv.path
         with self.filesystem.open(base / "packages", "at") as f:
-            f.writelines(package + u"\n" for package in packages)
+            f.writelines(package + "\n" for package in packages)
         with self.filesystem.open(base / "reqs", "at") as f:
-            f.writelines(req + u"\n" for req in requirements)
+            f.writelines(req + "\n" for req in requirements)
 
     def run_cli(self, argv=(), exit_status=_EX_OK):
         runner = click.testing.CliRunner()
@@ -128,7 +128,7 @@ class CLIMixin(object):
         It patches sys.stdout and sys.stderr to the same exact StringIO.
         """
 
-        class Fixed(object):
+        class Fixed:
             def __getattr__(self, attr):
                 return getattr(real_main, attr)
 

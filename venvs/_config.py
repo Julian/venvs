@@ -26,7 +26,7 @@ def _empty():
 
 
 @attr.s(frozen=True)
-class ConfiguredVirtualEnv(object):
+class ConfiguredVirtualEnv:
     """
     A virtual environment defined within a config file section.
     """
@@ -97,7 +97,7 @@ class ConfiguredVirtualEnv(object):
 
 
 @attr.s(eq=False, frozen=True)
-class Config(object):
+class Config:
     """
     A converge configuration file.
     """

@@ -45,7 +45,7 @@ def _install_into_virtualenv(
 
 
 @attr.s
-class VirtualEnv(object):
+class VirtualEnv:
     """
     A virtual environment.
 
@@ -91,7 +91,7 @@ class VirtualEnv(object):
 
 
 @attr.s
-class Locator(object):
+class Locator:
     """
     Locates virtualenvs from a common root directory.
 
