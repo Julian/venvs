@@ -2,7 +2,7 @@
 venvs
 =====
 
-|PyPI| |Pythons| |CI| |Codecov|
+|PyPI| |Pythons| |CI|
 
 ``venvs`` is a tool for configuring, in a single file, a set of
 virtualenvs, which packages to install into each, and any binaries to
@@ -182,7 +182,3 @@ virtualenvs for me. So that's what ``venvs`` does.
 .. |CI| image:: https://github.com/Julian/venvs/workflows/CI/badge.svg
   :alt: Build status
   :target: https://github.com/Julian/venvs/actions?query=workflow%3ACI
-
-.. |Codecov| image:: https://codecov.io/gh/Julian/venvs/branch/master/graph/badge.svg
-  :alt: Codecov Code coverage
-  :target: https://codecov.io/gh/Julian/venvs
