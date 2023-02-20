@@ -149,7 +149,6 @@ class Locator:
 
 
 class _Locator(click.ParamType):
-
     name = "locator"
 
     def convert(self, value, param, context):
