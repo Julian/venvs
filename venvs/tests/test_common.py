@@ -12,3 +12,17 @@ class TestLocator(TestCase):
             locator.for_name("one"),
             VirtualEnv(path=locator.root / "one"),
         )
+
+    def test_strips_py(self):
+        locator = Locator(root=Path.root())
+        self.assertEqual(
+            locator.for_name("one.py"),
+            VirtualEnv(path=locator.root / "one"),
+        )
+
+    def test_strips_python(self):
+        locator = Locator(root=Path.root())
+        self.assertEqual(
+            locator.for_name("python-one"),
+            VirtualEnv(path=locator.root / "one"),
+        )

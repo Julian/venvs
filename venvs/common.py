@@ -141,6 +141,10 @@ class Locator:
         return self.for_name(directory.basename())
 
     def for_name(self, name):
+        if name.endswith(".py"):
+            name = name.removesuffix(".py")
+        elif name.startswith("python-"):
+            name = name.removeprefix("python-")
         child = self.root.descendant(name.lower().replace("-", "_"))
         return self.make_virtualenv(path=child)
 
