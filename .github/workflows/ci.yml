@@ -33,12 +33,6 @@ jobs:
         python-version:
           - name: pypy-3.9
             toxenv: pypy3-tests
-          - name: 3.8
-            toxenv: py38-build
-          - name: 3.8
-            toxenv: py38-audit
-          - name: 3.8
-            toxenv: py38-tests
           - name: 3.9
             toxenv: py39-build
           - name: 3.9
