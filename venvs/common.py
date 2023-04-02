@@ -4,7 +4,6 @@ import os
 import platform
 import subprocess
 import sys
-import sysconfig
 
 from filesystems.click import PATH
 import attr
@@ -178,7 +177,7 @@ _FILESYSTEM = click.option(
 _LINK_DIR = click.option(
     "--link-dir",
     default=filesystems.Path.from_string(
-        sysconfig.get_path("scripts", "posix_user"),
+        os.path.expanduser("~/.local/bin/"),
     ),
     type=PATH,
     help="The directory to link scripts into.",
