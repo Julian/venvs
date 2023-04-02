@@ -1,3 +1,6 @@
+"""
+CLI for managing a global temporary virtual environment.
+"""
 import click
 
 from venvs.common import _FILESYSTEM, _ROOT
@@ -12,7 +15,6 @@ def main(filesystem, locator, installs, requirements):
     """
     Create or reuse the global temporary virtualenv.
     """
-
     temporary = locator.temporary()
     click.echo(temporary.binary("python").dirname())
     temporary.recreate_on(filesystem=filesystem)

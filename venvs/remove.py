@@ -1,3 +1,6 @@
+"""
+CLI for deleting virtual environments imperatively.
+"""
 from filesystems.exceptions import FileNotFound
 import click
 
@@ -5,6 +8,9 @@ from venvs.common import _EX_NOINPUT, _FILESYSTEM, _ROOT
 
 
 def run(locator, filesystem, names, force):
+    """
+    Remove an ad hoc virtual environment.
+    """
     for name in names:
         virtualenv = locator.for_name(name=name)
         try:

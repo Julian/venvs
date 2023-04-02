@@ -1,12 +1,8 @@
+from functools import lru_cache
 import json
 import os
 import subprocess
 import sys
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
 
 from pyrsistent import freeze, pmap, pvector, thaw
 import attr
@@ -198,7 +194,7 @@ def _check_for_duplicated_links(sections):
         raise DuplicatedLinks(duplicated)
 
 
-@lru_cache()
+@lru_cache
 def _version_of(python):
     return subprocess.check_output(
         [python, "--version"],

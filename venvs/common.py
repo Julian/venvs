@@ -1,3 +1,7 @@
+"""
+Objects for interacting with a central set of virtual environments.
+"""
+
 from itertools import chain
 from shutil import which
 import os
@@ -60,7 +64,6 @@ def _install_into_virtualenv(
 class VirtualEnv:
     """
     A virtual environment.
-
     """
 
     path = attr.ib()
@@ -68,9 +71,15 @@ class VirtualEnv:
     _install = attr.ib(default=_install_into_virtualenv, repr=False)
 
     def exists_on(self, filesystem):
+        """
+        Return whether this environment already exist on the given filesystem.
+        """
         return filesystem.is_dir(path=self.path)
 
     def binary(self, name):
+        """
+        Retrieve the path to a given binary within this environment.
+        """
         return self.path.descendant("bin", name)
 
     def create(
@@ -80,6 +89,9 @@ class VirtualEnv:
         stdout=sys.stdout,
         stderr=sys.stderr,
     ):
+        """
+        Create this virtual environment.
+        """
         self._create(
             self,
             arguments=arguments,
@@ -89,9 +101,15 @@ class VirtualEnv:
         )
 
     def remove_from(self, filesystem):
+        """
+        Delete this virtual environment off the given filesystem.
+        """
         filesystem.remove(self.path)
 
     def recreate_on(self, filesystem, **kwargs):
+        """
+        Recreate this environment, deleting an existing one if necessary.
+        """
         try:
             self.remove_from(filesystem=filesystem)
         except filesystems.exceptions.FileNotFound:
@@ -99,6 +117,9 @@ class VirtualEnv:
         self.create(**kwargs)
 
     def install(self, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
+        """
+        Install a given set of packages into this environment.
+        """
         self._install(virtualenv=self, stdout=stdout, stderr=stderr, **kwargs)
 
 
@@ -114,6 +135,9 @@ class Locator:
 
     @classmethod
     def default(cls, **kwargs):
+        """
+        Return the default (OS-specific) location for environments.
+        """
         workon_home = os.getenv("WORKON_HOME")
         if workon_home:
             root = workon_home
@@ -134,12 +158,13 @@ class Locator:
     def for_directory(self, directory):
         """
         Find the virtualenv that would be associated with the given directory.
-
         """
-
         return self.for_name(directory.basename())
 
     def for_name(self, name):
+        """
+        Retrieve the environment with the given name.
+        """
         if name.endswith(".py"):
             name = name.removesuffix(".py")
         elif name.startswith("python-"):
@@ -148,6 +173,9 @@ class Locator:
         return self.make_virtualenv(path=child)
 
     def temporary(self):
+        """
+        Retrieve a global temporary virtual environment.
+        """
         return self.for_name(".venvs-temporary-env")
 
 
@@ -189,4 +217,8 @@ _EX_NOINPUT = getattr(os, "EX_NOINPUT", 66)
 
 
 class BadParameter(click.BadParameter):
+    """
+    Set a different exit status from click's default.
+    """
+
     exit_code = _EX_USAGE

@@ -41,7 +41,7 @@ def _fail(virtualenv, name):
 
 
 def _do_not_fail(virtualenv, name):
-    sys.stderr.write("Converging {!r} failed!\n".format(name))
+    sys.stderr.write(f"Converging {name!r} failed!\n")
 
 
 @_FILESYSTEM
@@ -139,7 +139,6 @@ def _link(source, to, filesystem):
     """
     Link the given binary, replacing broken symlinks and erroring if existing.
     """
-
     try:
         filesystem.link(source=source, to=to)
     except FileExists as error:

@@ -1,3 +1,6 @@
+"""
+CLI for finding the location of appropriate virtual environments.
+"""
 from functools import partial
 import sys
 
@@ -22,7 +25,6 @@ def run(
     If an optional binary is provided, the binary's path within the virtualenv
     is returned.
     """
-
     if directory is not None:
         virtualenv = locator.for_directory(directory=directory)
     else:
@@ -82,7 +84,6 @@ def directory(context, directory, binary):
     """
     Find the virtualenv given the project's path.
     """
-
     locate = context.obj["locate"]
     context.exit(
         locate(directory=directory or Path.cwd(), binary=binary) or 0,
@@ -97,6 +98,5 @@ def name(context, name, binary):
     """
     Find the virtualenv given the project's name.
     """
-
     locate = context.obj["locate"]
     context.exit(locate(name=name, binary=binary) or 0)
