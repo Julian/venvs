@@ -12,7 +12,6 @@ on:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PIP_NO_PYTHON_VERSION_WARNING: "1"
-  PYTHON_LATEST: "3.11"
 
 jobs:
   pre-commit:
@@ -21,71 +20,51 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_LATEST }}
+          python-version: "3.x"
       - uses: pre-commit/action@v3.0.0
 
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      noxenvs: ${{ steps.noxenvs-matrix.outputs.noxenvs }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up nox
+        uses: wntrblm/nox@2022.11.21
+      - id: noxenvs-matrix
+        run: |
+          echo >>$GITHUB_OUTPUT noxenvs=$(
+            nox --list-sessions |
+            grep '^* ' |
+            cut -d ' ' -f 2- |
+            jq --raw-input --slurp 'split("\n") | map(select(. != ""))'
+          )
+
   ci:
+    needs: list
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest]
-        python-version:
-          - name: pypy-3.9
-            toxenv: pypy3-tests
-          - name: 3.9
-            toxenv: py39-build
-          - name: 3.9
-            toxenv: py39-audit
-          - name: 3.9
-            toxenv: py39-tests
-          - name: "3.10"
-            toxenv: py310-build
-          - name: "3.10"
-            toxenv: py310-audit
-          - name: "3.10"
-            toxenv: py310-tests
-          - name: "3.11"
-            toxenv: py311-build
-          - name: "3.11"
-            toxenv: py311-audit
-          - name: "3.11"
-            toxenv: py311-tests
-          - name: "3.11"
-            toxenv: docs-dirhtml
-          - name: "3.11"
-            toxenv: docs-doctest
-          - name: "3.11"
-            toxenv: docs-linkcheck
-          - name: "3.11"
-            toxenv: docs-spelling
-          - name: "3.11"
-            toxenv: docs-style
-          - name: "3.11"
-            toxenv: readme
-          - name: "3.11"
-            toxenv: secrets
-          - name: "3.11"
-            toxenv: style
-          - name: "3.11"
-            toxenv: shiv
+        noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
 
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version.name }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version.name }}
       - name: Install dependencies
-        run: sudo apt-get install -y libenchant-2-dev
-        if: runner.os == 'Linux' && startsWith(matrix.python-version.toxenv, 'docs-')
+        run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
+        if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
       - name: Install dependencies
         run: brew install enchant
-        if: runner.os == 'macOS' && startsWith(matrix.python-version.toxenv, 'docs-')
-      - name: Install tox
-        run: python -m pip install tox
-      - name: Run tox
-        run: python -m tox -e "${{ matrix.python-version.toxenv }}"
+        if: runner.os == 'macOS' && startsWith(matrix.noxenv, 'docs')
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Set up nox
+        uses: wntrblm/nox@2022.11.21
+      - name: Run nox
+        run: nox -s "${{ matrix.noxenv }}"
       - name: Upload shiv artifact
         uses: actions/upload-artifact@v3
         if: matrix.python-version.toxenv == 'shiv'
@@ -102,27 +81,20 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_LATEST }}
+          python-version: "3.x"
       - name: Install dependencies
         run: python -m pip install build
       - name: Create packages
         run: python -m build .
-      - uses: actions/upload-artifact@v3
-        with:
-          name: dist
-          path: dist
-      - name: Publish package
+      - name: Publish to PyPI
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.pypi_password }}
-      - name: Create Release Notes
+      - name: Create a Release
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-        uses: actions/github-script@v6
+        uses: softprops/action-gh-release@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.request(`POST /repos/${{ github.repository }}/releases`, {
-              tag_name: "${{ github.ref }}",
-              generate_release_notes: true
-            });
+          files: |
+            dist/*
+          generate_release_notes: true
