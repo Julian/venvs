@@ -106,7 +106,3 @@ docstring-quotes = "double"
 "docs/*" = ["D"]
 "venvs/tests/*" = ["D"]
 "noxfile.py" = ["D"]
-
-[tool.ruff.pyupgrade]
-# We support 3.8 + 3.9
-keep-runtime-typing = true
