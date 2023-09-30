@@ -1,13 +1,12 @@
 """
 Converge the set of installed virtualenvs.
-
 """
 from datetime import datetime
 import subprocess
 import sys
 
 from filesystems.exceptions import FileExists, FileNotFound
-from tqdm import tqdm
+from rich.progress import Progress
 import click
 
 from venvs._config import Config
@@ -62,13 +61,11 @@ def main(filesystem, locator, link_dir, handle_error, venvs):
     Converge the configured set of tracked virtualenvs.
     """
     for config, virtualenv in _loop(
+        included_venvs=venvs,
         filesystem=filesystem,
         locator=locator,
         handle_error=handle_error,
     ):
-        if venvs and config.name not in venvs:
-            continue
-
         try:
             virtualenv.recreate_on(filesystem=filesystem, python=config.python)
             virtualenv.install(
@@ -110,23 +107,30 @@ def main(filesystem, locator, link_dir, handle_error, venvs):
             continue
 
 
-def _loop(filesystem, locator, handle_error):
+def _loop(filesystem, locator, handle_error, included_venvs):
     config = Config.from_locator(filesystem=filesystem, locator=locator)
-    progress = tqdm(iterable=config, total=len(config), unit="venv")
-    iterable = iter(progress)
-    while True:
-        try:
-            venv_config = next(iterable)
-        except StopIteration:
-            return
-        except Exception:
-            handle_error(virtualenv=None, name=None)
-        else:
-            progress.set_description(venv_config.name)
-            venv = locator.for_name(name=venv_config.name)
-            if venv_config.matches_existing(venv, filesystem=filesystem):
-                continue
-            yield venv_config, venv
+    with Progress() as progress:
+        iterable = iter(config)
+        task = progress.add_task("[green]Converging...", total=len(config))
+
+        while True:
+            try:
+                venv_config = next(iterable)
+            except StopIteration:
+                return
+            except Exception:
+                handle_error(virtualenv=None, name=None)
+            else:
+                if included_venvs and venv_config.name not in included_venvs:
+                    continue
+
+                venv = locator.for_name(name=venv_config.name)
+                if venv_config.matches_existing(venv, filesystem=filesystem):
+                    continue
+
+                progress.update(task, advance=1)
+                progress.print(venv_config.name)
+                yield venv_config, venv
 
 
 def _link(source, to, filesystem):
