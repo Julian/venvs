@@ -4,7 +4,10 @@ import os
 import subprocess
 import sys
 
+from attr import asdict  # relying on retain_collection_types=False for now...
+from attrs import Factory, frozen
 from pyrsistent import freeze, pmap, pvector, thaw
+from pyrsistent.typing import PMap, PVector
 import attr
 import filesystems.exceptions
 import tomlkit
@@ -21,19 +24,19 @@ def _empty():
     return table
 
 
-@attr.s(frozen=True)
+@frozen
 class ConfiguredVirtualEnv:
     """
     A virtual environment defined within a config file section.
     """
 
-    name = attr.ib()
-    python = attr.ib(default=sys.executable)
-    install = attr.ib(default=pvector())
-    requirements = attr.ib(default=pvector())
-    link = attr.ib(default=pmap())
-    link_module = attr.ib(default=pmap())
-    post_commands = attr.ib(default=pvector())
+    name: str
+    python: str = sys.executable
+    install: PVector = pvector()
+    requirements: PVector = pvector()
+    link: PMap = pmap()
+    link_module: PMap = pmap()
+    post_commands: PVector = pvector()
 
     @classmethod
     def from_dict(cls, name, config_dict, bundles):
@@ -87,18 +90,18 @@ class ConfiguredVirtualEnv:
 
     def _serializable(self):
         return {
-            "virtualenv": thaw(pmap(attr.asdict(self))),
+            "virtualenv": thaw(pmap(asdict(self))),
             "sys.version": _version_of(self.python),
         }
 
 
-@attr.s(eq=False, frozen=True)
+@frozen(eq=False)
 class Config:
     """
     A converge configuration file.
     """
 
-    _contents = attr.ib(factory=_empty)
+    _contents: tomlkit.table = Factory(_empty)
 
     @classmethod
     def from_string(cls, string):

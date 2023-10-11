@@ -2,6 +2,7 @@
 Objects for interacting with a central set of virtual environments.
 """
 
+from collections.abc import Callable
 from contextlib import suppress
 from itertools import chain
 from shutil import which
@@ -10,8 +11,8 @@ import platform
 import subprocess
 import sys
 
+from attrs import field, frozen
 from filesystems.click import PATH
-import attr
 import click
 import filesystems.native
 
@@ -61,15 +62,19 @@ def _install_into_virtualenv(
     )
 
 
-@attr.s
+@frozen
 class VirtualEnv:
     """
     A virtual environment.
     """
 
-    path = attr.ib()
-    _create = attr.ib(default=_create_virtualenv, repr=False)
-    _install = attr.ib(default=_install_into_virtualenv, repr=False)
+    path: filesystems.Path = field()
+    _create = field(default=_create_virtualenv, repr=False, alias="create")
+    _install = field(
+        default=_install_into_virtualenv,
+        repr=False,
+        alias="install",
+    )
 
     def exists_on(self, filesystem):
         """
@@ -122,15 +127,15 @@ class VirtualEnv:
         self._install(virtualenv=self, stdout=stdout, stderr=stderr, **kwargs)
 
 
-@attr.s
+@frozen
 class Locator:
     """
     Locates virtualenvs from a common root directory.
 
     """
 
-    root = attr.ib()
-    make_virtualenv = attr.ib(default=VirtualEnv)
+    root: filesystems.Path
+    make_virtualenv: Callable[..., VirtualEnv] = VirtualEnv
 
     @classmethod
     def default(cls, **kwargs):
