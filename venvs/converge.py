@@ -6,6 +6,7 @@ from datetime import datetime
 from importlib import metadata
 import subprocess
 import sys
+import warnings
 
 from filesystems.exceptions import FileExists, FileNotFound
 from tqdm import tqdm
@@ -113,21 +114,26 @@ def main(filesystem, locator, link_dir, handle_error, venvs):
 
 def _loop(filesystem, locator, handle_error):
     config = Config.from_locator(filesystem=filesystem, locator=locator)
-    progress = tqdm(iterable=config, total=len(config), unit="venv")
-    iterable = iter(progress)
-    while True:
-        try:
-            venv_config = next(iterable)
-        except StopIteration:
-            return
-        except Exception:
-            handle_error(virtualenv=None, name=None)
-        else:
-            progress.set_description(venv_config.name)
-            venv = locator.for_name(name=venv_config.name)
-            if venv_config.matches_existing(venv, filesystem=filesystem):
-                continue
-            yield venv_config, venv
+
+    # REMOVEME: When tqdm/tqdm#1517 is closed.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        progress = tqdm(iterable=config, total=len(config), unit="venv")
+
+        iterable = iter(progress)
+        while True:
+            try:
+                venv_config = next(iterable)
+            except StopIteration:
+                return
+            except Exception:
+                handle_error(virtualenv=None, name=None)
+            else:
+                progress.set_description(venv_config.name)
+                venv = locator.for_name(name=venv_config.name)
+                if venv_config.matches_existing(venv, filesystem=filesystem):
+                    continue
+                yield venv_config, venv
 
 
 def _link(source, to, filesystem):
