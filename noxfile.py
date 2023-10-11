@@ -1,5 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import os
 
 import nox
 
@@ -13,7 +14,7 @@ PACKAGE = ROOT / "venvs"
 nox.options.sessions = []
 
 
-def session(default=True, **kwargs):
+def session(default=True, **kwargs):  # noqa: D103
     def _session(fn):
         if default:
             nox.options.sessions.append(kwargs.get("name", fn.__name__))
@@ -22,16 +23,33 @@ def session(default=True, **kwargs):
     return _session
 
 
-@session(python=["3.9", "3.10", "3.11", "pypy3"])
+@session(python=["3.10", "3.11", "3.12", "pypy3"])
 def tests(session):
     """
     Run the test suite with a corresponding Python version.
     """
     session.install("virtue", "-r", ROOT / "requirements.txt", ROOT)
-    if session.posargs == ["coverage"]:
+
+    if session.posargs and session.posargs[0] == "coverage":
+        if len(session.posargs) > 1 and session.posargs[1] == "github":
+            github = os.environ["GITHUB_STEP_SUMMARY"]
+        else:
+            github = None
+
         session.install("coverage[toml]")
-        session.run("coverage", "run", "-m", "virtue")
-        session.run("coverage", "report")
+        session.run("coverage", "run", "-m", "virtue", PACKAGE)
+        if github is None:
+            session.run("coverage", "report")
+        else:
+            with open(github, "a") as summary:
+                summary.write("### Coverage\n\n")
+                summary.flush()  # without a flush, output seems out of order.
+                session.run(
+                    "coverage",
+                    "report",
+                    "--format=markdown",
+                    stdout=summary,
+                )
     else:
         session.run("virtue", *session.posargs, PACKAGE)
 
