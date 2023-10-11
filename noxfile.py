@@ -25,7 +25,7 @@ REQUIREMENTS_IN = {
 }
 
 
-SUPPORTED = ["3.10", "3.11", "3.12", "pypy3"]
+SUPPORTED = ["3.10", "3.11", "3.12", "pypy3.10"]
 
 nox.options.sessions = []
 
