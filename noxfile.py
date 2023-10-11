@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import os
@@ -10,6 +11,21 @@ PYPROJECT = ROOT / "pyproject.toml"
 DOCS = ROOT / "docs"
 PACKAGE = ROOT / "venvs"
 
+REQUIREMENTS = dict(
+    main=ROOT / "requirements.txt",
+    docs=DOCS / "requirements.txt",
+)
+REQUIREMENTS_IN = {
+    (
+        ROOT / "pyproject.toml"
+        if path.absolute() == REQUIREMENTS["main"].absolute()
+        else path.parent / f"{path.stem}.in"
+    )
+    for path in REQUIREMENTS.values()
+}
+
+
+SUPPORTED = ["3.10", "3.11", "3.12", "pypy3"]
 
 nox.options.sessions = []
 
@@ -23,12 +39,12 @@ def session(default=True, **kwargs):  # noqa: D103
     return _session
 
 
-@session(python=["3.10", "3.11", "3.12", "pypy3"])
+@session(python=SUPPORTED)
 def tests(session):
     """
     Run the test suite with a corresponding Python version.
     """
-    session.install("virtue", "-r", ROOT / "requirements.txt", ROOT)
+    session.install("virtue", ROOT)
 
     if session.posargs and session.posargs[0] == "coverage":
         if len(session.posargs) > 1 and session.posargs[1] == "github":
@@ -54,12 +70,12 @@ def tests(session):
         session.run("virtue", *session.posargs, PACKAGE)
 
 
-@session()
+@session(python=SUPPORTED)
 def audit(session):
     """
-    Audit dependencies for vulnerabilities.
+    Audit Python dependencies for vulnerabilities.
     """
-    session.install("pip-audit", ROOT)
+    session.install("pip-audit", "-r", REQUIREMENTS["main"])
     session.run("python", "-m", "pip_audit")
 
 
@@ -72,6 +88,58 @@ def build(session):
     with TemporaryDirectory() as tmpdir:
         session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
         session.run("twine", "check", "--strict", tmpdir + "/*")
+
+
+@session(default=False)
+def pex(session):
+    """
+    Create a PEX for venvs.
+    """
+    session.install("pex")
+
+    with ExitStack() as stack:
+        if session.posargs:
+            out = session.posargs[0]
+        else:
+            tmpdir = Path(stack.enter_context(TemporaryDirectory()))
+            out = tmpdir / "venvs"
+        session.run(
+            "pex",
+            ROOT,
+            "--entry-point",
+            "venvs",
+            "--output-file",
+            out,
+        )
+
+
+@session(default=False)
+def shiv(session):
+    """
+    Build a shiv which will run venvs.
+    """
+    session.install("shiv")
+
+    with ExitStack() as stack:
+        if session.posargs:
+            out = session.posargs[0]
+        else:
+            tmpdir = Path(stack.enter_context(TemporaryDirectory()))
+            out = tmpdir / "venvs"
+        session.run(
+            "python",
+            "-m",
+            "shiv",
+            "--reproducible",
+            "-c",
+            "venvs",
+            "-r",
+            REQUIREMENTS["main"],
+            ROOT,
+            "-o",
+            out,
+        )
+        print(f"Outputted a shiv to {out}.")
 
 
 @session(tags=["style"])
@@ -110,7 +178,7 @@ def docs(session, builder):
     """
     Build the documentation using a specific Sphinx builder.
     """
-    session.install("-r", DOCS / "requirements.txt")
+    session.install("-r", REQUIREMENTS["docs"])
     with TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
         argv = ["-n", "-T", "-W"]
@@ -143,50 +211,17 @@ def docs_style(session):
 
 
 @session(default=False)
-def pex(session):
-    """
-    Create a PEX for venvs.
-    """
-    session.install("pex")
-    session.run(
-        "pex",
-        ROOT,
-        "--entry-point",
-        "venvs",
-        "--output-file",
-        DIST / "venvs",
-    )
-
-
-@session(default=False)
-def shiv(session):
-    """
-    Create a shiv for venvs.
-    """
-    session.install("shiv")
-    session.run(
-        "shiv",
-        "-c",
-        "venvs",
-        "-o",
-        DIST / "venvs",
-        "-r",
-        ROOT / "requirements.txt",
-        ROOT,
-    )
-
-
-@session(default=False)
 def requirements(session):
     """
     Update the project's pinned requirements. Commit the result.
     """
     session.install("pip-tools")
-    for each in [DOCS / "requirements.in", ROOT / "pyproject.toml"]:
+    for each in REQUIREMENTS_IN:
         session.run(
             "pip-compile",
             "--resolver",
             "backtracking",
+            "--strip-extras",
             "-U",
             each.relative_to(ROOT),
         )
