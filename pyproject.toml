@@ -90,7 +90,7 @@ exclude = [
 
 [tool.ruff]
 line-length = 79
-target-version = "py38"
+target-version = "py310"
 select = ["B", "D", "D204", "E", "F", "Q", "RUF", "SIM", "UP", "W"]
 ignore = [
   # Wat, type annotations for self and cls, why is this a thing?
