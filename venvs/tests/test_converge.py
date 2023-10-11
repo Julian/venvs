@@ -285,7 +285,7 @@ class TestConverge(CLIMixin, TestCase):
                 self.installed(self.locator.for_name("c")),
                 self.locator.for_name("c").exists_on(self.filesystem),
             ),
-            tuple((set(), set()) for _ in "abc") + (True,),
+            (*((set(), set()) for _ in "abc"), True),
         )
         self.assertIn(
             "'magicExplodingVirtualenvOnInstall' failed",
@@ -335,7 +335,7 @@ class TestConverge(CLIMixin, TestCase):
                 self.installed(self.locator.for_name("c")),
                 self.locator.for_name("c").exists_on(self.filesystem),
             ),
-            tuple((set(), set()) for _ in "abc") + (True,),
+            (*((set(), set()) for _ in "abc"), True),
         )
         self.assertIn(
             "'magicExplodingVirtualenvOnCreate' failed",

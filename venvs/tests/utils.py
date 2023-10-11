@@ -1,3 +1,4 @@
+from contextlib import suppress
 from io import StringIO
 import sys
 
@@ -71,15 +72,11 @@ class CLIMixin:
         if virtualenv.path.basename() == "magicexplodingvirtualenvoncreate":
             raise ZeroDivisionError("Hey you told me to blow up on create!")
 
-        try:
+        with suppress(FileExists):
             self.filesystem.create_directory(path=virtualenv.path.parent())
-        except FileExists:
-            pass
 
-        try:
+        with suppress(FileExists):
             self.filesystem.create_directory(path=virtualenv.path)
-        except FileExists:
-            pass
 
     def _fake_install(self, virtualenv, packages, requirements, **kwargs):
         # FIXME: ...

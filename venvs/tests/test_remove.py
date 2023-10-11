@@ -19,7 +19,7 @@ class TestRemove(CLIMixin, TestCase):
         for venv in venvs:
             venv.create()
 
-        self.run_cli(["remove"] + names)
+        self.run_cli(["remove", *names])
         self.assertEqual(
             [venv.exists_on(filesystem=self.filesystem) for venv in venvs],
             [False, False, False],

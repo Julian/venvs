@@ -1,3 +1,4 @@
+from contextlib import suppress
 from unittest import TestCase
 import sys
 
@@ -185,7 +186,7 @@ class TestIntegration(TestCase):
         with self.fs.open(self.root / "create_stdout", "w") as stdout:
             sys.stdout = stdout
 
-            try:
+            with suppress(SystemExit):
                 _cli.main(
                     args=[
                         "create",
@@ -194,13 +195,11 @@ class TestIntegration(TestCase):
                         "venvs-unittest-should-be-deleted",
                     ],
                 )
-            except SystemExit:
-                pass
 
         with self.fs.open(self.root / "find_stdout", "w") as stdout:
             sys.stdout = stdout
 
-            try:
+            with suppress(SystemExit):
                 _cli.main(
                     [
                         "find",
@@ -211,8 +210,6 @@ class TestIntegration(TestCase):
                         "venvs-unittest-should-be-deleted",
                     ],
                 )
-            except SystemExit:
-                pass
 
         locator = Locator(root=self.root)
         virtualenv = locator.for_name("venvs-unittest-should-be-deleted")

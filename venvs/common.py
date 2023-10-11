@@ -2,6 +2,7 @@
 Objects for interacting with a central set of virtual environments.
 """
 
+from contextlib import suppress
 from itertools import chain
 from shutil import which
 import os
@@ -24,9 +25,9 @@ def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
             "--python",
             which(python),
             "--quiet",
-        ]
-        + list(arguments)
-        + [str(virtualenv.path)],
+            *arguments,
+            str(virtualenv.path),
+        ],
         stderr=stderr,
     )
 
@@ -53,8 +54,8 @@ def _install_into_virtualenv(
             "pip",
             "--quiet",
             "install",
-        ]
-        + things,
+            *things,
+        ],
         stdout=stdout,
         stderr=stderr,
     )
@@ -110,10 +111,8 @@ class VirtualEnv:
         """
         Recreate this environment, deleting an existing one if necessary.
         """
-        try:
+        with suppress(filesystems.exceptions.FileNotFound):
             self.remove_from(filesystem=filesystem)
-        except filesystems.exceptions.FileNotFound:
-            pass
         self.create(**kwargs)
 
     def install(self, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
