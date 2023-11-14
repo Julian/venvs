@@ -12,13 +12,13 @@ attrs==23.1.0
     # via
     #   filesystems
     #   venvs
-babel==2.13.0
+babel==2.13.1
     # via sphinx
 beautifulsoup4==4.12.2
     # via furo
 certifi==2023.7.22
     # via requests
-charset-normalizer==3.3.0
+charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via venvs
@@ -26,7 +26,7 @@ distlib==0.3.7
     # via virtualenv
 docutils==0.20.1
     # via sphinx
-filelock==3.12.4
+filelock==3.13.1
     # via virtualenv
 filesystems==0.26.0
     # via venvs
@@ -55,7 +55,7 @@ pygments==2.16.1
     #   sphinx
 pygments-github-lexers==0.0.5
     # via -r docs/requirements.in
-pyrsistent==0.19.3
+pyrsistent==0.20.0
     # via
     #   filesystems
     #   venvs
@@ -94,15 +94,15 @@ sphinxcontrib-spelling==8.0.0
     # via -r docs/requirements.in
 toml==0.10.2
     # via venvs
-tomlkit==0.12.1
+tomlkit==0.12.2
     # via venvs
 tqdm==4.66.1
     # via venvs
-urllib3==2.0.6
+urllib3==2.1.0
     # via requests
 file:.#egg=venvs
     # via -r docs/requirements.in
-virtualenv==20.24.5
+virtualenv==20.24.6
     # via venvs
 zope-interface==6.1
     # via filesystems
