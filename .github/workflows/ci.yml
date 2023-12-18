@@ -73,7 +73,7 @@ jobs:
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
       - name: Upload shiv artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: matrix.python-version.noxenv == 'shiv'
         with:
           name: venvs
