@@ -34,7 +34,7 @@ def session(default=True, python=LATEST, **kwargs):  # noqa: D103
     def _session(fn):
         if default:
             nox.options.sessions.append(kwargs.get("name", fn.__name__))
-        return nox.session(**kwargs)(fn)
+        return nox.session(python=python, **kwargs)(fn)
 
     return _session
 
