@@ -1,4 +1,3 @@
-from contextlib import ExitStack
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import os
@@ -25,12 +24,13 @@ REQUIREMENTS_IN = {
 }
 
 
-SUPPORTED = ["3.10", "3.11", "3.12", "pypy3.10"]
+SUPPORTED = ["pypy3.10", "3.11", "3.12"]
+LATEST = SUPPORTED[-1]
 
 nox.options.sessions = []
 
 
-def session(default=True, **kwargs):  # noqa: D103
+def session(default=True, python=LATEST, **kwargs):  # noqa: D103
     def _session(fn):
         if default:
             nox.options.sessions.append(kwargs.get("name", fn.__name__))
@@ -48,7 +48,7 @@ def tests(session):
 
     if session.posargs and session.posargs[0] == "coverage":
         if len(session.posargs) > 1 and session.posargs[1] == "github":
-            github = os.environ["GITHUB_STEP_SUMMARY"]
+            github = Path(os.environ["GITHUB_STEP_SUMMARY"])
         else:
             github = None
 
@@ -57,7 +57,7 @@ def tests(session):
         if github is None:
             session.run("coverage", "report")
         else:
-            with open(github, "a") as summary:
+            with github.open("a") as summary:
                 summary.write("### Coverage\n\n")
                 summary.flush()  # without a flush, output seems out of order.
                 session.run(
@@ -90,56 +90,13 @@ def build(session):
         session.run("twine", "check", "--strict", tmpdir + "/*")
 
 
-@session(default=False)
-def pex(session):
+@session(tags=["build"])
+def app(session):
     """
-    Create a PEX for venvs.
+    Build a PyApp which will run venvs.
     """
-    session.install("pex")
-
-    with ExitStack() as stack:
-        if session.posargs:
-            out = session.posargs[0]
-        else:
-            tmpdir = Path(stack.enter_context(TemporaryDirectory()))
-            out = tmpdir / "venvs"
-        session.run(
-            "pex",
-            ROOT,
-            "--entry-point",
-            "venvs",
-            "--output-file",
-            out,
-        )
-
-
-@session(default=False)
-def shiv(session):
-    """
-    Build a shiv which will run venvs.
-    """
-    session.install("shiv")
-
-    with ExitStack() as stack:
-        if session.posargs:
-            out = session.posargs[0]
-        else:
-            tmpdir = Path(stack.enter_context(TemporaryDirectory()))
-            out = tmpdir / "venvs"
-        session.run(
-            "python",
-            "-m",
-            "shiv",
-            "--reproducible",
-            "-c",
-            "venvs",
-            "-r",
-            REQUIREMENTS["main"],
-            ROOT,
-            "-o",
-            out,
-        )
-        print(f"Outputted a shiv to {out}.")
+    session.install("hatch")
+    session.run("hatch", "build", "-t", "app", *session.posargs)
 
 
 @session(tags=["style"])
@@ -148,7 +105,7 @@ def style(session):
     Check Python code style.
     """
     session.install("ruff")
-    session.run("ruff", "check", ROOT)
+    session.run("ruff", "check", ROOT, __file__)
 
 
 @session(default=False)
