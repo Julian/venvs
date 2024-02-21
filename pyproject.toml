@@ -13,8 +13,7 @@ readme = "README.rst"
 license = {text = "MIT"}
 keywords = ["venv", "virtualenv", "virtualenvwrapper", "mkvirtualenv", "pipx"]
 authors = [
-  {email = "Julian+venvs@GrayVines.com"},
-  {name = "Julian Berman"},
+  { name = "Julian Berman", email = "Julian+venvs@GrayVines.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
