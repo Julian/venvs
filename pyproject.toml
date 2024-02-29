@@ -28,11 +28,11 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-  "appdirs",
   "attrs>=23.1.0",
   "click",
   "filesystems>=0.23.0",
   "packaging",
+  "platformdirs",
   "pyrsistent",
   "toml>=0.10.0",
   "tomlkit",

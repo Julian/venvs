@@ -158,7 +158,7 @@ class Locator:
             # to be the "rightest" thing to do instead.
             root = os.path.expanduser("~/.local/share/virtualenvs")
         else:
-            from appdirs import user_data_dir
+            from platformdirs import user_data_dir
 
             root = user_data_dir(appname="virtualenvs")
         return cls(root=filesystems.Path.from_string(root), **kwargs)

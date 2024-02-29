@@ -2,9 +2,9 @@
 venvs creates virtualenvs.
 
 By default it places them in the appropriate data directory for your platform
-(See `appdirs <https://pypi.python.org/pypi/appdirs>`_), but it will also
-respect the :envvar:`WORKON_HOME` environment variable for compatibility with
-:command:`mkvirtualenv`.
+(See `platformdirs <https://pypi.python.org/pypi/platformdirs>`_), but it will
+also respect the :envvar:`WORKON_HOME` environment variable for compatibility
+with :command:`mkvirtualenv`.
 """
 
 from functools import partial
