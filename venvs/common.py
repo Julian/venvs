@@ -5,24 +5,27 @@ Objects for interacting with a central set of virtual environments.
 from collections.abc import Callable
 from contextlib import suppress
 from itertools import chain
+from pathlib import Path
 from shutil import which
 import os
 import platform
 import subprocess
 import sys
+import sysconfig
 
 from attrs import field, frozen
 from filesystems.click import PATH
 import click
 import filesystems.native
 
+_UV = Path(sysconfig.get_path("scripts")) / "uv"
+
 
 def _create_virtualenv(virtualenv, arguments, python, stdout, stderr):
     subprocess.check_call(
         [
-            sys.executable,
-            "-m",
-            "virtualenv",
+            str(_UV),
+            "venv",
             "--python",
             which(python),
             "--quiet",
@@ -50,9 +53,11 @@ def _install_into_virtualenv(
     )
     subprocess.check_call(
         [
-            str(virtualenv.binary("python")),
-            "-m",
+            str(_UV),
             "pip",
+            "install",
+            "--python",
+            str(virtualenv.binary("python")),
             "--quiet",
             "install",
             *things,
