@@ -37,7 +37,7 @@ dependencies = [
   "toml>=0.10.0",
   "tomlkit",
   "tqdm",
-  "uv",
+  "uv>=0.1.13",
 ]
 
 [project.scripts]
