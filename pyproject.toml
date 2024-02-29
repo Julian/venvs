@@ -10,7 +10,6 @@ name = "venvs"
 description = "A simpler tool for creating venvs in a central location"
 requires-python = ">=3.10"
 readme = "README.rst"
-license = {text = "MIT"}
 keywords = ["venv", "virtualenv", "virtualenvwrapper", "mkvirtualenv", "pipx"]
 authors = [
   { name = "Julian Berman", email = "Julian+venvs@GrayVines.com" },
