@@ -1,6 +1,7 @@
 """
 CLI for managing a global temporary virtual environment.
 """
+
 import click
 
 from venvs.common import _FILESYSTEM, _ROOT

@@ -1,6 +1,7 @@
 """
 CLI for finding the location of appropriate virtual environments.
 """
+
 from functools import partial
 import sys
 
