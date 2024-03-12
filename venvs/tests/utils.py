@@ -1,5 +1,6 @@
 from contextlib import suppress
 from io import StringIO
+from textwrap import dedent
 import sys
 
 from filesystems import Path
@@ -112,10 +113,14 @@ class CLIMixin:
         self.assertEqual(
             result.exit_code,
             exit_status,
-            msg="Different exit code, {} != {}\n\nstderr:\n\n{!r}".format(
-                result.exit_code,
-                exit_status,
-                self.stderr.getvalue(),
+            msg=dedent(
+                f"""
+                Different exit code, {result.exit_code} != {exit_status}
+
+                stderr:
+
+                    {self.stderr.getvalue()!r}
+                """,
             ),
         )
         return self.stdout.getvalue(), self.stderr.getvalue()
