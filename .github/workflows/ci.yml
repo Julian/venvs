@@ -2,27 +2,23 @@ name: CI
 
 on:
   push:
+    branches-ignore:
+      - "wip*"
+    tags:
+      - "v*"
   pull_request:
   release:
     types: [published]
   schedule:
-    # Daily at 5:55
-    - cron: "55 5 * * *"
+    # Daily at 6:12
+    - cron: "12 6 * * *"
+  workflow_dispatch:
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PIP_NO_PYTHON_VERSION_WARNING: "1"
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - uses: pre-commit/action@v3.0.1
-
   list:
     runs-on: ubuntu-latest
     outputs:
@@ -40,17 +36,19 @@ jobs:
   ci:
     needs: list
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
         noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
         posargs: [""]
         include:
-          - noxenv: tests-3.11
+          - noxenv: tests-3.12
             posargs: coverage github
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
         if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
@@ -66,16 +64,14 @@ jobs:
             3.12
             pypy3.10
           allow-prereleases: true
+          cache: pip
+      - name: Set up uv
+        uses: hynek/setup-cached-uv@v1
       - name: Set up nox
         uses: wntrblm/nox@2024.04.15
+
       - name: Run nox
         run: nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }}
-      - name: Upload shiv artifact
-        uses: actions/upload-artifact@v4
-        if: matrix.python-version.noxenv == 'shiv'
-        with:
-          name: venvs
-          path: "dist/venvs"
 
   packaging:
     needs: ci

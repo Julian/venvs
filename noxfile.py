@@ -16,9 +16,12 @@ REQUIREMENTS = dict(
 )
 REQUIREMENTS_IN = {
     (
-        ROOT / "pyproject.toml"
-        if path.absolute() == REQUIREMENTS["main"].absolute()
-        else path.parent / f"{path.stem}.in"
+        (
+            ROOT / "pyproject.toml"
+            if path.absolute() == REQUIREMENTS["main"].absolute()
+            else path.parent / f"{path.stem}.in"
+        ),
+        path,
     )
     for path in REQUIREMENTS.values()
 }
@@ -27,6 +30,7 @@ REQUIREMENTS_IN = {
 SUPPORTED = ["pypy3.10", "3.11", "3.12"]
 LATEST = SUPPORTED[-1]
 
+nox.options.default_venv_backend = "uv|virtualenv"
 nox.options.sessions = []
 
 
@@ -172,13 +176,13 @@ def requirements(session):
     """
     Update the project's pinned requirements. Commit the result.
     """
-    session.install("pip-tools")
-    for each in REQUIREMENTS_IN:
-        session.run(
-            "pip-compile",
-            "--resolver",
-            "backtracking",
-            "--strip-extras",
-            "-U",
-            each.relative_to(ROOT),
-        )
+    if session.venv_backend == "uv":
+        cmd = ["uv", "pip", "compile"]
+    else:
+        session.install("pip-tools")
+        cmd = ["pip-compile", "--resolver", "backtracking", "--strip-extras"]
+
+    for each, out in REQUIREMENTS_IN:
+        # otherwise output files end up with silly absolute path comments...
+        relative = each.relative_to(ROOT)
+        session.run(*cmd, "--upgrade", "--output-file", out, relative)
