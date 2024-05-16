@@ -5,14 +5,14 @@ attrs==23.2.0
 click==8.1.7
 filesystems==0.26.0
 packaging==24.0
-platformdirs==4.2.0
+platformdirs==4.2.2
 pyrsistent==0.20.0
     # via filesystems
 setuptools==69.5.1
     # via zope-interface
 toml==0.10.2
-tomlkit==0.12.4
-tqdm==4.66.2
-uv==0.1.35
-zope-interface==6.3
+tomlkit==0.12.5
+tqdm==4.66.4
+uv==0.1.44
+zope-interface==6.4
     # via filesystems
