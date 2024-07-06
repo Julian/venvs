@@ -34,7 +34,7 @@ os.execvp(argv[0], argv)
 
 
 def _fail(virtualenv, name):
-    raise
+    raise  # noqa: PLE0704
 
 
 def _do_not_fail(virtualenv, name):
