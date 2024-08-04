@@ -5,10 +5,9 @@ import subprocess
 import sys
 
 from attr import asdict  # relying on retain_collection_types=False for now...
-from attrs import Factory, frozen
+from attrs import Factory, evolve, frozen
 from pyrsistent import freeze, pmap, pvector, thaw
 from pyrsistent.typing import PMap, PVector
-import attr
 import filesystems.exceptions
 import tomlkit
 
@@ -164,7 +163,7 @@ class Config:
                 "link-module": sorted(set(link_module)),
             },
         )
-        return attr.evolve(self, contents=contents)
+        return evolve(self, contents=contents)
 
 
 def _interpolated(iterable):
