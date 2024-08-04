@@ -30,7 +30,7 @@ dynamic = ["version"]
 dependencies = [
   "attrs>=23.1.0",
   "click",
-  "filesystems>=0.23.0",
+  "filesystems>=2024.8.1",
   "packaging",
   "platformdirs",
   "pyrsistent",
