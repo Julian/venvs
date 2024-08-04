@@ -59,7 +59,6 @@ def _install_into_virtualenv(
             "--python",
             str(virtualenv.binary("python")),
             "--quiet",
-            "install",
             *things,
         ],
         stdout=stdout,
