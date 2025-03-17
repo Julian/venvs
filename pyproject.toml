@@ -133,8 +133,10 @@ ignore = [
   "RET505",  # These push you to use `if` instead of `elif`, but for no reason
   "RET506",
   "RSE102",  # Ha, what, who even knew you could leave the parens off. But no.
+  "RUF009",  # the function call happening once is exactly the point...
   "S602",  # These are somewhere between noisy and actively harmful
   "S603",  #    as they encourage shell=True.
+  "SIM115", # delete=False is used when necessary for re-opening the tempfile
   "SIM300", # Not sure what heuristic this uses, but it's easily incorrect
   "SLF001",  # Private usage within this package itself is fine
   "TD",  # These TODO style rules are also silly
