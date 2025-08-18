@@ -24,7 +24,7 @@ jobs:
     outputs:
       noxenvs: ${{ steps.noxenvs-matrix.outputs.noxenvs }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up nox
         uses: wntrblm/nox@2025.02.09
       - id: noxenvs-matrix
@@ -47,7 +47,7 @@ jobs:
             posargs: coverage github
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
@@ -84,7 +84,7 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
