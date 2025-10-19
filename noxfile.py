@@ -27,7 +27,7 @@ REQUIREMENTS_IN = {
 }
 
 
-SUPPORTED = ["pypy3.10", "3.11", "3.12"]
+SUPPORTED = ["pypy3.11", "3.12", "3.13"]
 LATEST = SUPPORTED[-1]
 
 nox.options.default_venv_backend = "uv|virtualenv"
@@ -74,13 +74,13 @@ def tests(session):
         session.run("virtue", *session.posargs, PACKAGE)
 
 
-@session(python=SUPPORTED)
+@session()
 def audit(session):
     """
     Audit Python dependencies for vulnerabilities.
     """
-    session.install("pip-audit", "-r", REQUIREMENTS["main"])
-    session.run("python", "-m", "pip_audit")
+    session.install("pip-audit")
+    session.run("python", "-m", "pip_audit", "-r", REQUIREMENTS["main"])
 
 
 @session(tags=["build"])
