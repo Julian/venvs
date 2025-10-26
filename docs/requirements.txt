@@ -94,7 +94,7 @@ typing-extensions==4.15.0
     # via beautifulsoup4
 urllib3==2.5.0
     # via requests
-uv==0.9.4
+uv==0.9.5
     # via venvs
 venvs @ file:.#egg=venvs
     # via -r docs/requirements.in
