@@ -4,7 +4,7 @@ attrs==25.4.0
     # via
     #   venvs (pyproject.toml)
     #   filesystems
-click==8.3.0
+click==8.2.1
     # via venvs (pyproject.toml)
 filesystems==2024.8.1
     # via venvs (pyproject.toml)
