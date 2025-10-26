@@ -8,7 +8,7 @@ source = "vcs"
 [project]
 name = "venvs"
 description = "A simpler tool for creating venvs in a central location"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 readme = "README.rst"
 keywords = ["venv", "virtualenv", "virtualenvwrapper", "mkvirtualenv", "pipx"]
 authors = [
@@ -20,9 +20,9 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -69,8 +69,8 @@ skip_covered = true
 
 [tool.doc8]
 ignore = [
-    "D000",  # see PyCQA/doc8#125
-    "D001",  # one sentence per line, so max length doesn't make sense
+  "D000",  # see PyCQA/doc8#125
+  "D001",  # one sentence per line, so max length doesn't make sense
 ]
 
 [tool.isort]
@@ -84,8 +84,8 @@ use_parentheses = true
 [tool.pyright]
 reportUnnecessaryTypeIgnoreComment = true
 exclude = [
-    "**/tests/__init__.py",
-    "**/tests/test_*.py",
+  "**/tests/__init__.py",
+  "**/tests/test_*.py",
 ]
 
 [tool.ruff]

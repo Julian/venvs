@@ -27,7 +27,7 @@ REQUIREMENTS_IN = {
 }
 
 
-SUPPORTED = ["pypy3.11", "3.12", "3.13"]
+SUPPORTED = ["3.12", "3.13", "3.14"]
 LATEST = SUPPORTED[-1]
 
 nox.options.default_venv_backend = "uv|virtualenv"
@@ -90,7 +90,13 @@ def build(session):
     """
     session.install("build", "twine")
     with TemporaryDirectory() as tmpdir:
-        session.run("python", "-m", "build", ROOT, "--outdir", tmpdir)
+        session.run(
+            "pyproject-build",
+            "--installer=uv",
+            ROOT,
+            "--outdir",
+            tmpdir,
+        )
         session.run("twine", "check", "--strict", tmpdir + "/*")
 
 
@@ -174,7 +180,9 @@ def docs_style(session):
 @session(default=False)
 def requirements(session):
     """
-    Update the project's pinned requirements. Commit the result.
+    Update the project's pinned requirements.
+
+    You should commit the result afterwards.
     """
     if session.venv_backend == "uv":
         cmd = ["uv", "pip", "compile"]

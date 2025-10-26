@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 import os
@@ -126,7 +126,7 @@ class TestConverge(CLIMixin, TestCase):
         self.addCleanup(os.remove, file.name)
         mtime = os.path.getmtime(file.name)
         later = timedelta(minutes=10)
-        new_mtime = datetime.fromtimestamp(mtime, tz=timezone.utc) + later
+        new_mtime = datetime.fromtimestamp(mtime, tz=UTC) + later
 
         self.filesystem.set_contents(
             self.locator.root.descendant("virtualenvs.toml"),

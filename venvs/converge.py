@@ -3,7 +3,7 @@ Converge the set of installed virtualenvs.
 
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib import metadata
 import subprocess
 import sys
@@ -162,7 +162,7 @@ def _write_module_wrapper(to, python, module, filesystem):
         python=python,
         module=module,
         version=metadata.version("venvs"),
-        now=datetime.now(tz=timezone.utc),
+        now=datetime.now(tz=UTC),
     )
 
     try:
