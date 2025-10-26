@@ -95,7 +95,7 @@ class ConfiguredVirtualEnv:
 
 
 @frozen(eq=False)
-class Config:
+class Config:  # noqa: PLW1641
     """
     A converge configuration file.
     """
