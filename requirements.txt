@@ -22,7 +22,7 @@ tomlkit==0.13.3
     # via venvs (pyproject.toml)
 tqdm==4.67.1
     # via venvs (pyproject.toml)
-uv==0.9.5
+uv==0.9.6
     # via venvs (pyproject.toml)
 zope-interface==8.0.1
     # via filesystems
