@@ -24,7 +24,6 @@ classifiers = [
 license = "MIT"
 
 [project.urls]
-Documentation = "https://venvs.readthedocs.io/"
 Homepage = "https://github.com/Julian/venvs"
 Issues = "https://github.com/Julian/venvs/issues/"
 Funding = "https://github.com/sponsors/Julian"

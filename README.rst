@@ -2,29 +2,33 @@
 venvs
 =====
 
-|PyPI| |Pythons| |CI|
+|PyPI| |CI|
 
 ``venvs`` is a tool for configuring, in a single file, a set of
 virtualenvs, which packages to install into each, and any binaries to
 make globally available from within.
 
+It is a thin layer on top of `uv <https://docs.astral.sh/uv/>`_,
+adding a declarative configuration format.
+
 
 Installation
 ------------
 
-The usual::
+::
 
-    $ pip install venvs
+    uv tool install venvs
+
+``uv`` must be installed and on your ``PATH``.
 
 
-Usage
------
+Configuration
+-------------
 
-The best way to use ``venvs`` is by creating a file named
-``~/.local/share/virtualenvs/virtualenvs.toml``. Here's an example of what goes
-in it:
+Create a file at ``~/.local/share/virtualenvs/virtualenvs.toml`` (or
+wherever ``$WORKON_HOME`` points). Here's an example:
 
-.. code-block::
+.. code-block:: toml
 
     [virtualenv.development]
     install = [
@@ -34,149 +38,119 @@ in it:
     link = ["trial"]
 
     [virtualenv.app]
-    install = ["$DEVELOPMENT/myapp"]
+    install = ["flask"]
+    python = "python3.12"
+    link = ["flask:flask-app"]
 
-After creating the above, running ``venvs converge`` will create 2
-virtualenvs, one called "development" with ``pudb`` and twisted installed
-into it and trial linked from within it onto your ``PATH``, and a second
-called "app" installing the corresponding directory.
+    [virtualenv.tools]
+    install = ["ipython"]
+    link-module = ["IPython:ipy"]
 
-For a more intricate example, have a look at `my own virtualenvs.toml
-<https://github.com/Julian/dotfiles/blob/master/.local/share/virtualenvs/virtualenvs.toml>`_.
-
-That's about all you need to know. If you insist on reading further
-though, venvs has an older, not-very-recommended mutable interface
-which allows you to create virtualenvs in a central location without
-tracking them in a config file (or converging them). For that, usage
-is similar to ``mkvirtualenv``, although ``venvs`` passes arguments
-directly through to ``virtualenv``:
-
-.. code-block:: sh
-
-    $ venvs create nameofvenv -- -p pypy
-
-will create a virtual environment in an appropriate platform-specific
-data directory, or in the directory specified by ``WORKON_HOME`` for
-compatibility with ``virtualenvwrapper``.
+Running ``venvs converge`` will create each virtualenv, install the
+specified packages, and symlink the named binaries into
+``~/.local/bin/``.
 
 
-Single-Purpose Virtualenvs
---------------------------
+Config Reference
+^^^^^^^^^^^^^^^^
 
-A common use case for virtualenvs is for single-purpose installations, e.g.:
+Each ``[virtualenv.<name>]`` section supports:
 
-"I want to install fabric and give it its own virtualenv so that its
-dependencies can be independently upgraded, all while still being able to use
-the ``fab`` binary globally".
+``install``
+    List of packages to install (supports ``$ENV_VAR`` and ``~/``
+    expansion).
 
-``venvs`` supports a ``--link`` option for this use case:
+``requirements``
+    List of requirements files to install from.
 
-.. code-block:: sh
+``python``
+    Python interpreter to use (default: ``python3``).
 
-    $ venvs create -i fabric --link fab
+``install-bundle``
+    List of bundle names to include (see below).
 
-will create a virtualenv for fabric (in the same normal location), but will
-symlink the ``fab`` binary from within the virtualenv into your
-``~/.local/bin`` directory.
+``link``
+    List of binaries to symlink into the link directory. Use
+    ``"source:target"`` to rename, e.g. ``"black:black3.12"``.
 
-(You may have heard of `pipsi <https://github.com/mitsuhiko/pipsi>`_ which is a
-similar tool for this use case, but with less customization than I would have
-liked.)
+``link-module``
+    List of modules to make available as wrapper scripts that run
+    ``python -m <module>``. Use ``"module:name"`` to rename.
 
+``post-commands``
+    List of commands (as arrays) to run after converging, e.g.
+    ``[["touch", "/tmp/done"]]``.
 
-Temporary Virtualenvs
----------------------
+Bundles
+"""""""
 
-I also find ``mktmpenv`` useful for quick testing. To support its use case,
-``venvs`` currently supports a different but similar style of temporary
-virtualenv.
+Bundles are reusable package groups:
 
-Invoking::
+.. code-block:: toml
 
-    $ venv=$(venvs temporary)
+    [bundle]
+    dev = ["pytest", "ruff", "mypy"]
 
-in your shell will create (or re-create) a global temporary virtualenv,
-and print its ``bin/`` subdirectory (which in this case will be then
-stored in the ``venv`` variable). It can subsequently be used by, e.g.::
-
-    $ $venv/python
-
-or::
-
-    $ $venv/pip ...
-
-et cetera.
-
-You may prefer using::
-
-    $ cd $(venvs temporary)
-
-as your temporary venv workflow if you're into that sort of thing instead.
-
-The global virtualenv is cleared each time you invoke ``venvs temporary``.
-Unless you care, unlike ``virtualenvwrapper``'s ``mktmpenv``, there's no
-need to care about cleaning it up, whenever it matters for the next
-time, it will be cleared and overwritten.
-
-``venvs`` may support the more similar "traditional" one-use virtualenv in the
-future, but given that it does not activate virtualenvs by default (see below),
-the current recommendation for this use case would be to simply use the
-``virtualenv`` binary directly.
+    [virtualenv.myproject]
+    install = ["mypackage"]
+    install-bundle = ["dev"]
 
 
-The 5 Minute Tutorial
----------------------
+Usage
+-----
 
-Besides the ``venvs`` for named-virtualenv creation and ``venvs
-temporary`` for temporary-virtualenv creation described above::
+``venvs converge``
+^^^^^^^^^^^^^^^^^^
 
-    $ venvs find name foo
+Converge the configured set of virtualenvs::
 
-will output (to standard output) the path to a virtualenv with the given name
-(see also ``--existing-only``), and::
+    $ venvs converge
 
-    $ venvs remove foo
+Specific virtualenvs can be targeted::
 
-will remove it.
+    $ venvs converge myproject tools
 
-There are a number of other slight variants, see the ``--help`` information for
-each of the three binaries.
+Options:
 
-*Real documentation to come (I hope)*
+``--fail-fast``
+    Stop on the first failure (default: continue and report errors at
+    the end).
+
+``--link-dir <path>``
+    Directory to symlink binaries into (default: ``~/.local/bin``).
+
+``--root <path>``
+    Root directory for virtualenvs (default: platform-specific, or
+    ``$WORKON_HOME``).
+
+Converge is idempotent -- if the configuration and Python version
+haven't changed and the virtualenv is healthy, it is skipped.
+Virtualenvs that are no longer in the configuration are automatically
+removed along with their symlinks. Broken virtualenvs (e.g. from a
+deleted Python installation) are automatically recreated.
+
+Virtualenvs are converged in parallel.
+
+``venvs find``
+^^^^^^^^^^^^^^
+
+Find virtualenv paths::
+
+    $ venvs find                    # print the root directory
+    $ venvs find name myproject     # print the virtualenv path
+    $ venvs find name myproject python  # print path to a binary
 
 
-Why don't I use ``virtualenvwrapper``?
---------------------------------------
+Releasing
+---------
 
-``virtualenvwrapper`` is great! I've used it for a few years. But I've
-slowly settled on a much smaller subset of its functionality that I like
-to use. Specifically:
+Releases are managed via `cargo-release <https://github.com/crate-ci/cargo-release>`_::
 
-    * I don't like activating virtualenvs.
-
-      virtualenvs are magical and hacky enough on their own, and piling
-      activation on top just makes things even more messy for me, especially
-      when moving around between different projects in a shell.  Some people
-      use ``cd`` tricks to solve this, but I just want simplicity.
-
-    * I don't need project support.
-
-      I've never attached a project to a virtualenv. I just use a naming
-      convention, naming the virtualenv with the name of the repo (with simple
-      coercion), and then using `dynamic directory expansion in my shell
-      <https://github.com/Julian/dotfiles/blob/4376b05de0f7af9e7ecb2e3596b8830c806c5d71/.config/zsh/.zshrc#L59-L92>`_
-      to handle association.
-
-Basically, I just want a thing that is managing a central repository of
-virtualenvs for me. So that's what ``venvs`` does.
+    $ cargo release 2026.5.1
 
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/venvs.svg
    :alt: PyPI version
-   :target: https://pypi.org/project/venvs/
-
-.. |Pythons| image:: https://img.shields.io/pypi/pyversions/venvs.svg
-   :alt: Supported Python versions
    :target: https://pypi.org/project/venvs/
 
 .. |CI| image:: https://github.com/Julian/venvs/workflows/CI/badge.svg
