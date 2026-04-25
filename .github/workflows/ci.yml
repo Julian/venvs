@@ -14,95 +14,131 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  list:
+  test:
+    name: Tests
     runs-on: ubuntu-latest
-    outputs:
-      noxenvs: ${{ steps.noxenvs-matrix.outputs.noxenvs }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - name: Set up uv
-        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
-        with:
-          enable-cache: ${{ github.ref_type != 'tag' }} # zizmor: ignore[cache-poisoning]
-      - id: noxenvs-matrix
-        run: |
-          echo >>$GITHUB_OUTPUT noxenvs=$(
-            uvx nox --list-sessions --json | jq '[.[].session]'
-          )
 
-  ci:
-    needs: list
+      - name: Set up Rust
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Run tests
+        run: cargo test
+
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Rust
+        run: rustup toolchain install stable --component rustfmt,clippy
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+  build-wheels:
+    name: Build wheel (${{ matrix.target }})
+    needs: [test, lint]
+    runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: false
       matrix:
-        noxenv: ${{ fromJson(needs.list.outputs.noxenvs) }}
-        posargs: [""]
         include:
-          - noxenv: tests-3.14
-            posargs: coverage github
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libenchant-2-dev
-        if: runner.os == 'Linux' && startsWith(matrix.noxenv, 'docs')
-      - name: Install dependencies
-        run: brew install enchant
-        if: runner.os == 'macOS' && startsWith(matrix.noxenv, 'docs')
-      - name: Set up Python
-        uses: actions/setup-python@v6
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@423a6347767a8b16e65c2a7a7042e4a921528da8 # v1
         with:
-          python-version: |
-            3.12
-            3.13
-            3.14
-          allow-prereleases: true
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          manylinux: auto
 
-      - name: Set up uv
-        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
+      - name: Upload wheels
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          enable-cache: ${{ github.ref_type != 'tag' }} # zizmor: ignore[cache-poisoning]
+          name: wheels-${{ matrix.target }}
+          path: dist
 
-      - name: Run nox
-        run: uvx nox -s "${{ matrix.noxenv }}" -- ${{ matrix.posargs }} # zizmor: ignore[template-injection]
-
-  packaging:
-    needs: ci
+  build-sdist:
+    name: Build sdist
+    needs: [test, lint]
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Build sdist
+        uses: PyO3/maturin-action@423a6347767a8b16e65c2a7a7042e4a921528da8 # v1
+        with:
+          command: sdist
+          args: --out dist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sdist
+          path: dist
+
+  publish:
+    name: Publish
+    needs: [build-wheels, build-sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+
     environment:
       name: PyPI
       url: https://pypi.org/p/venvs
 
     permissions:
-      contents: write
-      id-token: write
+      contents: write # for creating GitHub Releases
+      id-token: write # for PyPI trusted publishing
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - name: Set up uv
-        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
-        with:
-          enable-cache: ${{ github.ref_type != 'tag' }} # zizmor: ignore[cache-poisoning]
 
-      - name: Build our distributions
-        run: uv run --frozen --with 'build[uv]' -m build --installer=uv
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: dist
+          merge-multiple: true
 
       - name: Publish to PyPI
-        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
+
       - name: Create a GitHub Release
-        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b
-        with:
-          files: |
-            dist/*
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" dist/* --generate-notes

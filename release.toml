@@ -1,0 +1,8 @@
+# cargo-release configuration
+# Release with: cargo release <VERSION>
+# e.g. cargo release 2026.5.1
+
+publish = false  # we publish to PyPI via CI, not crates.io
+push = true
+tag-prefix = "v"
+tag-name = "v{{version}}"
