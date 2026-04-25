@@ -77,7 +77,7 @@ jobs:
           persist-credentials: false
 
       - name: Build wheels
-        uses: PyO3/maturin-action@423a6347767a8b16e65c2a7a7042e4a921528da8 # v1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1
         with:
           target: ${{ matrix.target }}
           args: --release --out dist
@@ -99,7 +99,7 @@ jobs:
           persist-credentials: false
 
       - name: Build sdist
-        uses: PyO3/maturin-action@423a6347767a8b16e65c2a7a7042e4a921528da8 # v1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1
         with:
           command: sdist
           args: --out dist
