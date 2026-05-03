@@ -1,5 +1,5 @@
 use std::collections::{BTreeSet, HashMap};
-use std::fs;
+use std::fs::{self, File, TryLockError};
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
@@ -27,12 +27,23 @@ pub fn run(
     let uv = find_uv()?;
     let config = Config::from_file(&locator.config_path())?;
     let state_path = locator.root.join("managed.json");
+
+    // Hold an exclusive lock on the root for the duration of run() so two
+    // venvs converge invocations don't trample each other's state. The
+    // `_lock` File must outlive everything that mutates state below.
+    let _lock = acquire_lock(&locator.root)?;
+
     let mut state = ManagedState::load(&state_path)?;
 
     let current_names: BTreeSet<String> = config.virtualenvs.keys().cloned().collect();
 
-    // Phase 1: Remove orphans (fast, serial).
+    // Phase 1: Remove orphans (fast, serial). Persist the result before
+    // doing further work so an interrupted run doesn't try to remove the
+    // same orphans (and their already-deleted links) on the next pass.
     remove_orphans(&mut state, &current_names, locator)?;
+    state
+        .save(&state_path)
+        .context("saving managed state after orphan removal")?;
 
     // Pre-resolve python versions (avoid redundant subprocess calls).
     let python_versions = resolve_python_versions(&uv, &config)?;
@@ -48,6 +59,10 @@ pub fn run(
             .filter(|v| filter.contains(v.name.as_str()))
             .collect()
     };
+
+    // Create the link directory once up front (parallel workers all need it).
+    fs::create_dir_all(link_dir)
+        .with_context(|| format!("creating link directory {}", link_dir.display()))?;
 
     let state = Mutex::new(state);
     let cancelled = AtomicBool::new(false);
@@ -68,7 +83,20 @@ pub fn run(
             pb.enable_steady_tick(std::time::Duration::from_millis(100));
 
             let sys_version = python_versions.get(&resolved.python).unwrap();
-            let result = converge_one(&uv, resolved, locator, link_dir, &state, sys_version, &pb);
+            let ui = Ui {
+                pb: &pb,
+                multi: &multi_progress,
+            };
+            let result = converge_one(
+                &uv,
+                resolved,
+                locator,
+                link_dir,
+                &state,
+                &state_path,
+                sys_version,
+                &ui,
+            );
 
             match &result {
                 Ok(()) => {
@@ -87,7 +115,7 @@ pub fn run(
         .collect();
 
     // Save state (even on partial failure, so successful venvs are tracked).
-    let state = state.into_inner().unwrap();
+    let state = state.into_inner().unwrap_or_else(|p| p.into_inner());
     state.save(&state_path).context("saving managed state")?;
 
     if errors.is_empty() {
@@ -108,6 +136,32 @@ fn find_uv() -> Result<PathBuf> {
     which::which("uv").context("venvs requires uv to be installed and on PATH")
 }
 
+/// Acquire an exclusive lock on the venvs root so concurrent `converge`
+/// invocations can't corrupt shared state. Returns the locked File; when
+/// it's dropped the lock releases automatically.
+fn acquire_lock(root: &Path) -> Result<File> {
+    fs::create_dir_all(root).with_context(|| format!("creating venvs root {}", root.display()))?;
+    let lock_path = root.join(".lock");
+    let file = File::options()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(&lock_path)
+        .with_context(|| format!("opening lock file {}", lock_path.display()))?;
+    match file.try_lock() {
+        Ok(()) => Ok(file),
+        Err(TryLockError::WouldBlock) => {
+            bail!(
+                "another venvs converge is running (lock held on {})",
+                lock_path.display(),
+            )
+        }
+        Err(TryLockError::Error(e)) => {
+            Err(e).with_context(|| format!("locking {}", lock_path.display()))
+        }
+    }
+}
+
 /// Resolve all distinct python specs to their version strings up front,
 /// so parallel workers don't each shell out for the same interpreter.
 fn resolve_python_versions(uv: &Path, config: &Config) -> Result<HashMap<String, String>> {
@@ -117,12 +171,10 @@ fn resolve_python_versions(uv: &Path, config: &Config) -> Result<HashMap<String,
         .map(|v| v.python.as_str())
         .collect();
 
-    let mut versions = HashMap::with_capacity(specs.len());
-    for spec in specs {
-        let version = get_python_version(uv, spec)?;
-        versions.insert(spec.to_string(), version);
-    }
-    Ok(versions)
+    specs
+        .par_iter()
+        .map(|spec| Ok((spec.to_string(), get_python_version(uv, spec)?)))
+        .collect()
 }
 
 fn get_python_version(uv: &Path, python: &str) -> Result<String> {
@@ -151,6 +203,13 @@ fn get_python_version(uv: &Path, python: &str) -> Result<String> {
         .stderr(Stdio::piped())
         .output()
         .with_context(|| format!("running {python_path} --version"))?;
+
+    if !output.status.success() {
+        bail!(
+            "{python_path} --version failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim(),
+        );
+    }
 
     String::from_utf8(output.stdout)
         .context("python --version returned non-UTF-8")
@@ -196,15 +255,25 @@ fn remove_links(links: &[PathBuf]) {
 
 // -- Per-venv convergence --
 
+/// UI handles for one worker: the worker's own bar plus the shared
+/// MultiProgress (used to suspend rendering around inherited-stdio commands).
+struct Ui<'a> {
+    pb: &'a ProgressBar,
+    multi: &'a MultiProgress,
+}
+
+#[allow(clippy::too_many_arguments)]
 fn converge_one(
     uv: &Path,
     resolved: &ResolvedVirtualEnv,
     locator: &Locator,
     link_dir: &Path,
     state: &Mutex<ManagedState>,
+    state_path: &Path,
     sys_version: &str,
-    pb: &ProgressBar,
+    ui: &Ui<'_>,
 ) -> Result<()> {
+    let pb = ui.pb;
     let venv_dir = locator.for_name(&resolved.name);
 
     // Snapshot what we need from state in a single short lock.
@@ -258,10 +327,8 @@ fn converge_one(
         run_captured(&mut cmd, &resolved.name, "uv pip install")?;
     }
 
-    // Create links.
+    // Create links. (link_dir itself is created once in run() before the parallel loop.)
     pb.set_message(format!("{}: linking", resolved.name));
-    fs::create_dir_all(link_dir)
-        .with_context(|| format!("creating link directory {}", link_dir.display()))?;
 
     let mut created_links = Vec::with_capacity(resolved.link.len() + resolved.link_module.len());
 
@@ -272,8 +339,9 @@ fn converge_one(
         created_links.push(write_module_wrapper(&venv_dir, link, link_dir)?);
     }
 
-    // Update state (before post-commands, so links are tracked even if
-    // a post-command fails).
+    // Update state and persist it (before post-commands, so links are
+    // tracked even if a post-command fails — and so an interrupted run
+    // leaves a record of every venv that successfully reached this point).
     {
         let mut state = state.lock().unwrap();
         state.venvs.insert(
@@ -284,17 +352,21 @@ fn converge_one(
                 links: created_links,
             },
         );
+        state
+            .save(state_path)
+            .context("saving managed state after converge")?;
     }
 
-    // Run post-commands.
+    // Run post-commands. They inherit our stdout/stderr, so suspend the
+    // progress bars while each one runs to keep the terminal coherent.
     for command in &resolved.post_commands {
         if command.is_empty() {
             continue;
         }
         pb.set_message(format!("{}: running {}", resolved.name, command[0],));
-        let status = Command::new(&command[0])
-            .args(&command[1..])
-            .status()
+        let status = ui
+            .multi
+            .suspend(|| Command::new(&command[0]).args(&command[1..]).status())
             .with_context(|| format!("running post-command: {command:?}"))?;
         if !status.success() {
             bail!("post-command failed for {}: {command:?}", resolved.name,);
@@ -321,15 +393,16 @@ fn run_captured(cmd: &mut Command, venv_name: &str, description: &str) -> Result
     Ok(())
 }
 
-/// Check that a venv's python interpreter actually works.
+/// Check that a venv's python interpreter is callable.
+///
+/// `try_exists` follows symlinks, so a broken `bin/python` symlink (e.g.
+/// from a deleted Python install) resolves to `Ok(false)`. The system
+/// python itself was already validated at the start of `run()` via
+/// `resolve_python_versions`, so a resolvable symlink here implies a
+/// working interpreter without paying for a subprocess per healthy venv.
 fn health_check(venv_dir: &Path) -> bool {
     let python = venv_dir.join("bin/python");
-    Command::new(&python)
-        .args(["-c", ""])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|s| s.success())
+    matches!(python.try_exists(), Ok(true))
 }
 
 fn create_symlink(venv_dir: &Path, link: &LinkSpec, link_dir: &Path) -> Result<PathBuf> {
@@ -366,6 +439,9 @@ fn create_symlink(venv_dir: &Path, link: &LinkSpec, link_dir: &Path) -> Result<P
 
 fn write_module_wrapper(venv_dir: &Path, link: &LinkSpec, link_dir: &Path) -> Result<PathBuf> {
     let python = venv_dir.join("bin/python");
+    let python_str = python
+        .to_str()
+        .with_context(|| format!("python path is not valid UTF-8: {}", python.display()))?;
     let target = link_dir.join(&link.target);
 
     // Refuse to overwrite files we didn't generate.
@@ -383,7 +459,7 @@ fn write_module_wrapper(venv_dir: &Path, link: &LinkSpec, link_dir: &Path) -> Re
 
     let wrapper = format!(
         "\
-#!{python}
+#!{python_str}
 {SENTINEL}
 # Don't modify this file, it may be replaced when re-converging.
 import os
@@ -392,7 +468,6 @@ import sys
 argv = [sys.executable, \"-m\", \"{module}\"] + sys.argv[1:]
 os.execvp(argv[0], argv)
 ",
-        python = python.display(),
         module = link.source,
     );
 
@@ -413,6 +488,46 @@ mod tests {
     #[test]
     fn health_check_nonexistent_dir() {
         assert!(!health_check(Path::new("/nonexistent/venv")));
+    }
+
+    #[test]
+    fn acquire_lock_blocks_second_acquire() {
+        let dir = tempfile::tempdir().unwrap();
+        let _first = acquire_lock(dir.path()).expect("first lock should succeed");
+        let err = acquire_lock(dir.path()).expect_err("second lock should fail");
+        assert!(
+            err.to_string()
+                .contains("another venvs converge is running"),
+            "unexpected error: {err}",
+        );
+    }
+
+    #[test]
+    fn acquire_lock_releases_on_drop() {
+        let dir = tempfile::tempdir().unwrap();
+        {
+            let _first = acquire_lock(dir.path()).expect("first lock should succeed");
+        }
+        // Now the lock is dropped — acquiring it again should succeed.
+        acquire_lock(dir.path()).expect("lock should be re-acquirable after drop");
+    }
+
+    #[test]
+    fn health_check_healthy_venv() {
+        let dir = tempfile::tempdir().unwrap();
+        let bin = dir.path().join("bin");
+        fs::create_dir_all(&bin).unwrap();
+        fs::write(bin.join("python"), b"").unwrap();
+        assert!(health_check(dir.path()));
+    }
+
+    #[test]
+    fn health_check_broken_symlink() {
+        let dir = tempfile::tempdir().unwrap();
+        let bin = dir.path().join("bin");
+        fs::create_dir_all(&bin).unwrap();
+        symlink("/definitely/does/not/exist", bin.join("python")).unwrap();
+        assert!(!health_check(dir.path()));
     }
 
     #[test]

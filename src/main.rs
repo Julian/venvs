@@ -72,7 +72,7 @@ fn main() -> ExitCode {
             root,
             existing_only,
         } => match locator::Locator::new(root) {
-            Ok(locator) => Ok(find::run(&locator, command, existing_only)),
+            Ok(locator) => find::run(&locator, command, existing_only),
             Err(e) => Err(e),
         },
     };

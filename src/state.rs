@@ -33,14 +33,21 @@ impl ManagedState {
         }
     }
 
-    /// Persist state to disk (creates parent directories as needed).
+    /// Persist state to disk atomically (creates parent directories as needed).
+    ///
+    /// Writes to a sibling temp file, then renames over the target. A crash
+    /// mid-write leaves the previous file intact rather than a half-written
+    /// JSON blob.
     pub fn save(&self, path: &Path) -> Result<()> {
         let contents = serde_json::to_string_pretty(self).context("serializing state")?;
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)
                 .with_context(|| format!("creating directory {}", parent.display()))?;
         }
-        fs::write(path, contents).with_context(|| format!("writing {}", path.display()))
+        let tmp = path.with_extension("json.tmp");
+        fs::write(&tmp, contents).with_context(|| format!("writing {}", tmp.display()))?;
+        fs::rename(&tmp, path)
+            .with_context(|| format!("renaming {} -> {}", tmp.display(), path.display()))
     }
 
     /// Find orphaned venv names: present in state but absent from config.
@@ -164,6 +171,30 @@ mod tests {
         state.save(&path).unwrap();
         let loaded = ManagedState::load(&path).unwrap();
         assert_eq!(state.venvs, loaded.venvs);
+    }
+
+    #[test]
+    fn save_does_not_leave_temp_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("managed.json");
+
+        ManagedState::default().save(&path).unwrap();
+        assert!(path.exists());
+        assert!(!path.with_extension("json.tmp").exists());
+    }
+
+    #[test]
+    fn save_overwrites_existing_file_atomically() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("managed.json");
+        fs::write(&path, "stale contents").unwrap();
+
+        let mut state = ManagedState::default();
+        state.venvs.insert("foo".into(), sample_state("foo"));
+        state.save(&path).unwrap();
+
+        let loaded = ManagedState::load(&path).unwrap();
+        assert!(loaded.venvs.contains_key("foo"));
     }
 
     #[test]

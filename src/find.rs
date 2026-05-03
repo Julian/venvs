@@ -2,6 +2,7 @@ use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+use anyhow::{Context, Result};
 use clap::Subcommand;
 
 use crate::locator::Locator;
@@ -20,22 +21,28 @@ pub enum FindCommand {
     },
 }
 
-pub fn run(locator: &Locator, command: Option<FindCommand>, existing_only: bool) -> ExitCode {
+pub fn run(
+    locator: &Locator,
+    command: Option<FindCommand>,
+    existing_only: bool,
+) -> Result<ExitCode> {
     let (venv_dir, binary) = match command {
         None => {
             println!("{}", locator.root.display());
-            return ExitCode::SUCCESS;
+            return Ok(ExitCode::SUCCESS);
         }
         Some(FindCommand::Name { name, binary }) => (locator.for_name(&name), binary),
         Some(FindCommand::Directory { directory, binary }) => {
-            let dir = directory
-                .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
-            (locator.for_directory(&dir), binary)
+            let dir = match directory {
+                Some(d) => d,
+                None => env::current_dir().context("getting current directory")?,
+            };
+            (locator.for_directory(&dir)?, binary)
         }
     };
 
     if existing_only && !venv_dir.exists() {
-        return ExitCode::FAILURE;
+        return Ok(ExitCode::FAILURE);
     }
 
     match binary {
@@ -47,5 +54,5 @@ pub fn run(locator: &Locator, command: Option<FindCommand>, existing_only: bool)
         }
     }
 
-    ExitCode::SUCCESS
+    Ok(ExitCode::SUCCESS)
 }
