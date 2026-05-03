@@ -116,6 +116,13 @@ Options:
     Stop on the first failure (default: continue and report errors at
     the end).
 
+``--dry-run``
+    Print what would be done (orphan removals, creates, updates with
+    the specific reason, skips) without making any changes. Exits 0
+    if the configuration is already converged, 2 if any changes
+    would be made, and non-zero on error. Cannot be combined with
+    ``--fail-fast``.
+
 ``--link-dir <path>``
     Directory to symlink binaries into (default: ``~/.local/bin``).
 

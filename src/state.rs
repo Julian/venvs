@@ -68,19 +68,6 @@ impl ManagedState {
             .cloned()
             .collect()
     }
-
-    /// Check whether a venv needs to be recreated.
-    pub fn needs_update(
-        &self,
-        name: &str,
-        resolved: &ResolvedVirtualEnv,
-        sys_version: &str,
-    ) -> bool {
-        match self.venvs.get(name) {
-            Some(existing) => existing.config != *resolved || existing.sys_version != sys_version,
-            None => true,
-        }
-    }
 }
 
 #[cfg(test)]
@@ -109,38 +96,6 @@ mod tests {
             sys_version: "Python 3.12.0".to_string(),
             links: vec![],
         }
-    }
-
-    #[test]
-    fn needs_update_when_missing() {
-        let state = ManagedState::default();
-        assert!(state.needs_update("foo", &sample_venv("foo"), "Python 3.12.0",));
-    }
-
-    #[test]
-    fn no_update_when_unchanged() {
-        let mut state = ManagedState::default();
-        state.venvs.insert("foo".into(), sample_state("foo"));
-
-        assert!(!state.needs_update("foo", &sample_venv("foo"), "Python 3.12.0",));
-    }
-
-    #[test]
-    fn needs_update_when_packages_changed() {
-        let mut state = ManagedState::default();
-        state.venvs.insert("foo".into(), sample_state("foo"));
-
-        let mut changed = sample_venv("foo");
-        changed.install.push("flask".into());
-        assert!(state.needs_update("foo", &changed, "Python 3.12.0"));
-    }
-
-    #[test]
-    fn needs_update_when_python_version_changed() {
-        let mut state = ManagedState::default();
-        state.venvs.insert("foo".into(), sample_state("foo"));
-
-        assert!(state.needs_update("foo", &sample_venv("foo"), "Python 3.13.0",));
     }
 
     #[test]
