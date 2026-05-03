@@ -229,7 +229,7 @@ fn remove_orphans(
         eprintln!("Removing orphaned virtualenv: {name}");
 
         if let Some(venv_state) = state.venvs.get(name) {
-            remove_links(&venv_state.links);
+            remove_links(&venv_state.links, &locator.root);
         }
 
         let venv_dir = locator.for_name(name);
@@ -244,11 +244,30 @@ fn remove_orphans(
     Ok(())
 }
 
-fn remove_links(links: &[PathBuf]) {
+/// Remove paths recorded as belonging to a venv, but only if they still
+/// look like ours: a symlink whose target lives under `venv_root`, or a
+/// regular file carrying our wrapper sentinel. A tampered or stale state
+/// file with arbitrary paths in `links` therefore can't trick us into
+/// deleting unrelated files.
+fn remove_links(links: &[PathBuf], venv_root: &Path) {
     for path in links {
-        // symlink_metadata succeeds for broken symlinks (unlike exists()).
-        if path.symlink_metadata().is_ok() {
-            let _ = fs::remove_file(path);
+        let Ok(meta) = path.symlink_metadata() else {
+            continue;
+        };
+        if meta.file_type().is_symlink() {
+            if let Ok(target) = fs::read_link(path)
+                && target.starts_with(venv_root)
+            {
+                let _ = fs::remove_file(path);
+            }
+        } else if meta.file_type().is_file()
+            && let Ok(contents) = fs::read_to_string(path)
+        {
+            let mut lines = contents.lines();
+            lines.next(); // shebang
+            if lines.next().is_some_and(|l| l.starts_with(SENTINEL)) {
+                let _ = fs::remove_file(path);
+            }
         }
     }
 }
@@ -291,7 +310,7 @@ fn converge_one(
 
     // Clean up stale links from the previous convergence of this venv.
     if let Some(links) = &old_links {
-        remove_links(links);
+        remove_links(links, &locator.root);
     }
 
     // Recreate the venv.
@@ -692,6 +711,74 @@ mod tests {
         write_module_wrapper(&venv_dir, &spec, &link_dir).unwrap();
         // Second call should succeed (replaces its own wrapper).
         write_module_wrapper(&venv_dir, &spec, &link_dir).unwrap();
+    }
+
+    #[test]
+    fn remove_links_removes_symlink_into_venv_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let venv_root = dir.path().join("venvs");
+        let bin = venv_root.join("myenv/bin");
+        fs::create_dir_all(&bin).unwrap();
+        let source = bin.join("tool");
+        fs::write(&source, "#!/bin/sh\n").unwrap();
+
+        let link_dir = dir.path().join("links");
+        fs::create_dir_all(&link_dir).unwrap();
+        let link = link_dir.join("tool");
+        symlink(&source, &link).unwrap();
+
+        remove_links(std::slice::from_ref(&link), &venv_root);
+        assert!(!link.exists() && link.symlink_metadata().is_err());
+    }
+
+    #[test]
+    fn remove_links_skips_symlink_outside_venv_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let venv_root = dir.path().join("venvs");
+        fs::create_dir_all(&venv_root).unwrap();
+
+        let outside = dir.path().join("important_file");
+        fs::write(&outside, "do not delete").unwrap();
+
+        let link_dir = dir.path().join("links");
+        fs::create_dir_all(&link_dir).unwrap();
+        let link = link_dir.join("evil");
+        symlink(&outside, &link).unwrap();
+
+        remove_links(std::slice::from_ref(&link), &venv_root);
+
+        // The symlink is left in place because its target isn't under venv_root.
+        assert!(link.symlink_metadata().is_ok());
+        assert!(outside.exists());
+    }
+
+    #[test]
+    fn remove_links_skips_arbitrary_regular_file() {
+        // A poisoned state record like `links = ["/etc/passwd"]` must not
+        // cause arbitrary file deletion.
+        let dir = tempfile::tempdir().unwrap();
+        let venv_root = dir.path().join("venvs");
+        fs::create_dir_all(&venv_root).unwrap();
+
+        let unrelated = dir.path().join("unrelated.txt");
+        fs::write(&unrelated, "not a venvs wrapper").unwrap();
+
+        remove_links(std::slice::from_ref(&unrelated), &venv_root);
+        assert!(unrelated.exists(), "unrelated file should not be removed");
+    }
+
+    #[test]
+    fn remove_links_removes_wrapper_with_sentinel() {
+        let dir = tempfile::tempdir().unwrap();
+        let venv_root = dir.path().join("venvs");
+        fs::create_dir_all(&venv_root).unwrap();
+
+        let wrapper = dir.path().join("links/wrapper");
+        fs::create_dir_all(wrapper.parent().unwrap()).unwrap();
+        fs::write(&wrapper, format!("#!/usr/bin/python\n{SENTINEL}\n# rest\n")).unwrap();
+
+        remove_links(std::slice::from_ref(&wrapper), &venv_root);
+        assert!(!wrapper.exists());
     }
 
     #[test]

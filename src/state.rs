@@ -6,6 +6,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::config::ResolvedVirtualEnv;
+use crate::locator::validate_name;
 
 /// State for a single managed virtualenv.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -24,13 +25,22 @@ pub struct ManagedState {
 
 impl ManagedState {
     /// Load state from disk, returning default if the file doesn't exist.
+    ///
+    /// Names are revalidated on load: a tampered or hand-edited
+    /// `managed.json` whose keys contain `..`/`/` would otherwise let
+    /// later `for_name(...)` calls escape the venvs root.
     pub fn load(path: &Path) -> Result<Self> {
-        match fs::read_to_string(path) {
+        let state: Self = match fs::read_to_string(path) {
             Ok(contents) => serde_json::from_str(&contents)
-                .with_context(|| format!("parsing {}", path.display())),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
-            Err(e) => Err(e).with_context(|| format!("reading {}", path.display())),
+                .with_context(|| format!("parsing {}", path.display()))?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Self::default()),
+            Err(e) => return Err(e).with_context(|| format!("reading {}", path.display())),
+        };
+        for name in state.venvs.keys() {
+            validate_name(name)
+                .with_context(|| format!("invalid venv name in {}", path.display()))?;
         }
+        Ok(state)
     }
 
     /// Persist state to disk atomically (creates parent directories as needed).
@@ -217,5 +227,18 @@ mod tests {
         let path = dir.path().join("managed.json");
         fs::write(&path, r#"{"something": "else"}"#).unwrap();
         assert!(ManagedState::load(&path).is_err());
+    }
+
+    #[test]
+    fn load_rejects_tampered_traversal_key() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("managed.json");
+        fs::write(
+            &path,
+            r#"{"venvs":{"../etc":{"config":{"name":"../etc","python":"python3","install":[],"requirements":[],"link":[],"link_module":[],"post_commands":[]},"sys_version":"x","links":[]}}}"#,
+        )
+        .unwrap();
+        let err = ManagedState::load(&path).unwrap_err();
+        assert!(format!("{err:#}").contains("../etc"));
     }
 }

