@@ -1,6 +1,6 @@
 [package]
 name = "venvs"
-version = "2026.4.1"
+version = "2026.5.1"
 edition = "2024"
 description = "A tool for managing virtualenvs via a declarative config file"
 license = "MIT"
