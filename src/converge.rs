@@ -198,6 +198,23 @@ fn describe_changes(
     if existing.config.post_commands != resolved.post_commands {
         reasons.push("post-commands changed".to_string());
     }
+    if existing.config.sync_project != resolved.sync_project {
+        reasons.push("sync-project changed".to_string());
+    }
+    if existing.config.sync_groups != resolved.sync_groups {
+        reasons.push(diff_strings(
+            "sync-groups",
+            &existing.config.sync_groups,
+            &resolved.sync_groups,
+        ));
+    }
+    if existing.config.sync_extras != resolved.sync_extras {
+        reasons.push(diff_strings(
+            "sync-extras",
+            &existing.config.sync_extras,
+            &resolved.sync_extras,
+        ));
+    }
     reasons
 }
 
@@ -659,51 +676,76 @@ fn converge_one(
     // Clean up stale links from the previous convergence of this venv.
     remove_links(old_links, &locator.root);
 
-    // Recreate the venv.
+    // Recreate the venv. uv sync builds the venv itself, so the pip path
+    // calls `uv venv` first and the sync path skips straight to `uv sync`.
     pb.set_message(format!("{}: creating venv", resolved.name));
     if venv_dir.exists() {
         fs::remove_dir_all(&venv_dir)
             .with_context(|| format!("removing existing venv {}", venv_dir.display()))?;
     }
 
-    run_captured(
-        Command::new(uv)
-            .args(["venv", "--python", &resolved.python, "--quiet"])
-            .arg(&venv_dir),
-        &resolved.name,
-        "uv venv",
-    )?;
-
-    // Install packages.
-    if !resolved.install.is_empty() || !resolved.requirements.is_empty() {
-        pb.set_message(format!("{}: installing packages", resolved.name));
-
-        let venv_python = venv_dir.join("bin/python");
+    if let Some(project) = &resolved.sync_project {
+        pb.set_message(format!("{}: syncing project", resolved.name));
         let mut cmd = Command::new(uv);
-        cmd.args(["pip", "install", "--python"])
-            .arg(&venv_python)
+        cmd.env("UV_PROJECT_ENVIRONMENT", &venv_dir)
+            .args(["sync", "--project"])
+            .arg(project)
             .arg("--quiet");
-        for package in &resolved.install {
-            cmd.arg(package);
+        for group in &resolved.sync_groups {
+            cmd.args(["--group", group]);
         }
-        for req in &resolved.requirements {
-            cmd.args(["-r", req.as_str()]);
+        for extra in &resolved.sync_extras {
+            cmd.args(["--extra", extra]);
         }
-        run_captured(&mut cmd, &resolved.name, "uv pip install")?;
+        run_captured(&mut cmd, &resolved.name, "uv sync")?;
+    } else {
+        run_captured(
+            Command::new(uv)
+                .args(["venv", "--python", &resolved.python, "--quiet"])
+                .arg(&venv_dir),
+            &resolved.name,
+            "uv venv",
+        )?;
+
+        if !resolved.install.is_empty() || !resolved.requirements.is_empty() {
+            pb.set_message(format!("{}: installing packages", resolved.name));
+
+            let venv_python = venv_dir.join("bin/python");
+            let mut cmd = Command::new(uv);
+            cmd.args(["pip", "install", "--python"])
+                .arg(&venv_python)
+                .arg("--quiet");
+            for package in &resolved.install {
+                cmd.arg(package);
+            }
+            for req in &resolved.requirements {
+                cmd.args(["-r", req.as_str()]);
+            }
+            run_captured(&mut cmd, &resolved.name, "uv pip install")?;
+        }
     }
 
     // Create links. (link_dir itself is created once in apply() before the parallel loop.)
     pb.set_message(format!("{}: linking", resolved.name));
 
-    let auto_discovered: Vec<LinkSpec> = match &resolved.auto_link_package {
-        Some(pkg) => entry_points::discover_scripts(&venv_dir, pkg)
-            .with_context(|| format!("auto-link discovery for {}", resolved.name))?
-            .into_iter()
-            .map(|script| LinkSpec {
-                source: script.clone(),
-                target: script,
-            })
-            .collect(),
+    let auto_package: Option<String> = match (&resolved.auto_link_package, &resolved.sync_project) {
+        (Some(pkg), _) => Some(pkg.clone()),
+        (None, Some(project)) => Some(read_project_package_name(project)?),
+        (None, None) => None,
+    };
+
+    let auto_discovered: Vec<LinkSpec> = match auto_package {
+        Some(pkg) => {
+            let suffix = resolved.auto_link_suffix.as_deref().unwrap_or("");
+            entry_points::discover_scripts(&venv_dir, &pkg)
+                .with_context(|| format!("auto-link discovery for {}", resolved.name))?
+                .into_iter()
+                .map(|script| LinkSpec {
+                    target: format!("{script}{suffix}"),
+                    source: script,
+                })
+                .collect()
+        }
         None => Vec::new(),
     };
 
@@ -753,6 +795,21 @@ fn converge_one(
     }
 
     Ok(())
+}
+
+/// Read the `[project].name` from a pyproject.toml in the given directory.
+fn read_project_package_name(project_path: &Path) -> Result<String> {
+    let pyproject = project_path.join("pyproject.toml");
+    let content = fs::read_to_string(&pyproject)
+        .with_context(|| format!("reading {}", pyproject.display()))?;
+    let parsed: toml::Value =
+        toml::from_str(&content).with_context(|| format!("parsing {}", pyproject.display()))?;
+    parsed
+        .get("project")
+        .and_then(|p| p.get("name"))
+        .and_then(|n| n.as_str())
+        .map(String::from)
+        .ok_or_else(|| anyhow::anyhow!("no [project].name in {}", pyproject.display()))
 }
 
 /// Run a command, capturing stdout/stderr. On failure, include stderr
@@ -868,12 +925,7 @@ mod tests {
         ResolvedVirtualEnv {
             name: name.to_string(),
             python: "python3".to_string(),
-            install: vec![],
-            requirements: vec![],
-            link: vec![],
-            link_module: vec![],
-            post_commands: vec![],
-            auto_link_package: None,
+            ..ResolvedVirtualEnv::default()
         }
     }
 

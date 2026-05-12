@@ -80,14 +80,11 @@ mod tests {
             name: name.to_string(),
             python: "python3".to_string(),
             install: vec!["requests".to_string()],
-            requirements: vec![],
             link: vec![LinkSpec {
                 source: "http".into(),
                 target: "http".into(),
             }],
-            link_module: vec![],
-            post_commands: vec![],
-            auto_link_package: None,
+            ..ResolvedVirtualEnv::default()
         }
     }
 

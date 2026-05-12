@@ -15,6 +15,7 @@ struct RawConfig {
     venv: BTreeMap<String, RawVirtualEnvConfig>,
     virtualenv: BTreeMap<String, RawVirtualEnvConfig>,
     tool: BTreeMap<String, RawToolConfig>,
+    dev: BTreeMap<String, RawDevConfig>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -52,6 +53,23 @@ struct RawToolConfig {
     post_commands: Vec<Vec<String>>,
 }
 
+/// `[dev.X]` is a venv backed by a local project checkout, converged via
+/// `uv sync`. Disk dir is always `<X>-dev`, so a release `[tool.X]` and a
+/// dev `[dev.X]` coexist without colliding.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+struct RawDevConfig {
+    /// Path to a directory with a `pyproject.toml`. Required.
+    project: Option<String>,
+    groups: Vec<String>,
+    extras: Vec<String>,
+    link: Option<Vec<String>>,
+    #[serde(rename = "link-module")]
+    link_module: Vec<String>,
+    #[serde(rename = "post-commands")]
+    post_commands: Vec<Vec<String>>,
+}
+
 /// A parsed link spec: source binary name -> target name in link dir.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LinkSpec {
@@ -74,6 +92,14 @@ pub struct ResolvedVirtualEnv {
     /// discovered and added to the link list. Used by `[tool.X]` when the
     /// user didn't specify `link` explicitly.
     pub auto_link_package: Option<String>,
+    /// Applied to auto-discovered link target names (e.g. "-dev" so a
+    /// script `jsonschema` links as `jsonschema-dev`). Empty for tool venvs.
+    pub auto_link_suffix: Option<String>,
+    /// If set, this venv is converged via `uv sync` against the given
+    /// project directory rather than `uv pip install`. Set by `[dev.X]`.
+    pub sync_project: Option<std::path::PathBuf>,
+    pub sync_groups: Vec<String>,
+    pub sync_extras: Vec<String>,
 }
 
 /// The fully resolved configuration.
@@ -96,13 +122,13 @@ impl Config {
 
     fn resolve(raw: &RawConfig) -> Result<Self> {
         let mut virtualenvs: BTreeMap<String, ResolvedVirtualEnv> = BTreeMap::new();
-        let mut declared_in: BTreeMap<String, &'static str> = BTreeMap::new();
+        let mut declared_in: BTreeMap<String, String> = BTreeMap::new();
 
         for (table, entries) in [("venv", &raw.venv), ("virtualenv", &raw.virtualenv)] {
             for (name, raw_venv) in entries {
                 validate_name(name).context("invalid venv name")?;
-                check_uniqueness(name, table, &mut declared_in)?;
                 let source = format!("[{table}.{name}]");
+                check_uniqueness(name, &source, &mut declared_in)?;
                 virtualenvs.insert(
                     name.clone(),
                     resolve_venv(name, &source, raw_venv, &raw.bundle)?,
@@ -111,11 +137,21 @@ impl Config {
         }
         for (name, raw_tool) in &raw.tool {
             validate_name(name).context("invalid venv name")?;
-            check_uniqueness(name, "tool", &mut declared_in)?;
             let source = format!("[tool.{name}]");
+            check_uniqueness(name, &source, &mut declared_in)?;
             virtualenvs.insert(
                 name.clone(),
                 resolve_tool(name, &source, raw_tool, &raw.bundle)?,
+            );
+        }
+        for (name, raw_dev) in &raw.dev {
+            let disk_name = format!("{name}-dev");
+            validate_name(&disk_name).context("invalid venv name (after -dev suffix)")?;
+            let source = format!("[dev.{name}]");
+            check_uniqueness(&disk_name, &source, &mut declared_in)?;
+            virtualenvs.insert(
+                disk_name.clone(),
+                resolve_dev(&disk_name, &source, raw_dev)?,
             );
         }
 
@@ -127,17 +163,14 @@ impl Config {
 }
 
 fn check_uniqueness(
-    name: &str,
-    table: &'static str,
-    declared_in: &mut BTreeMap<String, &'static str>,
+    disk_name: &str,
+    source: &str,
+    declared_in: &mut BTreeMap<String, String>,
 ) -> Result<()> {
-    if let Some(prev) = declared_in.get(name) {
-        bail!(
-            "venv {name:?} is declared in both [{prev}.{name}] and [{table}.{name}] \
-             — pick one"
-        );
+    if let Some(prev) = declared_in.get(disk_name) {
+        bail!("venv {disk_name:?} is declared in both {prev} and {source} — pick one");
     }
-    declared_in.insert(name.to_string(), table);
+    declared_in.insert(disk_name.to_string(), source.to_string());
     Ok(())
 }
 
@@ -177,11 +210,50 @@ fn resolve_tool(
         name: name.to_string(),
         python: raw.python.clone().unwrap_or_else(|| "python3".to_string()),
         install,
-        requirements: Vec::new(),
         link,
         link_module,
         post_commands: raw.post_commands.clone(),
         auto_link_package,
+        ..ResolvedVirtualEnv::default()
+    })
+}
+
+fn resolve_dev(disk_name: &str, source: &str, raw: &RawDevConfig) -> Result<ResolvedVirtualEnv> {
+    let project_raw = raw
+        .project
+        .as_deref()
+        .with_context(|| format!("{source}: `project` is required"))?;
+    let project = expand(project_raw)?;
+    if project.is_empty() {
+        bail!("{source}: `project` is empty");
+    }
+
+    for extra in &raw.extras {
+        validate_extra(extra).with_context(|| format!("invalid extra in {source}"))?;
+    }
+    for group in &raw.groups {
+        validate_extra(group).with_context(|| format!("invalid group in {source}"))?;
+    }
+
+    let (link, auto_link_suffix) = match &raw.link {
+        Some(specs) => (parse_link_specs(specs), None),
+        None => (Vec::new(), Some("-dev".to_string())),
+    };
+    validate_link_specs(&link, source)?;
+
+    let link_module = parse_link_specs(&raw.link_module);
+    validate_link_module_specs(&link_module, source)?;
+
+    Ok(ResolvedVirtualEnv {
+        name: disk_name.to_string(),
+        link,
+        link_module,
+        post_commands: raw.post_commands.clone(),
+        sync_project: Some(std::path::PathBuf::from(project)),
+        sync_groups: raw.groups.clone(),
+        sync_extras: raw.extras.clone(),
+        auto_link_suffix,
+        ..ResolvedVirtualEnv::default()
     })
 }
 
@@ -223,7 +295,7 @@ fn resolve_venv(
         link,
         link_module,
         post_commands: raw.post_commands.clone(),
-        auto_link_package: None,
+        ..ResolvedVirtualEnv::default()
     })
 }
 
@@ -1135,5 +1207,143 @@ mod tests {
             let toml = format!("[tool.foo]\nextras = [{:?}]\n", bad);
             assert!(Config::parse(&toml).is_err(), "should reject extra {bad:?}",);
         }
+    }
+
+    #[test]
+    fn dev_table_disk_name_has_dev_suffix() {
+        let config = Config::parse(
+            r#"
+            [dev.jsonschema]
+            project = "~/work/jsonschema"
+            "#,
+        )
+        .unwrap();
+
+        assert!(
+            config.virtualenvs.contains_key("jsonschema-dev"),
+            "dev venv should be stored under -dev suffix",
+        );
+        assert!(!config.virtualenvs.contains_key("jsonschema"));
+    }
+
+    #[test]
+    fn dev_table_sets_sync_project_and_auto_link_suffix() {
+        let config = Config::parse(
+            r#"
+            [dev.jsonschema]
+            project = "/abs/path"
+            groups = ["test"]
+            extras = ["cli"]
+            "#,
+        )
+        .unwrap();
+
+        let venv = &config.virtualenvs["jsonschema-dev"];
+        assert_eq!(
+            venv.sync_project.as_deref(),
+            Some(std::path::Path::new("/abs/path"))
+        );
+        assert_eq!(venv.sync_groups, vec!["test"]);
+        assert_eq!(venv.sync_extras, vec!["cli"]);
+        assert_eq!(venv.auto_link_suffix.as_deref(), Some("-dev"));
+        assert!(venv.link.is_empty(), "auto-link → explicit link empty");
+        assert!(venv.install.is_empty(), "dev mode has no install list");
+    }
+
+    #[test]
+    fn dev_table_explicit_link_disables_auto_link_suffix() {
+        let config = Config::parse(
+            r#"
+            [dev.jsonschema]
+            project = "/abs/path"
+            link = ["jv"]
+            "#,
+        )
+        .unwrap();
+
+        let venv = &config.virtualenvs["jsonschema-dev"];
+        assert!(venv.auto_link_suffix.is_none());
+        assert_eq!(venv.link.len(), 1);
+        assert_eq!(venv.link[0].target, "jv");
+    }
+
+    #[test]
+    fn dev_table_requires_project() {
+        let err = Config::parse(
+            r#"
+            [dev.jsonschema]
+            "#,
+        )
+        .unwrap_err();
+        assert!(format!("{err:#}").contains("project"));
+    }
+
+    #[test]
+    fn dev_table_rejects_disallowed_keys() {
+        for key in [
+            "install",
+            "requirements",
+            "install-bundle",
+            "python",
+            "sync",
+            "editable",
+        ] {
+            let toml = format!("[dev.foo]\nproject = \"/p\"\n{key} = \"x\"\n");
+            let err = Config::parse(&toml).unwrap_err();
+            let msg = format!("{err:#}");
+            assert!(
+                msg.contains("unknown field") || msg.contains(key),
+                "expected rejection of {key}: {msg}",
+            );
+        }
+    }
+
+    #[test]
+    fn dev_and_tool_with_same_root_coexist() {
+        let config = Config::parse(
+            r#"
+            [tool.jsonschema]
+            [dev.jsonschema]
+            project = "~/work/jsonschema"
+            "#,
+        )
+        .unwrap();
+
+        assert!(config.virtualenvs.contains_key("jsonschema"));
+        assert!(config.virtualenvs.contains_key("jsonschema-dev"));
+    }
+
+    #[test]
+    fn dev_collides_with_explicitly_named_venv_dev() {
+        // `[dev.foo]` produces disk dir "foo-dev"; so does `[venv.foo-dev]`.
+        let err = Config::parse(
+            r#"
+            [venv.foo-dev]
+            [dev.foo]
+            project = "/p"
+            "#,
+        )
+        .unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(msg.contains("foo-dev"));
+        assert!(msg.contains("[venv.foo-dev]") && msg.contains("[dev.foo]"));
+    }
+
+    #[test]
+    fn dev_table_expands_tilde_in_project() {
+        let config = Config::parse(
+            r#"
+            [dev.foo]
+            project = "~/proj"
+            "#,
+        )
+        .unwrap();
+
+        let project = config.virtualenvs["foo-dev"]
+            .sync_project
+            .as_deref()
+            .unwrap();
+        let home = dirs::home_dir().unwrap();
+        assert_eq!(project, home.join("proj"));
     }
 }
