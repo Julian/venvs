@@ -215,6 +215,15 @@ fn describe_changes(
             &resolved.sync_extras,
         ));
     }
+    // Catches changes that don't show up via the `link` diff: e.g. switching
+    // a venv from `[tool.foo]` to `[venv.foo]` with the same install list
+    // would leave stale auto-discovered symlinks if we didn't notice the
+    // auto-link mode flipping off.
+    if existing.config.auto_link_package != resolved.auto_link_package
+        || existing.config.auto_link_suffix != resolved.auto_link_suffix
+    {
+        reasons.push("auto-link changed".to_string());
+    }
     reasons
 }
 
@@ -522,10 +531,8 @@ fn print_plan(plan: &Plan, link_dir: &Path, out: &mut impl Write) -> io::Result<
             Verdict::Skip => continue,
             Verdict::Create => writeln!(
                 out,
-                "Would create: {name} (python: {}, install: {}, links: {})",
-                item.resolved.python,
-                item.resolved.install.len(),
-                item.resolved.link.len() + item.resolved.link_module.len(),
+                "Would create: {name} ({})",
+                describe_create(&item.resolved)
             )?,
             Verdict::Update { reasons, .. } => {
                 writeln!(out, "Would update: {name} ({})", reasons.join("; "))?;
@@ -533,6 +540,39 @@ fn print_plan(plan: &Plan, link_dir: &Path, out: &mut impl Write) -> io::Result<
         }
     }
     Ok(())
+}
+
+fn describe_create(resolved: &ResolvedVirtualEnv) -> String {
+    let link_count = resolved.link.len() + resolved.link_module.len();
+    if let Some(project) = &resolved.sync_project {
+        // Auto-link discovers at install time, so the script count isn't
+        // knowable for `Create` items — say so explicitly.
+        let mut parts = vec![format!("sync: {}", project.display())];
+        if !resolved.sync_groups.is_empty() {
+            parts.push(format!("groups: {}", resolved.sync_groups.join(",")));
+        }
+        if !resolved.sync_extras.is_empty() {
+            parts.push(format!("extras: {}", resolved.sync_extras.join(",")));
+        }
+        let link_part = if resolved.auto_link_suffix.is_some() {
+            "links: auto".to_string()
+        } else {
+            format!("links: {link_count}")
+        };
+        parts.push(link_part);
+        parts.join(", ")
+    } else {
+        let link_part = if resolved.auto_link_package.is_some() {
+            "links: auto".to_string()
+        } else {
+            format!("links: {link_count}")
+        };
+        format!(
+            "python: {}, install: {}, {link_part}",
+            resolved.python,
+            resolved.install.len(),
+        )
+    }
 }
 
 // -- Setup --
@@ -728,10 +768,17 @@ fn converge_one(
     // Create links. (link_dir itself is created once in apply() before the parallel loop.)
     pb.set_message(format!("{}: linking", resolved.name));
 
-    let auto_package: Option<String> = match (&resolved.auto_link_package, &resolved.sync_project) {
-        (Some(pkg), _) => Some(pkg.clone()),
-        (None, Some(project)) => Some(read_project_package_name(project)?),
-        (None, None) => None,
+    // Auto-link runs only if the user didn't supply explicit `link`. For
+    // `[tool.X]` that signal is `auto_link_package`; for `[dev.X]` it's
+    // `auto_link_suffix` (set when implicit, cleared when the user wrote
+    // their own `link = [...]`). Without this gate, an explicit `link` in
+    // a dev venv would still get discovered scripts appended to it.
+    let auto_package: Option<String> = if let Some(pkg) = &resolved.auto_link_package {
+        Some(pkg.clone())
+    } else if let (Some(_), Some(project)) = (&resolved.auto_link_suffix, &resolved.sync_project) {
+        Some(read_project_package_name(project)?)
+    } else {
+        None
     };
 
     let auto_discovered: Vec<LinkSpec> = match auto_package {
@@ -971,6 +1018,30 @@ mod tests {
         resolved.install = vec!["redis".into(), "flask".into()];
         let reasons = describe_changes(&existing, &resolved, "Python 3.12.0");
         assert_eq!(reasons, vec!["install: +flask -django".to_string()]);
+    }
+
+    #[test]
+    fn describe_changes_detects_auto_link_flip_with_otherwise_equal_config() {
+        // `[tool.foo]` → `[venv.foo] install = ["foo"]`: same install, no
+        // links specified, but auto-link silently turns off.
+        let mut existing = sample_state("foo", "Python 3.12.0");
+        existing.config.install = vec!["foo".into()];
+        existing.config.auto_link_package = Some("foo".into());
+        let mut resolved = sample_venv("foo");
+        resolved.install = vec!["foo".into()];
+        resolved.auto_link_package = None;
+        let reasons = describe_changes(&existing, &resolved, "Python 3.12.0");
+        assert_eq!(reasons, vec!["auto-link changed".to_string()]);
+    }
+
+    #[test]
+    fn describe_changes_detects_dev_auto_link_suffix_change() {
+        let mut existing = sample_state("foo-dev", "Python 3.12.0");
+        existing.config.auto_link_suffix = Some("-dev".into());
+        let mut resolved = sample_venv("foo-dev");
+        resolved.auto_link_suffix = None;
+        let reasons = describe_changes(&existing, &resolved, "Python 3.12.0");
+        assert!(reasons.iter().any(|r| r == "auto-link changed"));
     }
 
     #[test]
@@ -1368,6 +1439,46 @@ mod tests {
         )
         .unwrap();
         assert_eq!(dry_run_exit_code(&creating), 2);
+    }
+
+    #[test]
+    fn describe_create_pip_mode_lists_python_install_and_links() {
+        let mut v = sample_venv("foo");
+        v.python = "python3.12".into();
+        v.install = vec!["a".into(), "b".into()];
+        v.link = vec![LinkSpec {
+            source: "x".into(),
+            target: "x".into(),
+        }];
+        assert_eq!(
+            describe_create(&v),
+            "python: python3.12, install: 2, links: 1"
+        );
+    }
+
+    #[test]
+    fn describe_create_tool_mode_marks_links_as_auto() {
+        let mut v = sample_venv("black");
+        v.install = vec!["black".into()];
+        v.auto_link_package = Some("black".into());
+        assert_eq!(
+            describe_create(&v),
+            "python: python3, install: 1, links: auto"
+        );
+    }
+
+    #[test]
+    fn describe_create_dev_mode_shows_sync_details() {
+        let mut v = sample_venv("foo-dev");
+        v.sync_project = Some(PathBuf::from("/abs/proj"));
+        v.sync_groups = vec!["test".into()];
+        v.sync_extras = vec!["cli".into()];
+        v.auto_link_suffix = Some("-dev".into());
+        let out = describe_create(&v);
+        assert!(out.contains("sync: /abs/proj"), "{out}");
+        assert!(out.contains("groups: test"), "{out}");
+        assert!(out.contains("extras: cli"), "{out}");
+        assert!(out.contains("links: auto"), "{out}");
     }
 
     #[test]
