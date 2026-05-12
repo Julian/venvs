@@ -21,15 +21,6 @@ impl Locator {
         self.root.join(normalize_name(name))
     }
 
-    /// Find the virtualenv that would be associated with the given directory.
-    pub fn for_directory(&self, directory: &Path) -> Result<PathBuf> {
-        let basename = directory
-            .file_name()
-            .and_then(|n| n.to_str())
-            .with_context(|| format!("no basename in {}", directory.display()))?;
-        Ok(self.for_name(basename))
-    }
-
     /// Path to the config file.
     pub fn config_path(&self) -> PathBuf {
         self.root.join("virtualenvs.toml")
@@ -143,27 +134,6 @@ mod tests {
             locator.for_name("My-Package"),
             PathBuf::from("/tmp/venvs/my_package"),
         );
-    }
-
-    #[test]
-    fn for_directory_uses_basename() {
-        let locator = Locator {
-            root: PathBuf::from("/tmp/venvs"),
-        };
-        assert_eq!(
-            locator
-                .for_directory(Path::new("/home/user/projects/my-project"))
-                .unwrap(),
-            PathBuf::from("/tmp/venvs/my_project"),
-        );
-    }
-
-    #[test]
-    fn for_directory_errors_when_no_basename() {
-        let locator = Locator {
-            root: PathBuf::from("/tmp/venvs"),
-        };
-        assert!(locator.for_directory(Path::new("/")).is_err());
     }
 
     #[test]

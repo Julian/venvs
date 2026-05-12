@@ -40,15 +40,12 @@ pub fn run(
                 Some(d) => d,
                 None => env::current_dir().context("getting current directory")?,
             };
-            let venv = locator.for_directory(&dir)?;
-            // for_directory already pulled out the basename, but a basename
-            // like ".." would still let the resulting path escape the root.
-            let basename = venv
+            let basename = dir
                 .file_name()
                 .and_then(|n| n.to_str())
-                .context("derived venv path has no basename")?;
+                .with_context(|| format!("no basename in {}", dir.display()))?;
             validate_name(basename)?;
-            (venv, binary)
+            (resolve_name_with_dev_fallback(locator, basename), binary)
         }
     };
 
