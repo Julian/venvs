@@ -261,6 +261,11 @@ fn resolve_dev(disk_name: &str, source: &str, raw: &RawDevConfig) -> Result<Reso
 
     Ok(ResolvedVirtualEnv {
         name: disk_name.to_string(),
+        // Informational only — `uv sync` picks the real Python from the
+        // project's pyproject.toml / uv.lock. We still keep a non-empty
+        // value here so the shared sys-version lookup machinery (which
+        // queries `uv python find <spec>` per unique python string) works.
+        python: "python3".to_string(),
         link,
         link_module,
         post_commands: raw.post_commands.clone(),

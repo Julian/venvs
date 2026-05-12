@@ -1283,6 +1283,34 @@ mod tests {
     }
 
     #[test]
+    fn build_plan_filter_resolves_dev_fallback() {
+        let dir = tempfile::tempdir().unwrap();
+        let locator = Locator {
+            root: dir.path().to_path_buf(),
+        };
+        let config = Config::parse(
+            r#"
+            [dev.jsonschema]
+            project = "/p"
+            "#,
+        )
+        .unwrap();
+        let state = ManagedState::default();
+        // Bare "jsonschema" — no plain venv with that name exists, so the
+        // filter should route to the dev variant.
+        let plan = plan_for(
+            &config,
+            &state,
+            &locator,
+            dir.path(),
+            &["jsonschema".to_string()],
+        )
+        .unwrap();
+        assert_eq!(plan.items.len(), 1);
+        assert_eq!(plan.items[0].resolved.name, "jsonschema-dev");
+    }
+
+    #[test]
     fn build_plan_rejects_unknown_filter_names() {
         let dir = tempfile::tempdir().unwrap();
         let locator = Locator {
