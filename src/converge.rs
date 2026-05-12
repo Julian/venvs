@@ -12,6 +12,7 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 
 use crate::config::{Config, LinkSpec, ResolvedVirtualEnv};
+use crate::entry_points;
 use crate::locator::Locator;
 use crate::state::{ManagedState, VenvState};
 
@@ -694,9 +695,23 @@ fn converge_one(
     // Create links. (link_dir itself is created once in apply() before the parallel loop.)
     pb.set_message(format!("{}: linking", resolved.name));
 
-    let mut created_links = Vec::with_capacity(resolved.link.len() + resolved.link_module.len());
+    let auto_discovered: Vec<LinkSpec> = match &resolved.auto_link_package {
+        Some(pkg) => entry_points::discover_scripts(&venv_dir, pkg)
+            .with_context(|| format!("auto-link discovery for {}", resolved.name))?
+            .into_iter()
+            .map(|script| LinkSpec {
+                source: script.clone(),
+                target: script,
+            })
+            .collect(),
+        None => Vec::new(),
+    };
 
-    for link in &resolved.link {
+    let mut created_links = Vec::with_capacity(
+        resolved.link.len() + auto_discovered.len() + resolved.link_module.len(),
+    );
+
+    for link in resolved.link.iter().chain(auto_discovered.iter()) {
         created_links.push(create_symlink(&venv_dir, link, link_dir)?);
     }
     for link in &resolved.link_module {
@@ -858,6 +873,7 @@ mod tests {
             link: vec![],
             link_module: vec![],
             post_commands: vec![],
+            auto_link_package: None,
         }
     }
 

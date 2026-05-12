@@ -60,7 +60,8 @@ pub struct LinkSpec {
 }
 
 /// A fully resolved virtualenv configuration.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ResolvedVirtualEnv {
     pub name: String,
     pub python: String,
@@ -69,6 +70,10 @@ pub struct ResolvedVirtualEnv {
     pub link: Vec<LinkSpec>,
     pub link_module: Vec<LinkSpec>,
     pub post_commands: Vec<Vec<String>>,
+    /// If set, after install, console scripts declared by this package are
+    /// discovered and added to the link list. Used by `[tool.X]` when the
+    /// user didn't specify `link` explicitly.
+    pub auto_link_package: Option<String>,
 }
 
 /// The fully resolved configuration.
@@ -159,8 +164,10 @@ fn resolve_tool(
     expand_bundles_into(&mut install, &raw.install_bundle, bundles, source)?;
     validate_install(&install, source)?;
 
-    let raw_link = raw.link.clone().unwrap_or_else(|| vec![name.to_string()]);
-    let link = parse_link_specs(&raw_link);
+    let (link, auto_link_package) = match &raw.link {
+        Some(specs) => (parse_link_specs(specs), None),
+        None => (Vec::new(), Some(name.to_string())),
+    };
     validate_link_specs(&link, source)?;
 
     let link_module = parse_link_specs(&raw.link_module);
@@ -174,6 +181,7 @@ fn resolve_tool(
         link,
         link_module,
         post_commands: raw.post_commands.clone(),
+        auto_link_package,
     })
 }
 
@@ -215,6 +223,7 @@ fn resolve_venv(
         link,
         link_module,
         post_commands: raw.post_commands.clone(),
+        auto_link_package: None,
     })
 }
 
@@ -953,7 +962,7 @@ mod tests {
     }
 
     #[test]
-    fn tool_table_defaults_to_installing_and_linking_by_name() {
+    fn tool_table_defaults_to_installing_and_auto_linking_by_name() {
         let config = Config::parse(
             r#"
             [tool.black]
@@ -964,9 +973,11 @@ mod tests {
         let venv = &config.virtualenvs["black"];
         assert_eq!(venv.install, vec!["black"]);
         assert_eq!(venv.requirements, Vec::<String>::new());
-        assert_eq!(venv.link.len(), 1);
-        assert_eq!(venv.link[0].source, "black");
-        assert_eq!(venv.link[0].target, "black");
+        assert!(
+            venv.link.is_empty(),
+            "explicit link should be empty when auto-linking",
+        );
+        assert_eq!(venv.auto_link_package.as_deref(), Some("black"));
     }
 
     #[test]
@@ -995,16 +1006,15 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(
-            config.virtualenvs["jupyter"].install,
-            vec!["jupyter", "jupyterlab", "ipywidgets"]
-        );
-        assert_eq!(config.virtualenvs["jupyter"].link.len(), 1);
-        assert_eq!(config.virtualenvs["jupyter"].link[0].target, "jupyter");
+        let venv = &config.virtualenvs["jupyter"];
+        assert_eq!(venv.install, vec!["jupyter", "jupyterlab", "ipywidgets"]);
+        // No explicit link → auto-link, only from the primary package.
+        assert!(venv.link.is_empty());
+        assert_eq!(venv.auto_link_package.as_deref(), Some("jupyter"));
     }
 
     #[test]
-    fn tool_table_explicit_link_overrides_default() {
+    fn tool_table_explicit_link_overrides_auto() {
         let config = Config::parse(
             r#"
             [tool.jupyter]
@@ -1014,16 +1024,17 @@ mod tests {
         )
         .unwrap();
 
-        let targets: Vec<_> = config.virtualenvs["jupyter"]
-            .link
-            .iter()
-            .map(|l| l.target.as_str())
-            .collect();
+        let venv = &config.virtualenvs["jupyter"];
+        let targets: Vec<_> = venv.link.iter().map(|l| l.target.as_str()).collect();
         assert_eq!(targets, vec!["jupyter", "jupyter-lab"]);
+        assert!(
+            venv.auto_link_package.is_none(),
+            "explicit link should disable auto-link",
+        );
     }
 
     #[test]
-    fn tool_table_empty_explicit_link_means_no_links() {
+    fn tool_table_empty_explicit_link_disables_auto_link() {
         let config = Config::parse(
             r#"
             [tool.thing]
@@ -1031,7 +1042,9 @@ mod tests {
             "#,
         )
         .unwrap();
-        assert!(config.virtualenvs["thing"].link.is_empty());
+        let venv = &config.virtualenvs["thing"];
+        assert!(venv.link.is_empty());
+        assert!(venv.auto_link_package.is_none());
     }
 
     #[test]

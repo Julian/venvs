@@ -87,6 +87,7 @@ mod tests {
             }],
             link_module: vec![],
             post_commands: vec![],
+            auto_link_package: None,
         }
     }
 

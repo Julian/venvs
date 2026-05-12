@@ -1,5 +1,6 @@
 mod config;
 mod converge;
+mod entry_points;
 mod find;
 mod locator;
 mod state;
