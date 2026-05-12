@@ -26,72 +26,118 @@ Configuration
 -------------
 
 Create a file at ``~/.local/share/virtualenvs/virtualenvs.toml`` (or
-wherever ``$WORKON_HOME`` points). Here's an example:
+wherever ``$WORKON_HOME`` points). Each entry declares a venv using one
+of three table types depending on intent:
 
 .. code-block:: toml
 
-    [virtualenv.development]
-    install = [
-        "pudb",
-        "twisted",
-    ]
+    # [tool.X]: install package X and link its console scripts.
+    # Defaults: install = ["X"], link = scripts declared by X.
+    [tool.black]
+    [tool.ruff]
+
+    [tool.jsonschema]
+    extras = ["format"]              # → install jsonschema[format]
+    install = ["jsonschema-cli"]     # additional packages (scripts not linked)
+
+    # [dev.X]: a venv tracking a local project checkout, converged via
+    # `uv sync`. Disk dir is `X-dev` and auto-linked scripts get a `-dev`
+    # suffix, so `[tool.X]` and `[dev.X]` coexist without colliding.
+    [dev.jsonschema]
+    project = "~/Development/jsonschema"
+    groups = ["test"]
+
+    # [venv.X]: the explicit/escape-hatch table. All keys, no smart defaults.
+    [venv.development]
+    install = ["pudb", "twisted"]
     link = ["trial"]
 
-    [virtualenv.app]
+    [venv.app]
     install = ["flask"]
     python = "python3.12"
     link = ["flask:flask-app"]
 
-    [virtualenv.tools]
-    install = ["ipython"]
-    link-module = ["IPython:ipy"]
+Running ``venvs converge`` creates each venv, installs (or syncs) the
+specified packages, and symlinks the named binaries into ``~/.local/bin/``.
 
-Running ``venvs converge`` will create each virtualenv, install the
-specified packages, and symlink the named binaries into
-``~/.local/bin/``.
+``[virtualenv.X]`` is also accepted as a back-compat alias for ``[venv.X]``.
 
 
 Config Reference
 ^^^^^^^^^^^^^^^^
 
-Each ``[virtualenv.<name>]`` section supports:
+``[tool.X]``
+""""""""""""
+
+Sugar for ``uv tool install``-style venvs: one published package, its
+scripts auto-linked.
+
+``extras``
+    Package extras for the primary package, e.g. ``["format"]`` →
+    installs ``X[format]``.
 
 ``install``
-    List of packages to install (supports ``$ENV_VAR`` and ``~/``
-    expansion).
+    *Additional* (companion) packages, like ``uv tool install ... --with``.
+    Their scripts are not auto-linked.
 
-``requirements``
-    List of requirements files to install from.
+``install-bundle``
+    List of bundle names to install (see Bundles below). Scripts from
+    bundle packages are not auto-linked.
 
 ``python``
     Python interpreter to use (default: ``python3``).
 
-``install-bundle``
-    List of bundle names to include (see below).
-
 ``link``
-    List of binaries to symlink into the link directory. Use
-    ``"source:target"`` to rename, e.g. ``"black:black3.12"``.
+    Explicit override of the auto-discovered link list. Use
+    ``"source:target"`` to rename. ``link = []`` disables linking entirely.
 
 ``link-module``
-    List of modules to make available as wrapper scripts that run
-    ``python -m <module>``. Use ``"module:name"`` to rename.
+    Modules to expose as ``python -m <module>`` wrappers.
 
 ``post-commands``
-    List of commands (as arrays) to run after converging, e.g.
-    ``[["touch", "/tmp/done"]]``.
+    Commands to run after converging.
+
+``[dev.X]``
+"""""""""""
+
+A venv backed by a local Python project (typically a checkout you are
+developing). Converged via ``uv sync`` against the project's
+``pyproject.toml`` / ``uv.lock``. Disk dir is always ``X-dev``.
+
+``project`` (required)
+    Path to the project directory (supports ``$ENV_VAR`` and ``~/``
+    expansion).
+
+``groups``
+    PEP 735 dependency groups to install, e.g. ``["test", "docs"]``.
+
+``extras``
+    Project extras to install, e.g. ``["cli"]``.
+
+``link``, ``link-module``, ``post-commands``
+    As for ``[tool.X]``. Auto-linked scripts get a ``-dev`` suffix on
+    their targets; explicit ``link = [...]`` is used verbatim.
+
+``[venv.X]``
+""""""""""""
+
+The explicit table — use this when ``[tool.X]`` / ``[dev.X]`` don't fit.
+All of: ``install`` (list of packages), ``requirements`` (list of
+``requirements.txt`` files), ``install-bundle``, ``python``, ``link``,
+``link-module``, ``post-commands``.
 
 Bundles
 """""""
 
-Bundles are reusable package groups:
+Bundles are reusable package groups, referenceable from ``[venv.X]`` and
+``[tool.X]``:
 
 .. code-block:: toml
 
     [bundle]
     dev = ["pytest", "ruff", "mypy"]
 
-    [virtualenv.myproject]
+    [venv.myproject]
     install = ["mypackage"]
     install-bundle = ["dev"]
 
