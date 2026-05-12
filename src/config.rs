@@ -12,7 +12,9 @@ use crate::locator::{normalize_name, validate_name};
 #[serde(default)]
 struct RawConfig {
     bundle: BTreeMap<String, Vec<String>>,
+    venv: BTreeMap<String, RawVirtualEnvConfig>,
     virtualenv: BTreeMap<String, RawVirtualEnvConfig>,
+    tool: BTreeMap<String, RawToolConfig>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -24,6 +26,26 @@ struct RawVirtualEnvConfig {
     #[serde(rename = "install-bundle")]
     install_bundle: Vec<String>,
     link: Vec<String>,
+    #[serde(rename = "link-module")]
+    link_module: Vec<String>,
+    #[serde(rename = "post-commands")]
+    post_commands: Vec<Vec<String>>,
+}
+
+/// `[tool.X]` is sugar for "install the package `X` (with optional extras
+/// and companion packages) and link its scripts." Unlike [`RawVirtualEnvConfig`],
+/// it has no `requirements` (use `[venv.X]` if you need that), and `install`
+/// here means *additional* packages (`uv tool install foo --with bar`-style),
+/// not the primary package — the primary package is always the venv name.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+struct RawToolConfig {
+    python: Option<String>,
+    extras: Vec<String>,
+    install: Vec<String>,
+    #[serde(rename = "install-bundle")]
+    install_bundle: Vec<String>,
+    link: Option<Vec<String>>,
     #[serde(rename = "link-module")]
     link_module: Vec<String>,
     #[serde(rename = "post-commands")]
@@ -68,12 +90,28 @@ impl Config {
     }
 
     fn resolve(raw: &RawConfig) -> Result<Self> {
-        let mut virtualenvs = BTreeMap::new();
+        let mut virtualenvs: BTreeMap<String, ResolvedVirtualEnv> = BTreeMap::new();
+        let mut declared_in: BTreeMap<String, &'static str> = BTreeMap::new();
 
-        for (name, raw_venv) in &raw.virtualenv {
-            validate_name(name).context("invalid virtualenv name")?;
-            let resolved = resolve_venv(name, raw_venv, &raw.bundle)?;
-            virtualenvs.insert(name.clone(), resolved);
+        for (table, entries) in [("venv", &raw.venv), ("virtualenv", &raw.virtualenv)] {
+            for (name, raw_venv) in entries {
+                validate_name(name).context("invalid venv name")?;
+                check_uniqueness(name, table, &mut declared_in)?;
+                let source = format!("[{table}.{name}]");
+                virtualenvs.insert(
+                    name.clone(),
+                    resolve_venv(name, &source, raw_venv, &raw.bundle)?,
+                );
+            }
+        }
+        for (name, raw_tool) in &raw.tool {
+            validate_name(name).context("invalid venv name")?;
+            check_uniqueness(name, "tool", &mut declared_in)?;
+            let source = format!("[tool.{name}]");
+            virtualenvs.insert(
+                name.clone(),
+                resolve_tool(name, &source, raw_tool, &raw.bundle)?,
+            );
         }
 
         check_for_normalized_name_collisions(&virtualenvs)?;
@@ -83,8 +121,65 @@ impl Config {
     }
 }
 
+fn check_uniqueness(
+    name: &str,
+    table: &'static str,
+    declared_in: &mut BTreeMap<String, &'static str>,
+) -> Result<()> {
+    if let Some(prev) = declared_in.get(name) {
+        bail!(
+            "venv {name:?} is declared in both [{prev}.{name}] and [{table}.{name}] \
+             — pick one"
+        );
+    }
+    declared_in.insert(name.to_string(), table);
+    Ok(())
+}
+
+fn resolve_tool(
+    name: &str,
+    source: &str,
+    raw: &RawToolConfig,
+    bundles: &BTreeMap<String, Vec<String>>,
+) -> Result<ResolvedVirtualEnv> {
+    for extra in &raw.extras {
+        validate_extra(extra).with_context(|| format!("invalid extra in {source}"))?;
+    }
+
+    let primary_spec = if raw.extras.is_empty() {
+        name.to_string()
+    } else {
+        format!("{name}[{}]", raw.extras.join(","))
+    };
+
+    let mut install = vec![primary_spec];
+    for companion in &raw.install {
+        install.push(expand(companion)?);
+    }
+    expand_bundles_into(&mut install, &raw.install_bundle, bundles, source)?;
+    validate_install(&install, source)?;
+
+    let raw_link = raw.link.clone().unwrap_or_else(|| vec![name.to_string()]);
+    let link = parse_link_specs(&raw_link);
+    validate_link_specs(&link, source)?;
+
+    let link_module = parse_link_specs(&raw.link_module);
+    validate_link_module_specs(&link_module, source)?;
+
+    Ok(ResolvedVirtualEnv {
+        name: name.to_string(),
+        python: raw.python.clone().unwrap_or_else(|| "python3".to_string()),
+        install,
+        requirements: Vec::new(),
+        link,
+        link_module,
+        post_commands: raw.post_commands.clone(),
+    })
+}
+
 fn resolve_venv(
     name: &str,
+    source: &str,
     raw: &RawVirtualEnvConfig,
     bundles: &BTreeMap<String, Vec<String>>,
 ) -> Result<ResolvedVirtualEnv> {
@@ -93,23 +188,8 @@ fn resolve_venv(
         .iter()
         .map(|s| expand(s))
         .collect::<Result<_>>()?;
-
-    for bundle_name in &raw.install_bundle {
-        let bundle = bundles.get(bundle_name).with_context(|| {
-            format!("virtualenv {name:?} references unknown bundle {bundle_name:?}")
-        })?;
-        for package in bundle {
-            let expanded = expand(package)?;
-            if !install.contains(&expanded) {
-                install.push(expanded);
-            }
-        }
-    }
-
-    for package in &install {
-        validate_package_arg(package)
-            .with_context(|| format!("invalid install entry in virtualenv {name:?}"))?;
-    }
+    expand_bundles_into(&mut install, &raw.install_bundle, bundles, source)?;
+    validate_install(&install, source)?;
 
     let requirements: Vec<String> = raw
         .requirements
@@ -118,24 +198,14 @@ fn resolve_venv(
         .collect::<Result<_>>()?;
     for req in &requirements {
         validate_package_arg(req)
-            .with_context(|| format!("invalid requirements entry in virtualenv {name:?}"))?;
+            .with_context(|| format!("invalid requirements entry in {source}"))?;
     }
 
     let link = parse_link_specs(&raw.link);
-    for spec in &link {
-        validate_filename(&spec.source)
-            .with_context(|| format!("invalid link source in virtualenv {name:?}"))?;
-        validate_filename(&spec.target)
-            .with_context(|| format!("invalid link target in virtualenv {name:?}"))?;
-    }
+    validate_link_specs(&link, source)?;
 
     let link_module = parse_link_specs(&raw.link_module);
-    for spec in &link_module {
-        validate_python_module(&spec.source)
-            .with_context(|| format!("invalid link-module source in virtualenv {name:?}"))?;
-        validate_filename(&spec.target)
-            .with_context(|| format!("invalid link-module target in virtualenv {name:?}"))?;
-    }
+    validate_link_module_specs(&link_module, source)?;
 
     Ok(ResolvedVirtualEnv {
         name: name.to_string(),
@@ -146,6 +216,68 @@ fn resolve_venv(
         link_module,
         post_commands: raw.post_commands.clone(),
     })
+}
+
+fn expand_bundles_into(
+    install: &mut Vec<String>,
+    bundle_names: &[String],
+    bundles: &BTreeMap<String, Vec<String>>,
+    source: &str,
+) -> Result<()> {
+    for bundle_name in bundle_names {
+        let bundle = bundles
+            .get(bundle_name)
+            .with_context(|| format!("{source} references unknown bundle {bundle_name:?}"))?;
+        for package in bundle {
+            let expanded = expand(package)?;
+            if !install.contains(&expanded) {
+                install.push(expanded);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_install(install: &[String], source: &str) -> Result<()> {
+    for package in install {
+        validate_package_arg(package)
+            .with_context(|| format!("invalid install entry in {source}"))?;
+    }
+    Ok(())
+}
+
+fn validate_link_specs(specs: &[LinkSpec], source: &str) -> Result<()> {
+    for spec in specs {
+        validate_filename(&spec.source)
+            .with_context(|| format!("invalid link source in {source}"))?;
+        validate_filename(&spec.target)
+            .with_context(|| format!("invalid link target in {source}"))?;
+    }
+    Ok(())
+}
+
+fn validate_link_module_specs(specs: &[LinkSpec], source: &str) -> Result<()> {
+    for spec in specs {
+        validate_python_module(&spec.source)
+            .with_context(|| format!("invalid link-module source in {source}"))?;
+        validate_filename(&spec.target)
+            .with_context(|| format!("invalid link-module target in {source}"))?;
+    }
+    Ok(())
+}
+
+/// PEP 508 extra names: ASCII alphanumeric plus `-`, `_`, `.`.
+fn validate_extra(s: &str) -> Result<()> {
+    if s.is_empty() {
+        bail!("empty extra");
+    }
+    if !s
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+    {
+        bail!("invalid extra {s:?}");
+    }
+    Ok(())
 }
 
 /// Reject anything that `uv pip install` would parse as a flag rather than
@@ -279,6 +411,56 @@ mod tests {
     fn empty_config() {
         let config = Config::parse("").unwrap();
         assert!(config.virtualenvs.is_empty());
+    }
+
+    #[test]
+    fn venv_table_is_equivalent_to_virtualenv_table() {
+        let config = Config::parse(
+            r#"
+            [venv.myenv]
+            install = ["requests"]
+            "#,
+        )
+        .unwrap();
+
+        let venv = &config.virtualenvs["myenv"];
+        assert_eq!(venv.name, "myenv");
+        assert_eq!(venv.install, vec!["requests"]);
+    }
+
+    #[test]
+    fn venv_and_virtualenv_tables_coexist() {
+        let config = Config::parse(
+            r#"
+            [venv.alpha]
+            install = ["a"]
+            [virtualenv.beta]
+            install = ["b"]
+            "#,
+        )
+        .unwrap();
+
+        assert_eq!(config.virtualenvs["alpha"].install, vec!["a"]);
+        assert_eq!(config.virtualenvs["beta"].install, vec!["b"]);
+    }
+
+    #[test]
+    fn same_name_in_both_tables_is_rejected() {
+        let err = Config::parse(
+            r#"
+            [venv.shared]
+            install = ["a"]
+            [virtualenv.shared]
+            install = ["b"]
+            "#,
+        )
+        .unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(msg.contains("shared"), "error should name the venv: {msg}");
+        assert!(
+            msg.contains("[venv.") && msg.contains("[virtualenv."),
+            "error should name both tables: {msg}",
+        );
     }
 
     #[test]
@@ -768,5 +950,177 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn tool_table_defaults_to_installing_and_linking_by_name() {
+        let config = Config::parse(
+            r#"
+            [tool.black]
+            "#,
+        )
+        .unwrap();
+
+        let venv = &config.virtualenvs["black"];
+        assert_eq!(venv.install, vec!["black"]);
+        assert_eq!(venv.requirements, Vec::<String>::new());
+        assert_eq!(venv.link.len(), 1);
+        assert_eq!(venv.link[0].source, "black");
+        assert_eq!(venv.link[0].target, "black");
+    }
+
+    #[test]
+    fn tool_table_extras_bake_into_primary_spec() {
+        let config = Config::parse(
+            r#"
+            [tool.jsonschema]
+            extras = ["format", "cli"]
+            "#,
+        )
+        .unwrap();
+
+        assert_eq!(
+            config.virtualenvs["jsonschema"].install,
+            vec!["jsonschema[format,cli]"]
+        );
+    }
+
+    #[test]
+    fn tool_table_install_is_additional_companions() {
+        let config = Config::parse(
+            r#"
+            [tool.jupyter]
+            install = ["jupyterlab", "ipywidgets"]
+            "#,
+        )
+        .unwrap();
+
+        assert_eq!(
+            config.virtualenvs["jupyter"].install,
+            vec!["jupyter", "jupyterlab", "ipywidgets"]
+        );
+        assert_eq!(config.virtualenvs["jupyter"].link.len(), 1);
+        assert_eq!(config.virtualenvs["jupyter"].link[0].target, "jupyter");
+    }
+
+    #[test]
+    fn tool_table_explicit_link_overrides_default() {
+        let config = Config::parse(
+            r#"
+            [tool.jupyter]
+            install = ["jupyterlab"]
+            link = ["jupyter", "jupyter-lab"]
+            "#,
+        )
+        .unwrap();
+
+        let targets: Vec<_> = config.virtualenvs["jupyter"]
+            .link
+            .iter()
+            .map(|l| l.target.as_str())
+            .collect();
+        assert_eq!(targets, vec!["jupyter", "jupyter-lab"]);
+    }
+
+    #[test]
+    fn tool_table_empty_explicit_link_means_no_links() {
+        let config = Config::parse(
+            r#"
+            [tool.thing]
+            link = []
+            "#,
+        )
+        .unwrap();
+        assert!(config.virtualenvs["thing"].link.is_empty());
+    }
+
+    #[test]
+    fn tool_table_rejects_disallowed_keys() {
+        for key in ["requirements", "project", "sync", "editable"] {
+            let toml = format!("[tool.foo]\n{key} = \"x\"\n");
+            let err = Config::parse(&toml).unwrap_err();
+            let msg = format!("{err:#}");
+            assert!(
+                msg.contains("unknown field") || msg.contains(key),
+                "expected rejection of {key}: {msg}",
+            );
+        }
+    }
+
+    #[test]
+    fn tool_table_install_bundle_companions_skip_dup_of_primary() {
+        let config = Config::parse(
+            r#"
+            [bundle]
+            extras = ["black", "ruff"]
+
+            [tool.black]
+            install-bundle = ["extras"]
+            "#,
+        )
+        .unwrap();
+
+        assert_eq!(config.virtualenvs["black"].install, vec!["black", "ruff"]);
+    }
+
+    #[test]
+    fn tool_and_venv_with_same_name_is_rejected() {
+        let err = Config::parse(
+            r#"
+            [venv.foo]
+            [tool.foo]
+            "#,
+        )
+        .unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(msg.contains("foo"), "should name the venv: {msg}");
+        assert!(msg.contains("[venv.") && msg.contains("[tool."));
+    }
+
+    #[test]
+    fn tool_table_rejects_dash_prefixed_companions() {
+        let err = Config::parse(
+            r#"
+            [tool.foo]
+            install = ["--index-url=http://attacker"]
+            "#,
+        )
+        .unwrap_err();
+        assert!(format!("{err:#}").contains("'-'"));
+    }
+
+    #[test]
+    fn tool_table_custom_python() {
+        let config = Config::parse(
+            r#"
+            [tool.black]
+            python = "python3.12"
+            "#,
+        )
+        .unwrap();
+        assert_eq!(config.virtualenvs["black"].python, "python3.12");
+    }
+
+    #[test]
+    fn tool_table_post_commands() {
+        let config = Config::parse(
+            r#"
+            [tool.black]
+            post-commands = [["echo", "done"]]
+            "#,
+        )
+        .unwrap();
+        assert_eq!(
+            config.virtualenvs["black"].post_commands,
+            vec![vec!["echo", "done"]]
+        );
+    }
+
+    #[test]
+    fn tool_table_rejects_invalid_extras() {
+        for bad in ["bad extra", "with/slash", ""] {
+            let toml = format!("[tool.foo]\nextras = [{:?}]\n", bad);
+            assert!(Config::parse(&toml).is_err(), "should reject extra {bad:?}",);
+        }
     }
 }
