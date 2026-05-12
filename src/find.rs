@@ -33,7 +33,7 @@ pub fn run(
         }
         Some(FindCommand::Name { name, binary }) => {
             validate_name(&name)?;
-            (locator.for_name(&name), binary)
+            (resolve_name_with_dev_fallback(locator, &name), binary)
         }
         Some(FindCommand::Directory { directory, binary }) => {
             let dir = match directory {
@@ -66,4 +66,78 @@ pub fn run(
     }
 
     Ok(ExitCode::SUCCESS)
+}
+
+/// Resolve `name` to a venv path, trying `<name>` first and falling back to
+/// `<name>-dev` when the bare name doesn't exist on disk. The `-dev` suffix
+/// is a disk-layout detail of `[dev.X]` venvs that users shouldn't have to
+/// know about — when only the dev variant exists, `venvs find name foo`
+/// should find it.
+fn resolve_name_with_dev_fallback(locator: &Locator, name: &str) -> PathBuf {
+    let direct = locator.for_name(name);
+    if direct.exists() {
+        return direct;
+    }
+    let with_dev = format!("{name}-dev");
+    let dev_path = locator.for_name(&with_dev);
+    if dev_path.exists() {
+        return dev_path;
+    }
+    direct
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use tempfile::TempDir;
+
+    use super::*;
+
+    fn make_locator() -> (TempDir, Locator) {
+        let dir = TempDir::new().unwrap();
+        let locator = Locator {
+            root: dir.path().to_path_buf(),
+        };
+        (dir, locator)
+    }
+
+    #[test]
+    fn fallback_returns_direct_when_it_exists() {
+        let (_dir, locator) = make_locator();
+        fs::create_dir(locator.for_name("foo")).unwrap();
+        let path = resolve_name_with_dev_fallback(&locator, "foo");
+        assert_eq!(path, locator.for_name("foo"));
+    }
+
+    #[test]
+    fn fallback_routes_to_dev_when_only_dev_exists() {
+        let (_dir, locator) = make_locator();
+        fs::create_dir(locator.for_name("foo-dev")).unwrap();
+        let path = resolve_name_with_dev_fallback(&locator, "foo");
+        assert_eq!(path, locator.for_name("foo-dev"));
+    }
+
+    #[test]
+    fn fallback_prefers_direct_when_both_exist() {
+        let (_dir, locator) = make_locator();
+        fs::create_dir(locator.for_name("foo")).unwrap();
+        fs::create_dir(locator.for_name("foo-dev")).unwrap();
+        let path = resolve_name_with_dev_fallback(&locator, "foo");
+        assert_eq!(path, locator.for_name("foo"));
+    }
+
+    #[test]
+    fn fallback_returns_direct_when_neither_exists() {
+        let (_dir, locator) = make_locator();
+        let path = resolve_name_with_dev_fallback(&locator, "foo");
+        assert_eq!(path, locator.for_name("foo"));
+    }
+
+    #[test]
+    fn fallback_with_explicit_dev_suffix_finds_directly() {
+        let (_dir, locator) = make_locator();
+        fs::create_dir(locator.for_name("foo-dev")).unwrap();
+        let path = resolve_name_with_dev_fallback(&locator, "foo-dev");
+        assert_eq!(path, locator.for_name("foo-dev"));
+    }
 }

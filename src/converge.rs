@@ -75,11 +75,18 @@ fn build_plan(
     locator: &Locator,
     link_dir: &Path,
 ) -> Result<Plan> {
-    let unknown: Vec<&str> = names
-        .iter()
-        .filter(|n| !config.virtualenvs.contains_key(n.as_str()))
-        .map(String::as_str)
-        .collect();
+    // Resolve each user-supplied name to the disk name it refers to,
+    // applying the `-dev` fallback so `[dev.foo]` answers to `foo`.
+    let mut resolved_targets: BTreeSet<String> = BTreeSet::new();
+    let mut unknown: Vec<&str> = Vec::new();
+    for name in names {
+        match config.resolve_user_name(name) {
+            Some(disk) => {
+                resolved_targets.insert(disk.to_string());
+            }
+            None => unknown.push(name.as_str()),
+        }
+    }
     if !unknown.is_empty() {
         bail!("unknown virtualenv name(s): {}", unknown.join(", "));
     }
@@ -101,11 +108,10 @@ fn build_plan(
     let venvs_to_process: Vec<&ResolvedVirtualEnv> = if names.is_empty() {
         config.virtualenvs.values().collect()
     } else {
-        let filter: BTreeSet<&str> = names.iter().map(String::as_str).collect();
         config
             .virtualenvs
             .values()
-            .filter(|v| filter.contains(v.name.as_str()))
+            .filter(|v| resolved_targets.contains(&v.name))
             .collect()
     };
 

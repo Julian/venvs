@@ -120,6 +120,21 @@ impl Config {
         Self::resolve(&raw)
     }
 
+    /// Resolve a user-supplied venv name to the actual disk-name key in
+    /// `virtualenvs`, falling back to `<name>-dev` if the bare name doesn't
+    /// exist. This makes the `-dev` suffix that `[dev.X]` produces an
+    /// implementation detail: users can write `foo` and have it route to
+    /// `foo-dev` when no plain `foo` venv exists.
+    pub fn resolve_user_name(&self, name: &str) -> Option<&str> {
+        if let Some((k, _)) = self.virtualenvs.get_key_value(name) {
+            return Some(k.as_str());
+        }
+        let with_dev = format!("{name}-dev");
+        self.virtualenvs
+            .get_key_value(with_dev.as_str())
+            .map(|(k, _)| k.as_str())
+    }
+
     fn resolve(raw: &RawConfig) -> Result<Self> {
         let mut virtualenvs: BTreeMap<String, ResolvedVirtualEnv> = BTreeMap::new();
         let mut declared_in: BTreeMap<String, String> = BTreeMap::new();
@@ -1327,6 +1342,56 @@ mod tests {
         let msg = format!("{err:#}");
         assert!(msg.contains("foo-dev"));
         assert!(msg.contains("[venv.foo-dev]") && msg.contains("[dev.foo]"));
+    }
+
+    #[test]
+    fn resolve_user_name_finds_direct_match() {
+        let config = Config::parse("[tool.black]\n").unwrap();
+        assert_eq!(config.resolve_user_name("black"), Some("black"));
+    }
+
+    #[test]
+    fn resolve_user_name_falls_back_to_dev_suffix() {
+        let config = Config::parse(
+            r#"
+            [dev.jsonschema]
+            project = "/p"
+            "#,
+        )
+        .unwrap();
+        // User can write `jsonschema` and get the dev venv.
+        assert_eq!(
+            config.resolve_user_name("jsonschema"),
+            Some("jsonschema-dev"),
+        );
+        // The explicit disk name also works.
+        assert_eq!(
+            config.resolve_user_name("jsonschema-dev"),
+            Some("jsonschema-dev"),
+        );
+    }
+
+    #[test]
+    fn resolve_user_name_prefers_direct_over_dev_fallback() {
+        let config = Config::parse(
+            r#"
+            [tool.jsonschema]
+            [dev.jsonschema]
+            project = "/p"
+            "#,
+        )
+        .unwrap();
+        assert_eq!(config.resolve_user_name("jsonschema"), Some("jsonschema"));
+        assert_eq!(
+            config.resolve_user_name("jsonschema-dev"),
+            Some("jsonschema-dev"),
+        );
+    }
+
+    #[test]
+    fn resolve_user_name_returns_none_for_unknown() {
+        let config = Config::parse("[tool.black]\n").unwrap();
+        assert_eq!(config.resolve_user_name("ruff"), None);
     }
 
     #[test]
