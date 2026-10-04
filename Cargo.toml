@@ -12,7 +12,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-dirs = "6"
+dirs = "7"
 indicatif = "0.18"
 rayon = "1"
 serde = { version = "1", features = ["derive"] }
